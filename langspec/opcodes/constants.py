@@ -1,6 +1,5 @@
 import random
-from typing import TYPE_CHECKING, Generator, List, Union
-from uuid import uuid4
+from typing import TYPE_CHECKING, List, Union
 
 from langspec.opcodes import (
     Constant,

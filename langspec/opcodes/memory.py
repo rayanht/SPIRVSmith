@@ -1,6 +1,5 @@
 import random
-from typing import Generator, List, TYPE_CHECKING
-from uuid import uuid4
+from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from langspec.opcodes.context import Context
