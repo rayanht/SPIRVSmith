@@ -1,5 +1,5 @@
 import random
-from typing import TYPE_CHECKING, Dict, Generator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple
 from uuid import UUID, uuid4
 
 import langspec.opcodes.arithmetic

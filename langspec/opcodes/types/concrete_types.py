@@ -1,6 +1,5 @@
 import random
-import sys
-from typing import TYPE_CHECKING, Generator, List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 from uuid import uuid4
 
 from langspec.enums import StorageClass
@@ -11,7 +10,7 @@ from langspec.opcodes import (
 )
 
 if TYPE_CHECKING:
-    from langspec.opcodes.context import Context, TVC
+    from langspec.opcodes.context import Context
 from langspec.opcodes.types.abstract_types import (
     ArithmeticType,
     ContainerType,
@@ -21,7 +20,6 @@ from langspec.opcodes.types.abstract_types import (
     Type,
     UniformContainerType,
 )
-from patched_dataclass import dataclass
 
 
 class OpTypeVoid(FuzzLeaf, Type):

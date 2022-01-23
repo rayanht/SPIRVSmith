@@ -5,7 +5,7 @@ from langspec.opcodes import (
     OpCode,
     VoidOp,
 )
-from typing import Dict, List, Sequence, Union
+from typing import Dict, List, Sequence
 from langspec.enums import (
     AddressingModel,
     Capability,
