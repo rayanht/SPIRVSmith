@@ -2,7 +2,6 @@ import random
 from typing import TYPE_CHECKING, List, Optional, Tuple
 from uuid import UUID, uuid4
 
-import langspec.opcodes.arithmetic
 from langspec.enums import FunctionControlMask, SelectionControlMask
 from langspec.opcodes.constants import OpConstantTrue
 from langspec.opcodes import (
@@ -15,7 +14,7 @@ from langspec.opcodes import (
 
 if TYPE_CHECKING:
     from langspec.opcodes.context import Context
-from langspec.opcodes.memory import OpVariable, Statement
+from langspec.opcodes.memory import OpLoad, OpVariable, Statement
 from langspec.opcodes.types.concrete_types import OpTypeBool, OpTypeFunction, Type
 from patched_dataclass import dataclass
 
@@ -87,7 +86,7 @@ class OpSelectionMerge(Statement, Untyped, VoidOp):
     selection_control: SelectionControlMask = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-        if context.get_depth() > 2:
+        if context.get_depth() > 4:
             return []
         self.exit_label = OpLabel().fuzz(context)[0]
         self.selection_control = None  # TODO
@@ -122,18 +121,25 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
     instructions: List[OpCode] = []
     variables: List[OpVariable] = []
     block_context = context.make_child_context()
-    while random.random() < 0.99:
+    import langspec.opcodes.arithmetic
+    while random.random() < 0.95:
         opcodes: List[OpCode] = Statement().fuzz(block_context)
-        insert = True
+        nested_block = False
         for statement in opcodes:
             if isinstance(statement, OpSelectionMerge):
-                insert = False
-            if isinstance(statement, Statement) and insert:
+                nested_block = True
+                break
+            if isinstance(statement, Statement) and not nested_block:
                 block_context.symbol_table[statement] = statement.id
             if not isinstance(statement, (OpVariable, OpReturn)):
                 instructions.append(statement)
             if isinstance(statement, OpVariable):
                 variables.append(statement)
+        if nested_block:
+            nested_block_variables = filter(lambda s: isinstance(s, OpVariable), opcodes)
+            nested_block_instructions = filter(lambda s: not isinstance(s, OpVariable), opcodes)
+            variables += nested_block_variables
+            instructions += nested_block_instructions
     if exit_label:
         instructions.append(OpBranch(label=exit_label))
     return tuple([block_label, *variables, *instructions])

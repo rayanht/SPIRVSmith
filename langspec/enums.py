@@ -129,6 +129,9 @@ class ExecutionMode(Enum):
     # NumSIMDWorkitemsINTEL = 5896
     # SchedulerTargetFmaxMhzINTEL = 5903
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class StorageClass(Enum):
     UniformConstant = 0

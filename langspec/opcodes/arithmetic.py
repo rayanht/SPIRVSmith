@@ -58,13 +58,12 @@ def find_arithmetic_operands(
 
 T = TypeVar("T")
 
+class ArithmeticOperator(Statement, Generic[T]):
+    pass
 
-class UnaryArithmeticOperator(Statement, Generic[T]):
-    type: Type = None
-    operand: Union[Statement, Constant] = None
-
+class UnaryArithmeticOperatorFuzzMixin:
     def fuzz(self, context: "Context") -> List[OpCode]:
-        target_type = get_args(self.__class__.__orig_bases__[0])
+        target_type = get_args(self.__class__.__orig_bases__[1])
         operands = find_arithmetic_operands(context, target_type)
         if not operands:
             return []
@@ -73,13 +72,9 @@ class UnaryArithmeticOperator(Statement, Generic[T]):
         return [self]
 
 
-class BinaryArithmeticOperator(Statement, Generic[T]):
-    type: Type = None
-    operand1: Union[Statement, Constant] = None
-    operand2: Union[Statement, Constant] = None
-
+class BinaryArithmeticOperatorFuzzMixin:
     def fuzz(self, context: "Context") -> List[OpCode]:
-        target_type = get_args(self.__class__.__orig_bases__[0])
+        target_type = get_args(self.__class__.__orig_bases__[1])
         operands = find_arithmetic_operands(context, target_type)
         if not operands:
             return []
@@ -89,35 +84,52 @@ class BinaryArithmeticOperator(Statement, Generic[T]):
         return [self]
 
 
-class OpSNegate(UnaryArithmeticOperator[OpTypeInt]):
+class UnaryArithmeticOperator(ArithmeticOperator[T]):
+    type: Type = None
+    operand: Union[Statement, Constant] = None
+    
+    def to_spasm(self, context: "Context") -> str:
+        return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand.id}"
+
+
+class BinaryArithmeticOperator(ArithmeticOperator[T]):
+    type: Type = None
+    operand1: Union[Statement, Constant] = None
+    operand2: Union[Statement, Constant] = None
+    
+    def to_spasm(self, context: "Context") -> str:
+        return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand1.id} %{self.operand2.id}"
+
+
+class OpSNegate(UnaryArithmeticOperatorFuzzMixin, UnaryArithmeticOperator[OpTypeInt]):
     pass
 
 
-class OpFNegate(UnaryArithmeticOperator[OpTypeFloat]):
+class OpFNegate(UnaryArithmeticOperatorFuzzMixin, UnaryArithmeticOperator[OpTypeFloat]):
     pass
 
 
-class OpIAdd(BinaryArithmeticOperator[OpTypeInt]):
+class OpIAdd(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeInt]):
     pass
 
 
-class OpFAdd(BinaryArithmeticOperator[OpTypeFloat]):
+class OpFAdd(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
     pass
 
 
-class OpISub(BinaryArithmeticOperator[OpTypeInt]):
+class OpISub(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeInt]):
     pass
 
 
-class OpFSub(BinaryArithmeticOperator[OpTypeFloat]):
+class OpFSub(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
     pass
 
 
-class OpIMul(BinaryArithmeticOperator[OpTypeInt]):
+class OpIMul(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeInt]):
     pass
 
 
-class OpFMul(BinaryArithmeticOperator[OpTypeFloat]):
+class OpFMul(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
     pass
 
 
@@ -128,13 +140,9 @@ class OpFMul(BinaryArithmeticOperator[OpTypeFloat]):
 #     pass
 
 
-class OpFMul(BinaryArithmeticOperator[OpTypeFloat]):
+class OpFMod(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
     pass
 
 
-class OpFMod(BinaryArithmeticOperator[OpTypeFloat]):
-    pass
-
-
-class OpFRem(BinaryArithmeticOperator[OpTypeFloat]):
+class OpFRem(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
     pass
