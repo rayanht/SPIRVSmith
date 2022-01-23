@@ -1,11 +1,12 @@
 from langspec.opcodes.function import OpFunction
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from langspec.opcodes import (
     FuzzLeaf,
     OpCode,
     VoidOp,
 )
-from typing import Dict, List, Sequence
+from uuid import uuid4
+from typing import List, Sequence
 from langspec.enums import (
     AddressingModel,
     Capability,

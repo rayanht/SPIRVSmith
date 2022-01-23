@@ -72,8 +72,9 @@ class SPIRVShader(Shader):
         memory_model = OpMemoryModel(
             addressing_model=AddressingModel.Logical, memory_model=MemoryModel.GLSL450
         )
+        #TODO extra operands
         execution_mode = OpExecutionMode(
-            function=entry_point, execution_mode=ExecutionMode.LocalSize
+            entry_point.function, ExecutionMode.LocalSize
         )
         return cls(
             [cls],
@@ -87,7 +88,6 @@ class SPIRVShader(Shader):
 
     def to_file(self):
         # Generate assembly
-        spasm = []
         with open("out.spasm", "w") as f:
             for capability in self.capabilities:
                 f.write(capability.to_spasm(self.context))
@@ -96,8 +96,11 @@ class SPIRVShader(Shader):
             f.write("\n")
             f.write(self.entry_point.to_spasm(self.context))
             f.write("\n")
-            # f.write(self.execution_mode.to_spasm(self.TVC_table))
+            # TODO
+            # f.write(self.execution_mode.to_spasm(self.context))
             # f.write("\n")
+            f.write(f"OpExecutionMode %{self.execution_mode.function.id} {self.execution_mode.execution_mode} 1 1 1")
+            f.write("\n")
             for tvc, _ in self.context.tvc.items():
                 f.write(tvc.to_spasm(self.context))
                 f.write("\n")
@@ -105,4 +108,4 @@ class SPIRVShader(Shader):
                 f.write(opcode.to_spasm(self.context))
                 f.write("\n")
 
-SPIRVShader.gen()
+SPIRVShader.gen().to_file()
