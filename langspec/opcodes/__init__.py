@@ -1,18 +1,14 @@
-from abc import ABC, abstractmethod
-from collections import OrderedDict
+from abc import ABC
 from dataclasses import field
-from re import A
 
-from typing import TYPE_CHECKING, Generator, Iterable, Protocol, Tuple
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING, Protocol, Tuple
+from uuid import uuid4
 
 if TYPE_CHECKING:
     from langspec.opcodes.context import Context
 from patched_dataclass import dataclass
 import random
-from types import FunctionType
 from typing import List
-from copy import deepcopy
 from langspec.enums import Capability
 
 

@@ -15,9 +15,7 @@ from langspec.opcodes.constants import Constant
 if TYPE_CHECKING:
     from langspec.opcodes.context import Context
 from langspec.opcodes.types.abstract_types import (
-    ArithmeticType,
     NumericalType,
-    ScalarType,
 )
 from langspec.opcodes.types.concrete_types import (
     OpTypeFloat,

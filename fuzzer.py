@@ -1,7 +1,5 @@
-import random
-from dataclasses import dataclass, field
-from typing import Dict, List, Sequence
-from uuid import uuid4
+from dataclasses import dataclass
+from typing import List, Sequence
 
 from langspec.enums import (AddressingModel, Capability, ExecutionMode,
                             ExecutionModel, MemoryModel)
@@ -107,31 +105,4 @@ class SPIRVShader(Shader):
                 f.write(opcode.to_spasm(self.context))
                 f.write("\n")
 
-
-# opcodes = [void_type, main_type, main]
-
-# current_instruction = main
-# i = 0
-# opcodes += current_instruction.fuzz(id_gen=id_gen)
-# current_instruction = opcodes[-1]
-# spv_program = list(map(lambda opcode: opcode.to_spasm(), opcodes))
-# print(spv_program)
-
-# void main()
-# {
-#     vec4 scale = vec4(1.0, 1.0, 2.0, 1.0);
-
-#     if (cond)
-#         color = color1 + 1
-#     else
-#         color = sqrt(color2) * scale;
-
-#     for (int i = 0; i < 4; ++i)
-#         color *= multiplier;
-# }
-
 SPIRVShader.gen()
-
-# vec = OpTypeVector()
-# vec.fuzz({})
-# print(vec.to_spasm({}))

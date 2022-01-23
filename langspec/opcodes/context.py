@@ -1,11 +1,8 @@
-from abc import ABC, abstractmethod
-from dataclasses import field
-import dataclasses
 from uuid import UUID, uuid4
-from typing import TYPE_CHECKING, Dict, Optional, List, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, List
 from langspec.enums import StorageClass
 from langspec.opcodes import Statement, Untyped
-from langspec.opcodes.constants import Constant, OpConstant
+from langspec.opcodes.constants import Constant
 import random
 from langspec.opcodes.types.abstract_types import ArithmeticType, ScalarType, Type
 from langspec.opcodes.types.concrete_types import (
