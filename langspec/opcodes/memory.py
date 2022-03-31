@@ -23,10 +23,13 @@ class OpVariable(Statement):
     storage_class: StorageClass = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-
-        self.storage_class = (
-            StorageClass.Function if context.function else StorageClass.Input
-        )
+        
+        if context.function:
+            self.storage_class = StorageClass.Function
+        else:
+            self.storage_class = (
+                StorageClass.StorageBuffer if context.is_compute_shader() else StorageClass.Input
+            )
         self.context = context
         dynamic = False
         try:
@@ -52,7 +55,8 @@ class OpVariable(Statement):
                 return []
             self.type = OpTypePointer()
             self.type.storage_class = self.storage_class
-            if self.storage_class == StorageClass.Input:
+            target_storage_class = StorageClass.StorageBuffer if context.is_compute_shader() else StorageClass.Input
+            if self.storage_class == target_storage_class:
                 self.type.type = random.choice(
                     list(
                         filter(
@@ -115,10 +119,10 @@ class OpStore(Statement, OpCode, Untyped, VoidOp):
             if variable.type.type == self.object.type:
                 if variable.context and variable.context == context:
                     filtered_variables.append(variable)
-                elif not variable.context:
+                else:
                     if (
                         variable.storage_class == StorageClass.Function
-                        or variable.storage_class == StorageClass.Output
+                        or variable.storage_class == StorageClass.StorageBuffer
                     ):
                         filtered_variables.append(variable)
         try:
