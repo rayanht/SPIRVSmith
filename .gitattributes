@@ -1,2 +1,13 @@
-bin/** filter=lfs diff=lfs merge=lfs -text
+bin/spirv-val filter=lfs diff=lfs merge=lfs -text
+bin/amber filter=lfs diff=lfs merge=lfs -text
+bin/spirv-cfg filter=lfs diff=lfs merge=lfs -text
+bin/spirv-cross filter=lfs diff=lfs merge=lfs -text
+bin/spirv-lesspipe.sh filter=lfs diff=lfs merge=lfs -text
+bin/spirv-opt filter=lfs diff=lfs merge=lfs -text
+bin/spirv-reduce filter=lfs diff=lfs merge=lfs -text
+bin/spirv-as filter=lfs diff=lfs merge=lfs -text
+bin/spirv-dis filter=lfs diff=lfs merge=lfs -text
+bin/spirv-fuzz filter=lfs diff=lfs merge=lfs -text
+bin/spirv-link filter=lfs diff=lfs merge=lfs -text
+bin/spirv-lint filter=lfs diff=lfs merge=lfs -text
 . !text !filter !merge !diff
