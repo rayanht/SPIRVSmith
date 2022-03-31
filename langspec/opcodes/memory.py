@@ -16,8 +16,10 @@ from langspec.opcodes import (
 from langspec.opcodes.types.concrete_types import OpTypeBool, OpTypePointer, Type
 from langspec.opcodes import OpCode
 
+class MemoryOperator(Statement):
+    ...
 
-class OpVariable(Statement):
+class OpVariable(MemoryOperator):
     context: "Context" = None
     type: OpTypePointer = None
     storage_class: StorageClass = None
@@ -80,7 +82,7 @@ class OpVariable(Statement):
         return [self]
 
 
-class OpLoad(Statement):
+class OpLoad(MemoryOperator):
     type: Type = None
     variable: OpVariable = None
     # memory_operands: Optional[???]
@@ -96,7 +98,7 @@ class OpLoad(Statement):
         return [self]
 
 
-class OpStore(Statement, OpCode, Untyped, VoidOp):
+class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
     variable: OpVariable = None
     object: OpCode = None
     # memory_operands: Optional[???]
@@ -117,14 +119,7 @@ class OpStore(Statement, OpCode, Untyped, VoidOp):
         filtered_variables = []
         for variable in variables:
             if variable.type.type == self.object.type:
-                if variable.context and variable.context == context:
-                    filtered_variables.append(variable)
-                else:
-                    if (
-                        variable.storage_class == StorageClass.Function
-                        or variable.storage_class == StorageClass.StorageBuffer
-                    ):
-                        filtered_variables.append(variable)
+                filtered_variables.append(variable)
         try:
             variable = random.choice(filtered_variables)
         except IndexError:

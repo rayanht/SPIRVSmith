@@ -19,6 +19,9 @@ from langspec.opcodes.types.concrete_types import OpTypeBool, OpTypeFunction, Ty
 from patched_dataclass import dataclass
 
 
+class FunctionOperator(Statement):
+    ...
+    
 class OpFunction(OpCode):
     context: "Context" = None
     return_type: Type = None
@@ -62,7 +65,7 @@ class OpFunctionEnd(FuzzLeaf, VoidOp):
     pass
 
 
-class OpReturn(Statement, OpCode, Untyped, VoidOp):
+class OpReturn(FunctionOperator, OpCode, Untyped, VoidOp):
     # operand: Statement = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
@@ -81,7 +84,10 @@ class OpLabel(FuzzLeaf, Untyped):
     pass
 
 
-class OpSelectionMerge(Statement, Untyped, VoidOp):
+class ControlFlowOperator(Statement):
+    ...
+
+class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
     exit_label: OpLabel = None
     selection_control: SelectionControlMask = None
 
@@ -94,14 +100,16 @@ class OpSelectionMerge(Statement, Untyped, VoidOp):
         else_block = fuzz_block(context, self.exit_label)
         true_label = if_block[0]
         false_label = else_block[0]
-        const_true = OpConstantTrue()
-        const_true.type = OpTypeBool()
-        if const_true not in context.tvc:
-            context.tvc[const_true] = const_true.id
-        condition = OpBranchConditional(
-            condition=const_true, true_label=true_label, false_label=false_label
+        try:
+            condition = random.choice(context.get_statements(
+                lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
+            ))
+        except IndexError:
+            return []
+        op_branch = OpBranchConditional(
+            condition=condition, true_label=true_label, false_label=false_label
         )
-        return [self, condition, *if_block, *else_block, self.exit_label]
+        return [self, op_branch, *if_block, *else_block, self.exit_label]
 
 
 @dataclass
@@ -122,8 +130,10 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
     variables: List[OpVariable] = []
     block_context = context.make_child_context()
     import langspec.opcodes.arithmetic
+    import langspec.opcodes.logic
+
     # TODO parametrize randomness
-    while random.random() < 0.95:
+    while random.random() < context.config.p_statement:
         opcodes: List[OpCode] = Statement().fuzz(block_context)
         nested_block = False
         for statement in opcodes:
@@ -137,8 +147,12 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
             if isinstance(statement, OpVariable):
                 variables.append(statement)
         if nested_block:
-            nested_block_variables = filter(lambda s: isinstance(s, OpVariable), opcodes)
-            nested_block_instructions = filter(lambda s: not isinstance(s, OpVariable), opcodes)
+            nested_block_variables = filter(
+                lambda s: isinstance(s, OpVariable), opcodes
+            )
+            nested_block_instructions = filter(
+                lambda s: not isinstance(s, OpVariable), opcodes
+            )
             variables += nested_block_variables
             instructions += nested_block_instructions
     if exit_label:

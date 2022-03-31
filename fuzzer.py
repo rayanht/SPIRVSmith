@@ -121,6 +121,8 @@ class ShaderGenerator:
         )
         if process.returncode != 0:
             logging.warning(f"ASSEMBLY_FAIL - {shader.id}")
+            stderr = process.stderr.decode("utf-8")
+            logging.debug(stderr)
         else:
             logging.info(f"ASSEMBLY_SUCCESS - {shader.id}")
 

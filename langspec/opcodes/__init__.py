@@ -11,18 +11,13 @@ import random
 from typing import List
 from langspec.enums import Capability
 
-
-class _Intersection:
-    def __getitem__(self, bases):
-        full_bases = bases + (Protocol,)
-
-        class Inter(*full_bases):
-            ...
-
-        return Inter
-
-
-Intersection = _Intersection()
+randomization_parameters = {
+    "MemoryOperator": "w_memory_operation",
+    "LogicalOperator": "w_logical_operation",
+    "ArithmeticOperator": "w_arithmetic_operation",
+    "ControlFlowOperator": "w_control_flow_operation",
+    "FunctionOperator": "w_function_operation",
+}
 
 excluded_identifiers = [
     "id",
@@ -112,7 +107,20 @@ class OpCode(ABC):
 
 class FuzzDelegator(OpCode):
     def fuzz(self, context: "Context") -> List[OpCode]:
-        return [*random.choice(self.__class__.__subclasses__())().fuzz(context)]
+        # This means we're at the top-level (i.e. generating a new statement)
+        # rather than recursing because of nested FuzzDelegator instances.
+        subclasses = self.__class__.__subclasses__()
+        if "ArithmeticOperator" in map(
+            lambda cls: cls.__name__, self.__class__.__subclasses__()
+        ):
+            weights = [
+                getattr(context.config, randomization_parameters[sub.__name__])
+                for sub in subclasses
+            ]
+            return [
+                *random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)
+            ]
+        return [*random.choice(subclasses)().fuzz(context)]
 
 
 class FuzzLeaf(OpCode):
@@ -133,4 +141,12 @@ class Statement(FuzzDelegator):
 
 
 class Untyped:
+    pass
+
+
+class Signed:
+    pass
+
+
+class Unsigned:
     pass
