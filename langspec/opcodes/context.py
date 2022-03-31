@@ -1,5 +1,5 @@
 from uuid import UUID, uuid4
-from typing import TYPE_CHECKING, Dict, Optional, List
+from typing import TYPE_CHECKING, Callable, Dict, Optional, List
 from langspec.enums import ExecutionModel, StorageClass
 from langspec.opcodes import Statement, Untyped
 from langspec.opcodes.constants import Constant
@@ -83,7 +83,7 @@ class Context:
     def get_global_variables(self) -> List[OpVariable]:
         return list(filter(lambda tvc: isinstance(tvc, OpVariable), self.tvc.keys()))
 
-    def get_statements(self, filter_fn) -> List[Statement]:
+    def get_statements(self, filter_fn: Callable[[Statement], bool]) -> List[Statement]:
         statements: List[Statement] = list(
             filter(lambda sym: isinstance(sym, Statement), self.symbol_table)
         )
@@ -94,11 +94,16 @@ class Context:
             )
             parent = parent.parent_context
         return list(filter(filter_fn, statements))
+    
+    def get_typed_statements(self, filter_fn: Callable[[Statement], bool]) -> List[Statement]:
+        statements = self.get_statements(
+            lambda sym: not isinstance(sym, Untyped)
+        )
+        return list(filter(filter_fn, statements))
 
     def get_arithmetic_statements(self) -> List[Statement]:
-        return self.get_statements(
-            lambda sym: not isinstance(sym, Untyped)
-            and isinstance(sym.type, ArithmeticType)
+        return self.get_typed_statements(
+            lambda sym: isinstance(sym.type, ArithmeticType)
         )
 
     def get_depth(self) -> int:
