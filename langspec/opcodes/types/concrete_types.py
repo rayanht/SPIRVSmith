@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import random
 from typing import TYPE_CHECKING, List, Tuple
 from uuid import uuid4
@@ -66,7 +67,8 @@ class OpTypePointer(UniformContainerType):
     type: Type = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-        self.storage_class = random.choice(list(StorageClass))
+        # TODO Fragment shaders Output/Input
+        self.storage_class = StorageClass.StorageBuffer
         fuzzed_type = random.choice([ScalarType, ContainerType])().fuzz(context)
         self.type = fuzzed_type[-1]
         if self.type is None:

@@ -1,6 +1,6 @@
 from uuid import UUID, uuid4
 from typing import TYPE_CHECKING, Dict, Optional, List
-from langspec.enums import StorageClass
+from langspec.enums import ExecutionModel, StorageClass
 from langspec.opcodes import Statement, Untyped
 from langspec.opcodes.constants import Constant
 import random
@@ -16,6 +16,7 @@ from langspec.opcodes.function import OpFunction
 
 if TYPE_CHECKING:
     from langspec.opcodes import OpCode
+    from run import SPIRVSmithConfig
 from langspec.opcodes.memory import OpVariable
 
 
@@ -25,15 +26,19 @@ class Context:
     function: Optional["OpFunction"]
     parent_context: Optional["Context"]
     tvc: Dict["OpCode", str]
+    execution_model: ExecutionModel
+    config: "SPIRVSmithConfig"
 
     def __init__(
-        self, function: Optional["OpFunction"], parent_context: Optional["Context"]
+        self, function: Optional["OpFunction"], parent_context: Optional["Context"], execution_model: ExecutionModel, config: "SPIRVSmithConfig"
     ) -> None:
         self.id = uuid4()
         self.symbol_table = dict()
         self.function = function
         self.parent_context = parent_context
+        self.execution_model = execution_model
         self.tvc = dict()
+        self.config = config
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -47,8 +52,8 @@ class Context:
         return f"<Context id={self.id} fn={self.function}>"
 
     @classmethod
-    def create_global_context(cls):
-        context = cls(None, None)
+    def create_global_context(cls, execution_model: ExecutionModel, config: "SPIRVSmithConfig") -> "Context":
+        context = cls(None, None, execution_model, config)
         void_type = OpTypeVoid()
         main_type = OpTypeFunction()
         main_type.return_type = void_type
@@ -56,13 +61,14 @@ class Context:
         cls.main_type = main_type
         context.tvc[void_type] = void_type.id
         context.tvc[main_type] = main_type.id
+        context.config = config
         return context
 
     def make_child_context(self, function: OpTypeFunction = None):
         if function:
-            context = Context(function, self)
+            context = Context(function, self, self.execution_model, self.config)
         else:
-            context = Context(self.function, self)
+            context = Context(self.function, self, self.execution_model, self.config)
         context.tvc = self.tvc
         return context
 
@@ -104,7 +110,7 @@ class Context:
         return depth
 
     def gen_types(self):
-        for _ in range(50):
+        for _ in range(self.config.n_types):
             try:
                 opcodes: List["OpCode"] = Type().fuzz(self)
             except RecursionError:
@@ -114,7 +120,7 @@ class Context:
                     self.tvc[opcode] = opcode.id
 
     def gen_constants(self):
-        for _ in range(20):
+        for _ in range(self.config.n_constants):
             try:
                 opcodes: List["OpCode"] = Constant().fuzz(self)
             except RecursionError:
@@ -129,22 +135,23 @@ class Context:
             for opcode in opcodes:
                 self.tvc[opcode] = opcode.id
         # Generate output
-        output: OpVariable = OpVariable()
-        output.storage_class = StorageClass.Output
-        output.context = self
-        output.type = OpTypePointer()
-        output.type.storage_class = StorageClass.Output
-        output.type.type = random.choice(
-            list(
-                filter(
-                    lambda tvc: isinstance(tvc, ScalarType)
-                    and not isinstance(tvc, OpTypeBool),
-                    self.tvc.keys(),
+        if self.execution_model != ExecutionModel.GLCompute:
+            output: OpVariable = OpVariable()
+            output.storage_class = StorageClass.StorageBuffer
+            output.context = self
+            output.type = OpTypePointer()
+            output.type.storage_class = StorageClass.StorageBuffer
+            output.type.type = random.choice(
+                list(
+                    filter(
+                        lambda tvc: isinstance(tvc, ScalarType)
+                        and not isinstance(tvc, OpTypeBool),
+                        self.tvc.keys(),
+                    )
                 )
             )
-        )
-        self.tvc[output.type] = output.type.id
-        self.tvc[output] = output.id
+            self.tvc[output.type] = output.type.id
+            self.tvc[output] = output.id
 
     def gen_program(self) -> List["OpCode"]:
         function_types: List[OpTypeFunction] = self.get_function_types()
@@ -191,3 +198,6 @@ class Context:
                 self.tvc,
             )
         )
+    
+    def is_compute_shader(self) -> bool:
+        return self.execution_model == ExecutionModel.GLCompute or self.execution_model == ExecutionModel.Kernel
