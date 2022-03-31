@@ -86,7 +86,7 @@ class OpSelectionMerge(Statement, Untyped, VoidOp):
     selection_control: SelectionControlMask = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-        if context.get_depth() > 4:
+        if context.get_depth() > context.config.max_depth:
             return []
         self.exit_label = OpLabel().fuzz(context)[0]
         self.selection_control = None  # TODO
@@ -122,6 +122,7 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
     variables: List[OpVariable] = []
     block_context = context.make_child_context()
     import langspec.opcodes.arithmetic
+    # TODO parametrize randomness
     while random.random() < 0.95:
         opcodes: List[OpCode] = Statement().fuzz(block_context)
         nested_block = False

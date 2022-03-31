@@ -12,11 +12,11 @@ class SourceLanguage(Enum):
 
 
 class ExecutionModel(Enum):
-    Vertex = 0
-    TessellationControl = 1
-    TessellationEvaluation = 2
-    Geometry = 3
-    Fragment = 4
+    # Vertex = 0
+    # TessellationControl = 1
+    # TessellationEvaluation = 2
+    # Geometry = 3
+    # Fragment = 4
     GLCompute = 5
     Kernel = 6
     # TaskNV = 5267
@@ -146,7 +146,7 @@ class StorageClass(Enum):
     # PushConstant = 9
     # AtomicCounter = 10
     # Image = 11
-    # StorageBuffer = 12
+    StorageBuffer = 12
     # CallableDataKHR = 5328
     # CallableDataNV = 5328
     # IncomingCallableDataKHR = 5329
