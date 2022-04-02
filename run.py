@@ -26,6 +26,7 @@ class SPIRVSmithConfig:
     w_control_flow_operation: int = 1
     w_function_operation: int = 1
     w_bitwise_operation: int = 6
+    w_conversion_operation: int = 6
     p_statement: float = 0.98
 
 cs = ConfigStore.instance()

@@ -1,5 +1,6 @@
 from abc import ABC
 from dataclasses import field
+import inspect
 
 from typing import TYPE_CHECKING, Dict, Tuple
 from uuid import uuid4
@@ -18,6 +19,7 @@ randomization_parameters = {
     "ControlFlowOperator": "w_control_flow_operation",
     "FunctionOperator": "w_function_operation",
     "BitwiseOperator": "w_bitwise_operation",
+    "ConversionOperator": "w_conversion_operation",
 }
 
 excluded_identifiers = [
