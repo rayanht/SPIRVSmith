@@ -45,7 +45,7 @@ def find_arithmetic_operands(
     if isinstance(operand1.type, OpTypeVector):
         operand2 = random.choice(
             list(
-                filter(lambda op: isinstance(op.type, OpTypeVector), eligible_operands)
+                filter(lambda op: isinstance(op.type, OpTypeVector) and len(op.type) == len(operand1.type), eligible_operands)
             )
         )
     elif isinstance(operand1.type, NumericalType):
@@ -60,7 +60,7 @@ def find_arithmetic_operands(
 T = TypeVar("T")
 
 class ArithmeticOperator(Statement, Generic[T]):
-    pass
+    ...
 
 class UnaryArithmeticOperatorFuzzMixin:
     def fuzz(self, context: "Context") -> List[OpCode]:
@@ -69,7 +69,12 @@ class UnaryArithmeticOperatorFuzzMixin:
         if not operands:
             return []
         self.operand: Statement = operands[0]
-        self.type = self.operand.type
+        if isinstance(self.operand.type, OpTypeVector):
+            self.type = OpTypeVector().fuzz(context)[-1]
+            self.type.type = self.operand.type.type
+            self.type.size = len(self.operand.type)
+        else:
+            self.type = self.operand.type
         return [self]
 
 
@@ -81,7 +86,12 @@ class BinaryArithmeticOperatorFuzzMixin:
             return []
         self.operand1 = operands[0]
         self.operand2 = operands[1]
-        self.type = self.operand1.type
+        if isinstance(self.operand1.type, OpTypeVector):
+            self.type = OpTypeVector().fuzz(context)[-1]
+            self.type.type = self.operand1.type.type
+            self.type.size = len(self.operand1.type)
+        else:
+            self.type = self.operand1.type
         return [self]
 
 

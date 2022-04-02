@@ -13,7 +13,7 @@ from typing import (
 )
 from langspec.opcodes import OpCode, Signed, Statement, Unsigned
 
-from langspec.opcodes.constants import Constant
+from langspec.opcodes.constants import Constant, OpConstantComposite
 
 if TYPE_CHECKING:
     from langspec.opcodes.context import Context
@@ -41,17 +41,9 @@ def find_conversion_operand(
     ) + context.get_constants((OpTypeInt, OpTypeVector))
     eligible_operands: List[Operand] = []
     for operand in operands:
-        if isinstance(operand.type, target_type) or (
-            isinstance(operand.type, OpTypeVector)
-            and isinstance(operand.type.type, target_type)
-        ):
-            if (
-                isinstance(operand.type, NumericalType)
-                or isinstance(operand.type, OpTypeVector)
-                and isinstance(operand.type.type, NumericalType)
-            ):
-                if signed is not None and operand.type.signed != signed:
-                    continue
+        if isinstance(operand.get_base_type(), target_type):
+            if signed is not None and operand.get_base_type().signed != signed:
+                continue
             eligible_operands.append(operand)
     if len(eligible_operands) == 0:
         return None
@@ -88,12 +80,14 @@ class ConversionOperatorFuzzMixin:
         inner_type = destination_type().fuzz(context)[-1]
         if destination_signed is not None:
             inner_type.signed = destination_signed
-        inner_type.width = self.operand.type.width
         context.tvc[inner_type] = inner_type.id
-        if isinstance(self.operand, OpTypeVector):
+        # if isinstance(self.operand, OpConstantComposite):
+        #     inner_type.width = self.operand.type.type.width
+        inner_type.width = self.operand.get_base_type().width
+        if isinstance(self.operand.type, (OpConstantComposite, OpTypeVector)):
             self.type = OpTypeVector().fuzz(context)[-1]
             self.type.type = inner_type
-            self.type.size = self.operand.size
+            self.type.size = len(self.operand.type)
             context.tvc[self.type] = self.type.id
         else:
             self.type = inner_type
