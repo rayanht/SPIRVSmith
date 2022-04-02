@@ -176,6 +176,7 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
     import langspec.opcodes.arithmetic
     import langspec.opcodes.logic
     import langspec.opcodes.bitwise
+    import langspec.opcodes.conversions
 
     while random.random() < context.config.p_statement:
         opcodes: List[OpCode] = Statement().fuzz(block_context)
