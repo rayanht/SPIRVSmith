@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import field
 
-from typing import TYPE_CHECKING, Protocol, Tuple
+from typing import TYPE_CHECKING, Dict, Tuple
 from uuid import uuid4
 
 if TYPE_CHECKING:
@@ -17,6 +17,7 @@ randomization_parameters = {
     "ArithmeticOperator": "w_arithmetic_operation",
     "ControlFlowOperator": "w_control_flow_operation",
     "FunctionOperator": "w_function_operation",
+    "BitwiseOperator": "w_bitwise_operation",
 }
 
 excluded_identifiers = [
@@ -32,6 +33,8 @@ excluded_identifiers = [
     "fuzz",
 ]
 
+class ReparametrizationError(Exception):
+    ...
 
 def members(inst):
     return tuple(
@@ -61,15 +64,7 @@ class OpCode(ABC):
             return False
 
     def __hash__(self):
-        # print(
-        #     self.__class__.__name__,
-        #     self.__members(),
-        #     tuple([getattr(self, attr) for attr in self.__members()]),
-        # )
         return hash(tuple([getattr(self, attr) for attr in members(self)]))
-
-    def validate_opcode(self) -> bool:
-        return True
 
     def get_required_capabilities(self) -> List[Capability]:
         return []
@@ -105,22 +100,58 @@ class OpCode(ABC):
         return spasm
 
 
+# A FuzzDelegator is a transient object, we need to commit
+# reparametrizations to this global object.
+PARAMETRIZATIONS: Dict[str, Dict[str, int]] = {}
+
+
 class FuzzDelegator(OpCode):
+    def get_subclasses(self):
+        return self.__class__.__subclasses__()
+
+    @classmethod
+    def is_parametrized(cls):
+        return cls.__name__ in PARAMETRIZATIONS
+
+    @classmethod
+    def get_parametrization(cls):
+        return PARAMETRIZATIONS[cls.__name__]
+
+    @classmethod
+    def set_zero_probability(cls, target_cls) -> None:
+        # There is a tricky case here when an OpCode can be reached
+        # from multiple delegators.
+        # 
+        # The delegation path then has a fork in it and when we try 
+        # to reparametrize it is possible that ot all delegators in
+        # the path have been parametrized yet
+        PARAMETRIZATIONS[cls.__name__][target_cls.__name__] = 0
+
+    def parametrize(self, context: "Context") -> None:
+        subclasses = self.get_subclasses()
+        # Get parametrization from config for top-level delegators
+        PARAMETRIZATIONS[self.__class__.__name__] = {}
+        if "ArithmeticOperator" in map(lambda cls: cls.__name__, subclasses):
+            for sub in subclasses:
+                PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = getattr(
+                    context.config, randomization_parameters[sub.__name__]
+                )
+        else:
+            for sub in subclasses:
+                PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = 1
+
     def fuzz(self, context: "Context") -> List[OpCode]:
-        # This means we're at the top-level (i.e. generating a new statement)
-        # rather than recursing because of nested FuzzDelegator instances.
-        subclasses = self.__class__.__subclasses__()
-        if "ArithmeticOperator" in map(
-            lambda cls: cls.__name__, self.__class__.__subclasses__()
-        ):
-            weights = [
-                getattr(context.config, randomization_parameters[sub.__name__])
-                for sub in subclasses
-            ]
-            return [
-                *random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)
-            ]
-        return [*random.choice(subclasses)().fuzz(context)]
+        if not self.__class__.is_parametrized():
+            self.parametrize(context=context)
+        subclasses = self.get_subclasses()
+        weights = [
+            PARAMETRIZATIONS[self.__class__.__name__][sub.__name__]
+            for sub in subclasses
+        ]
+        try:
+            return [*random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)]
+        except ReparametrizationError:
+            return [*random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)]
 
 
 class FuzzLeaf(OpCode):

@@ -24,14 +24,15 @@ from langspec.opcodes.types.concrete_types import (
     Type,
 )
 
+Operand = Statement | Constant
 
 def find_arithmetic_operands(
     context: "Context", target_type: Type
-) -> Tuple[Union[Statement, Constant], Union[Statement, Constant]]:
+) -> Tuple[Operand, Operand]:
     operands: List[Statement] = (
         context.get_arithmetic_statements() + context.get_arithmetic_constants()
     )
-    eligible_operands: List[Union[Statement, Constant]] = []
+    eligible_operands: List[Operand] = []
     for operand in operands:
         if isinstance(operand.type, target_type) or (
             isinstance(operand.type, OpTypeVector)
@@ -86,7 +87,7 @@ class BinaryArithmeticOperatorFuzzMixin:
 
 class UnaryArithmeticOperator(ArithmeticOperator[T]):
     type: Type = None
-    operand: Union[Statement, Constant] = None
+    operand: Operand = None
     
     def to_spasm(self, context: "Context") -> str:
         return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand.id}"
@@ -94,8 +95,8 @@ class UnaryArithmeticOperator(ArithmeticOperator[T]):
 
 class BinaryArithmeticOperator(ArithmeticOperator[T]):
     type: Type = None
-    operand1: Union[Statement, Constant] = None
-    operand2: Union[Statement, Constant] = None
+    operand1: Operand = None
+    operand2: Operand = None
     
     def to_spasm(self, context: "Context") -> str:
         return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand1.id} %{self.operand2.id}"

@@ -16,7 +16,7 @@ class ExecutionModel(Enum):
     # TessellationControl = 1
     # TessellationEvaluation = 2
     # Geometry = 3
-    # Fragment = 4
+    Fragment = 4
     GLCompute = 5
     Kernel = 6
     # TaskNV = 5267
