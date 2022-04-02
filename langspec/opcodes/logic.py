@@ -38,17 +38,9 @@ def find_logical_operands(
     ) + context.get_constants((OpTypeBool, OpTypeVector))
     eligible_operands: List[Operand] = []
     for operand in operands:
-        if isinstance(operand.type, target_type) or (
-            isinstance(operand.type, OpTypeVector)
-            and isinstance(operand.type.type, target_type)
-        ):
-            if (
-                isinstance(operand.type, NumericalType)
-                or isinstance(operand.type, OpTypeVector)
-                and isinstance(operand.type.type, NumericalType)
-            ):
-                if signed is not None and operand.type.signed != signed:
-                    continue
+        if isinstance(operand.get_base_type(), target_type):
+            if signed is not None and operand.get_base_type().signed != signed:
+                continue
             eligible_operands.append(operand)
     if len(eligible_operands) == 0:
         return None
@@ -56,7 +48,7 @@ def find_logical_operands(
     if isinstance(operand1.type, OpTypeVector):
         operand2 = random.choice(
             list(
-                filter(lambda op: isinstance(op.type, OpTypeVector), eligible_operands)
+                filter(lambda op: isinstance(op.type, OpTypeVector) and len(op.type) == len(operand1.type), eligible_operands)
             )
         )
     elif isinstance(operand1.type, NumericalType):
@@ -90,7 +82,13 @@ class UnaryLogicalOperatorFuzzMixin:
         if not operands:
             return []
         self.operand: Statement = operands[0]
-        self.type = OpTypeBool()
+        if isinstance(self.operand.type, OpTypeVector):
+            self.type = OpTypeVector().fuzz(context)[-1]
+            self.type.type = OpTypeBool()
+            self.type.size = len(self.operand.type)
+        else:
+            self.type = OpTypeBool()
+        context.tvc[self.type] = self.type.id
         return [self]
 
 
@@ -105,7 +103,13 @@ class BinaryLogicalOperatorFuzzMixin:
             return []
         self.operand1 = operands[0]
         self.operand2 = operands[1]
-        self.type = OpTypeBool()
+        if isinstance(self.operand1.type, OpTypeVector):
+            self.type = OpTypeVector().fuzz(context)[-1]
+            self.type.type = OpTypeBool()
+            self.type.size = len(self.operand1.type)
+        else:
+            self.type = OpTypeBool()
+        context.tvc[self.type] = self.type.id
         return [self]
 
 

@@ -1,5 +1,6 @@
+from copy import deepcopy
 import random
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Tuple, Union
 
 from langspec.opcodes import (
     Constant,
@@ -9,11 +10,18 @@ from langspec.opcodes import (
 if TYPE_CHECKING:
     from langspec.opcodes.context import Context
 from langspec.opcodes.types.abstract_types import (
+    ContainerType,
     NumericalType,
     Type,
 )
 from langspec.opcodes.types.concrete_types import (
+    OpTypeArray,
     OpTypeBool,
+    OpTypeFloat,
+    OpTypeInt,
+    OpTypeMatrix,
+    OpTypeStruct,
+    OpTypeVector,
 )
 from patched_dataclass import dataclass
 
@@ -42,50 +50,58 @@ class OpConstant(Constant):
     def fuzz(self, context: "Context") -> List[OpCode]:
 
         self.type = NumericalType().fuzz(context)[0]
-        from langspec.opcodes.types.concrete_types import OpTypeInt
 
         if isinstance(self.type, OpTypeInt):
             if self.type.signed:
-                self.value = random.randint(
-                    -(2 ** (self.type.width - 1)), 2 ** (self.type.width - 1) - 1
-                )
+                self.value = random.randint(-100, 100)
             else:
-                self.value = random.randint(0, 2 ** self.type.width)
+                self.value = random.randint(0, 100)
         else:
-            self.value = random.uniform(0, 2 ** self.type.width)
+            self.value = random.uniform(0, 100)
 
         return [self.type, self]
 
 
-# @dataclass
-# class OpConstantComposite(Constant):
-#     constants: Tuple[Constant]
+class OpConstantComposite(Constant):
+    type: Type = None
+    constituents: Tuple[OpCode] = None
 
-#     def fuzz(self,  tvc, context: Context) -> List[OpCode]:
-#
-#         self.type: Union[MixedContainerType, UniformContainerType] = random.choice(
-#             list(
-#                 filter(
-#                     lambda tvc: isinstance(tvc, ContainerType)
-#                     and not isinstance(tvc, OpTypePointer),
-#                     TVC_table.keys(),
-#                 )
-#             )
-#         )
-#         self.constants = []
-#         if isinstance(self.type, UniformContainerType):
-#             for _ in range(len(self.type)):
-#                 constant: Constant = find_constant(tvc, self.type.type,  context)
-#                 self.constants.append(constant)
-#         else:
-#             for type in self.type.types:
-#                 constant: Constant = find_constant(tvc, type,  context)
-#                 self.constants.append(constant)
-#         self.constants = tuple(self.constants)
-#         return [self]
-
-#     def to_spasm(self, TVC_table) -> str:
-#         spasm = f"%{self.id} = OpConstantComposite %{TVC_table[self.type]}"
-#         for constant in self.constants:
-#             spasm += f" %{TVC_table[constant]}"
-#         return spasm
+    def fuzz(self, context: "Context") -> List[OpCode]:
+        composite_type = random.choice(
+            [OpTypeArray, OpTypeVector] #, OpTypeMatrix]
+        )().fuzz(context)
+        self.type: OpTypeArray | OpTypeVector = composite_type[-1]
+        base_type: Type = self.type.get_base_type()
+        self.constituents = []
+        if isinstance(base_type, OpTypeBool):
+            for _ in range(len(self.type)):
+                entry = random.choice([OpConstantTrue, OpConstantFalse])().fuzz(
+                    context
+                )
+                composite_type += entry[:-1]
+                self.constituents.append(entry[-1])
+        elif isinstance(base_type, OpTypeInt):
+            for _ in range(len(self.type)):
+                entry = OpConstant().fuzz(context)
+                while not isinstance(entry[-1].type, OpTypeInt):
+                    entry = OpConstant().fuzz(context)
+                new_type = deepcopy(entry[-1].type)
+                new_type.width = base_type.width
+                new_type.signed = base_type.signed
+                if not new_type.signed:
+                    entry[-1].value = abs(entry[-1].value)
+                entry[-1].type = new_type
+                composite_type.append(new_type)
+                self.constituents.append(entry[-1])
+        elif isinstance(base_type, OpTypeFloat):
+            for _ in range(len(self.type)):
+                entry = OpConstant().fuzz(context)
+                while not isinstance(entry[-1].type, OpTypeFloat):
+                    entry = OpConstant().fuzz(context)
+                new_type = deepcopy(entry[-1].type)
+                new_type.width = base_type.width
+                entry[-1].type = new_type
+                composite_type.append(new_type)
+                self.constituents.append(entry[-1])
+        self.constituents = tuple(self.constituents)
+        return [*composite_type, *self.constituents, self]
