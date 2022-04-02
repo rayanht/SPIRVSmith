@@ -205,7 +205,8 @@ class ShaderGenerator:
             fw.write("RUN pipeline 1 1 1\n")
 
     def gen_shader(self) -> SPIRVShader:
-        execution_model = random.choice(list(ExecutionModel))
+        # execution_model = random.choice(list(ExecutionModel))
+        execution_model = random.choice([ExecutionModel.GLCompute, ExecutionModel.Kernel])
         context = Context.create_global_context(execution_model, self.config)
         # Generate random types and constants to be used by the program
         context.gen_types()

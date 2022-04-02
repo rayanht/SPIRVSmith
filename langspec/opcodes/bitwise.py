@@ -1,14 +1,17 @@
 import random
+from types import NoneType
+
 from typing import (
     TYPE_CHECKING,
     Generic,
     List,
+    Optional,
     Tuple,
     TypeVar,
     Union,
     get_args,
 )
-from langspec.opcodes import OpCode, Statement
+from langspec.opcodes import OpCode, Signed, Statement, Unsigned
 
 from langspec.opcodes.constants import Constant
 
@@ -18,6 +21,7 @@ from langspec.opcodes.types.abstract_types import (
     NumericalType,
 )
 from langspec.opcodes.types.concrete_types import (
+    OpTypeBool,
     OpTypeFloat,
     OpTypeInt,
     OpTypeVector,
@@ -26,12 +30,12 @@ from langspec.opcodes.types.concrete_types import (
 
 Operand = Statement | Constant
 
-def find_arithmetic_operands(
+def find_bitwise_operands(
     context: "Context", target_type: Type
 ) -> Tuple[Operand, Operand]:
-    operands: List[Statement] = (
-        context.get_arithmetic_statements() + context.get_arithmetic_constants()
-    )
+    operands: List[Statement] = context.get_typed_statements(
+        lambda _: True
+    ) + context.get_constants((OpTypeInt, OpTypeVector))
     eligible_operands: List[Operand] = []
     for operand in operands:
         if isinstance(operand.type, target_type) or (
@@ -45,27 +49,31 @@ def find_arithmetic_operands(
     if isinstance(operand1.type, OpTypeVector):
         operand2 = random.choice(
             list(
-                filter(lambda op: isinstance(op.type, OpTypeVector), eligible_operands)
+                filter(
+                    lambda op: isinstance(op.type, OpTypeVector)
+                    and op.type.size == operand1.type.size,
+                    eligible_operands,
+                )
             )
         )
-    elif isinstance(operand1.type, NumericalType):
+    elif isinstance(operand1.type, OpTypeInt):
         operand2 = random.choice(
-            list(
-                filter(lambda op: isinstance(op.type, NumericalType), eligible_operands)
-            )
+            list(filter(lambda op: isinstance(op.type, OpTypeInt), eligible_operands))
         )
     return operand1, operand2
 
 
 T = TypeVar("T")
 
-class ArithmeticOperator(Statement, Generic[T]):
+
+class BitwiseOperator(Statement, Generic[T]):
     pass
 
-class UnaryArithmeticOperatorFuzzMixin:
+
+class UnaryBitwiseOperatorFuzzMixin:
     def fuzz(self, context: "Context") -> List[OpCode]:
         target_type = get_args(self.__class__.__orig_bases__[1])
-        operands = find_arithmetic_operands(context, target_type)
+        operands = find_bitwise_operands(context, target_type)
         if not operands:
             return []
         self.operand: Statement = operands[0]
@@ -73,10 +81,10 @@ class UnaryArithmeticOperatorFuzzMixin:
         return [self]
 
 
-class BinaryArithmeticOperatorFuzzMixin:
+class BinaryBitwiseOperatorFuzzMixin:
     def fuzz(self, context: "Context") -> List[OpCode]:
         target_type = get_args(self.__class__.__orig_bases__[1])
-        operands = find_arithmetic_operands(context, target_type)
+        operands = find_bitwise_operands(context, target_type)
         if not operands:
             return []
         self.operand1 = operands[0]
@@ -85,65 +93,43 @@ class BinaryArithmeticOperatorFuzzMixin:
         return [self]
 
 
-class UnaryArithmeticOperator(ArithmeticOperator[T]):
+class UnaryBitwiseOperator(BitwiseOperator[T]):
     type: Type = None
     operand: Operand = None
-    
+
     def to_spasm(self, context: "Context") -> str:
         return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand.id}"
 
 
-class BinaryArithmeticOperator(ArithmeticOperator[T]):
+class BinaryBitwiseOperator(BitwiseOperator[T]):
     type: Type = None
     operand1: Operand = None
     operand2: Operand = None
-    
+
     def to_spasm(self, context: "Context") -> str:
         return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand1.id} %{self.operand2.id}"
 
 
-class OpSNegate(UnaryArithmeticOperatorFuzzMixin, UnaryArithmeticOperator[OpTypeInt]):
-    pass
+class OpShiftRightLogical(BinaryBitwiseOperatorFuzzMixin, BinaryBitwiseOperator[OpTypeInt]):
+    ...
+    
+class OpShiftRightArithmetic(BinaryBitwiseOperatorFuzzMixin, BinaryBitwiseOperator[OpTypeInt]):
+    ...
 
+class OpShiftLeftLogical(BinaryBitwiseOperatorFuzzMixin, BinaryBitwiseOperator[OpTypeInt]):
+    ...
 
-class OpFNegate(UnaryArithmeticOperatorFuzzMixin, UnaryArithmeticOperator[OpTypeFloat]):
-    pass
+class OpBitwiseOr(BinaryBitwiseOperatorFuzzMixin, BinaryBitwiseOperator[OpTypeInt]):
+    ...
 
+class OpBitwiseXor(BinaryBitwiseOperatorFuzzMixin, BinaryBitwiseOperator[OpTypeInt]):
+    ...
 
-class OpIAdd(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeInt]):
-    pass
+class OpBitwiseAnd(BinaryBitwiseOperatorFuzzMixin, BinaryBitwiseOperator[OpTypeInt]):
+    ...
 
+class OpNot(UnaryBitwiseOperatorFuzzMixin, UnaryBitwiseOperator[OpTypeInt]):
+    ...
 
-class OpFAdd(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
-    pass
-
-
-class OpISub(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeInt]):
-    pass
-
-
-class OpFSub(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
-    pass
-
-
-class OpIMul(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeInt]):
-    pass
-
-
-class OpFMul(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
-    pass
-
-
-# class OpUDiv(BinaryArithmeticOperator[OpTypeFloat]):
-#     pass
-
-# class OpSDiv(BinaryArithmeticOperator[OpTypeFloat]):
-#     pass
-
-
-class OpFMod(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
-    pass
-
-
-class OpFRem(BinaryArithmeticOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat]):
-    pass
+class OpBitCount(UnaryBitwiseOperatorFuzzMixin, UnaryBitwiseOperator[OpTypeInt]):
+    ...
