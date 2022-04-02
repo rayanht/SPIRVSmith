@@ -33,10 +33,13 @@ excluded_identifiers = [
     "to_spasm",
     "validate_opcode",
     "fuzz",
+    "get_base_type",
 ]
+
 
 class ReparametrizationError(Exception):
     ...
+
 
 def members(inst):
     return tuple(
@@ -123,8 +126,8 @@ class FuzzDelegator(OpCode):
     def set_zero_probability(cls, target_cls) -> None:
         # There is a tricky case here when an OpCode can be reached
         # from multiple delegators.
-        # 
-        # The delegation path then has a fork in it and when we try 
+        #
+        # The delegation path then has a fork in it and when we try
         # to reparametrize it is possible that ot all delegators in
         # the path have been parametrized yet
         PARAMETRIZATIONS[cls.__name__][target_cls.__name__] = 0
@@ -151,9 +154,13 @@ class FuzzDelegator(OpCode):
             for sub in subclasses
         ]
         try:
-            return [*random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)]
+            return [
+                *random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)
+            ]
         except ReparametrizationError:
-            return [*random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)]
+            return [
+                *random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)
+            ]
 
 
 class FuzzLeaf(OpCode):
@@ -162,24 +169,29 @@ class FuzzLeaf(OpCode):
 
 
 class Type(FuzzDelegator):
-    pass
+    def get_base_type(self):
+        ...
 
 
 class Constant(FuzzDelegator):
     type: Type
+    
+    def get_base_type(self):
+        return self.type.get_base_type()
 
 
 class Statement(FuzzDelegator):
-    pass
+    def get_base_type(self):
+        return self.type.get_base_type()
 
 
 class Untyped:
-    pass
+    ...
 
 
 class Signed:
-    pass
+    ...
 
 
 class Unsigned:
-    pass
+    ...

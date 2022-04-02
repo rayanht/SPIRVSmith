@@ -38,7 +38,8 @@ class OpTypeVoid(FuzzLeaf, Type):
 
 
 class OpTypeBool(FuzzLeaf, ScalarType):
-    ...
+    def get_base_type(self):
+        return self
 
 
 class OpTypeInt(ScalarType, NumericalType, ArithmeticType):
@@ -50,6 +51,9 @@ class OpTypeInt(ScalarType, NumericalType, ArithmeticType):
         self.width = 2 ** 5  # TODO other widths with capabilities
         return [self]
 
+    def get_base_type(self):
+        return self
+
 
 class OpTypeFloat(ScalarType, NumericalType, ArithmeticType):
     width: int = None
@@ -58,6 +62,8 @@ class OpTypeFloat(ScalarType, NumericalType, ArithmeticType):
         self.width = 2 ** 5  # TODO other widths with capabilities
         return [self]
 
+    def get_base_type(self):
+        return self
 
 class OpTypeVector(UniformContainerType, ArithmeticType):
     type: Type = None
@@ -70,6 +76,9 @@ class OpTypeVector(UniformContainerType, ArithmeticType):
 
     def __len__(self):
         return self.size
+    
+    def get_base_type(self):
+        return self.type.get_base_type()
 
 
 class OpTypeMatrix(UniformContainerType):
@@ -90,6 +99,9 @@ class OpTypeMatrix(UniformContainerType):
 
     def get_required_capabilities(self) -> List[Capability]:
         return [Capability.Matrix]
+    
+    def get_base_type(self):
+        return self.type.get_base_type()
 
 
 class OpTypeImage(UniformContainerType):
@@ -139,14 +151,17 @@ class OpTypeArray(UniformContainerType):
 
     def __len__(self):
         return self.length.value
+    
+    def get_base_type(self):
+        return self.type.get_base_type()
 
 
-class OpTypeRuntimeArray(UniformContainerType):
-    type: Type = None
+# class OpTypeRuntimeArray(UniformContainerType):
+#     type: Type = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
-        self.type = ScalarType().fuzz(context)[0]
-        return [self.type, self]
+#     def fuzz(self, context: "Context") -> List[OpCode]:
+#         self.type = ScalarType().fuzz(context)[0]
+#         return [self.type, self]
 
 
 class OpTypeStruct(MixedContainerType):
