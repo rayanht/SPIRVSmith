@@ -112,6 +112,50 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
         return [self, op_branch, *if_block, *else_block, self.exit_label]
 
 
+# class OpLoopMerge(ControlFlowOperator, Untyped, VoidOp):
+#     merge_label: OpLabel = None
+#     continue_label: OpLabel = None
+#     selection_control: SelectionControlMask = None
+
+#     def fuzz(self, context: "Context") -> List[OpCode]:
+#         if context.get_depth() > context.config.max_depth:
+#             return []
+#         self.merge_label = OpLabel().fuzz(context)[0]
+#         self.selection_control = None  # TODO
+#         loop_label = OpLabel().fuzz(context)[0]
+#         block = fuzz_block(context, loop_label)
+#         try:
+#             condition = random.choice(context.get_statements(
+#                 lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
+#             ))
+#         except IndexError:
+#             return []
+#         op_branch = OpBranchConditional(
+#             condition=condition, true_label=self.continue_label, false_label=self.merge_label
+#         )
+#         return [loop_label, self, op_branch, *block, self.merge_label]
+
+
+# class OpSwitch(ControlFlowOperator, Untyped, VoidOp):
+#     selection_control: SelectionControlMask = None
+#     default_label: OpLabel = None
+#     case_labels: List[OpLabel] = None
+#     value: OpCode = None
+
+#     def fuzz(self, context: "Context") -> Tuple[OpCode]:
+#         if context.get_depth() > context.config.max_depth:
+#             return []
+#         self.selection_control = random.choice(list(SelectionControlMask))
+#         self.default_label = OpLabel().fuzz(context)[0]
+#         self.case_labels = []
+#         for _ in range(random.randint(1, 5)):
+#             self.case_labels.append(OpLabel().fuzz(context)[0])
+#         self.value = random.choice(context.get_statements(
+#                 lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
+#             )
+#         ).fuzz(context)[0]
+#         return [self, *self.case_labels, self.default_label, self.value]
+
 @dataclass
 class OpBranchConditional(FuzzLeaf, Untyped, VoidOp):
     condition: Statement = None
@@ -131,8 +175,8 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
     block_context = context.make_child_context()
     import langspec.opcodes.arithmetic
     import langspec.opcodes.logic
+    import langspec.opcodes.bitwise
 
-    # TODO parametrize randomness
     while random.random() < context.config.p_statement:
         opcodes: List[OpCode] = Statement().fuzz(block_context)
         nested_block = False

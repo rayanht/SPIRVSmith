@@ -136,6 +136,17 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
             return [self.variable, self]
         return [self]
 
+# class OpAccessChain(MemoryOperator):
+#     type: Type = None
+#     base: OpCode = None
+#     indexes: List[OpCode] = []
+
+#     def fuzz(self, context: "Context") -> List[OpCode]:
+#         self.base: OpVariable = random.choice(
+#             context.get_local_variables() + context.get_global_variables()
+#         )
+#         self.type: Type = self.base.type.type
+#         return [self]
 
 # class OpArrayLength(OpCode):
 #     result_type: Type = None

@@ -37,7 +37,7 @@ class OpConstantFalse(Constant):
 @dataclass
 class OpConstant(Constant):
     type: Type = None
-    value: Union[int, float] = None
+    value: int | float = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
 

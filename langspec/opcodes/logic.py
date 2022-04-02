@@ -28,14 +28,15 @@ from langspec.opcodes.types.concrete_types import (
     Type,
 )
 
+Operand = Statement | Constant
 
 def find_logical_operands(
     context: "Context", target_type: Type, signed: bool | NoneType
-) -> Tuple[Union[Statement, Constant], Union[Statement, Constant]]:
+) -> Tuple[Operand, Operand]:
     operands: List[Statement] = context.get_typed_statements(
         lambda _: True
     ) + context.get_constants((OpTypeBool, OpTypeVector))
-    eligible_operands: List[Union[Statement, Constant]] = []
+    eligible_operands: List[Operand] = []
     for operand in operands:
         if isinstance(operand.type, target_type) or (
             isinstance(operand.type, OpTypeVector)
@@ -76,7 +77,7 @@ S = TypeVar("S")
 
 
 class LogicalOperator(Statement, Generic[T, S]):
-    pass
+    ...
 
 
 class UnaryLogicalOperatorFuzzMixin:
@@ -110,7 +111,7 @@ class BinaryLogicalOperatorFuzzMixin:
 
 class UnaryLogicalOperator(LogicalOperator[T, Optional[S]]):
     type: Type = None
-    operand: Union[Statement, Constant] = None
+    operand: Operand = None
 
     def to_spasm(self, context: "Context") -> str:
         return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand.id}"
@@ -118,8 +119,8 @@ class UnaryLogicalOperator(LogicalOperator[T, Optional[S]]):
 
 class BinaryLogicalOperator(LogicalOperator[T, Optional[S]]):
     type: Type = None
-    operand1: Union[Statement, Constant] = None
-    operand2: Union[Statement, Constant] = None
+    operand1: Operand = None
+    operand2: Operand = None
 
     def to_spasm(self, context: "Context") -> str:
         return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand1.id} %{self.operand2.id}"
