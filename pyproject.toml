@@ -15,6 +15,7 @@ datadog = "^0.44.0"
 python-json-logger = "^2.0.2"
 daiquiri = "^3.0.1"
 coverage = "^6.3.2"
+flake8 = "^4.0.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3", allow-prereleases = true}
