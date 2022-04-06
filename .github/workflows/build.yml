@@ -1,0 +1,56 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10"]
+        poetry-version: [1.0, 1.1.13]
+        os: [ubuntu-18.04, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Poetry
+      uses: abatilo/actions-poetry@v2.0.0
+      with:
+        poetry-version: ${{ matrix.poetry-version }}
+    - name: Install dependencies
+      run: |
+        poetry install
+    - name: Test with pytest
+      run: |
+        poetry run python -m pytest
+    - name: Generate the coverage report
+      run: |
+        poetry run coverage run -m pytest
+        poetry run coverage xml -o coverage.xml
+
+    - name: Publish code coverage to code climate
+      uses: paambaati/codeclimate-action@v2.7.5
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+      with:
+        coverageCommand: poetry run coverage report
+    - name: "Run FOSSA Scan"
+      uses: fossas/fossa-action@main # Use a specific version if locking is preferred
+      with:
+        api-key: ${{ secrets.FOSSA_API_KEY }}
+
+    - name: "Run FOSSA Test"
+      uses: fossas/fossa-action@main # Use a specific version if locking is preferred
+      with:
+        api-key: ${{ secrets.FOSSA_API_KEY }}
+        run-tests: true
