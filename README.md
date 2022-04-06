@@ -7,10 +7,76 @@
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B22322%2Fgithub.com%2Frayanht%2FSPIRVSmith.svg?type=shield)](https://app.fossa.com/projects/custom%2B22322%2Fgithub.com%2Frayanht%2FSPIRVSmith?ref=badge_shield)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-SPIRVSmith is a differential testing tool for SPIRV compilers based on fuzzing techniques.
+## Introduction
+
+SPIRVSmith is a differential testing tool that leverages structured fuzzing techniques to find bugs in producers and consumers of SPIRV shaders.
+
+SPIRVSmith attempts to find bugs in the following projects:
+- [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools) - mostly the validator and reducer components.
+- [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
+- [Amber](https://github.com/google/amber)
+- [SwiftShader](https://github.com/google/swiftshader)
+- [MoltenVK](https://github.com/KhronosGroup/MoltenVK)
+- ...and more to come!
 
 
-## SPIRV Coverage
+## How does it work?
+
+### Differential Testing
+The bread and butter of `SPIRVSmith` is **differential testing** (sometimes called differential fuzzing), in which we provide the same SPIRV shader to similar consumers (say three different SPIRV compilers for example), execute the three resulting programs and compare the values contained inside all buffers at the end of exeuction. 
+
+In a **fully deterministic** program `(== synchronous && free of undefined behaviour)`, we expect all these buffers to be exactly the same at the end of execution, regardless of what compiler was used to generate said program. If one program ends up with different buffers than the other two, we have a strong reason to believe that the compiler that generated it has a **bug**. 
+
+The constraint on determinism creates an interesting problem, how can we ensure that the **randomly** generated programs are free of undefined behaviour? Unlike existing differential testing tools, `SPIRVSmith` does not perform any static analysis or backtracking at generation-time to enforce this constraint, we rather implement the idea of **program reconditioning** by **Donaldson et al.**
+
+### Program Reconditioning
+
+**Donaldson et al.** introduce the idea of program reconditioning as "a method for leveraging off-the-shelf test case reducers to simplify programs that expose miscompilation bugs during randomised differential testing". 
+
+This approach solves the issues raised by **Yang et al.** in the case of [CSmith](https://github.com/csmith-project/csmith) where test case reducers couldn't be used to provide concise, actionable bug reports since they would themselves often introduce undefined behaviour. 
+
+Program reconditioning works by decoupling the process of generating a program and the process of ensuring that said program is free of undefined behaviour. This is in contrast to **Livinskii et al.** in [YARPGen](https://github.com/intel/yarpgen) where code generation steps and static analysis steps are interleaved. 
+
+**Donaldson et al.** describe a **rule-based reconditioning approach** where transforms are applied to constructs that **could** exhibit undefined behaviour. Transforms are applied to all eligible construct in a blanket manner, **no** static analysis is performed to determine which constructs are in fact worth reconditioning. Here is example of reconditioning a **GLSL** shader:
+
+#### Original 
+```glsl
+float A [3]; // Not initialised
+void main () {
+    int i = int (A[0]);
+    float f = 2000000.0;
+    while (i != -42) { // Might not terminate
+        A[i] = f; // Out of  bounds ?
+        f = f + f; // Roundoff
+        int j = i ++ +; // Order of side effects
+        ( i / ( i - 1)); // Divide by zero ?
+        i = j;
+    }
+}
+```
+
+#### Reconditioned 
+```glsl
+// [ Declarations of SAFE_ABS , MAKE_IN_RANGE and SAFE_DIV ]
+uint _loop_count = 0u;
+const uint _loop_limit = 100u;
+float A [3] = float [3](1.0 , 1.0 , 1.0);
+void main () {
+    int i = int (A[0]);
+    float f = 2000000.0;
+    while (i != -42) {
+        if (_loop_count >= _loop_limit) break;
+        _loop_count ++;
+        A[SAFE_ABS(i) % 3] = f ;
+        f = MAKE_IN_RANGE(f + f);
+        int _t = SAFE_DIV(i , i - 1);
+        int j = i ++ + _t;
+        i = j;
+    }
+}
+```
+
+## SPIRV Language Coverage
 
 <details>
 
@@ -77,7 +143,7 @@ SPIRVSmith is a differential testing tool for SPIRV compilers based on fuzzing t
 
 </details>
 
-####Extension
+#### Extension
 
 <details>
 
@@ -318,7 +384,7 @@ SPIRVSmith is a differential testing tool for SPIRV compilers based on fuzzing t
 | OpFMod | :white_check_mark: |
 | OpVectorTimesScalar | :red_circle: |
 | OpMatrixTimesScalar | :red_circle: |
-| OpVectorTimesMatrix |: red_circle: |
+| OpVectorTimesMatrix | :red_circle: |
 | OpMatrixTimesVector | :red_circle: |
 | OpMatrixTimesMatrix | :red_circle: |
 | OpOuterProduct | :red_circle: |
