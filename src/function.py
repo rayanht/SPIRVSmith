@@ -2,9 +2,9 @@ import random
 from typing import TYPE_CHECKING, List, Optional, Tuple
 from uuid import UUID, uuid4
 
-from langspec.enums import FunctionControlMask, SelectionControlMask
-from langspec.opcodes.constants import OpConstantTrue
-from langspec.opcodes import (
+from src.enums import FunctionControlMask, SelectionControlMask
+from src.constants import OpConstantTrue
+from src import (
     FuzzLeaf,
     OpCode,
     OpCode,
@@ -13,15 +13,16 @@ from langspec.opcodes import (
 )
 
 if TYPE_CHECKING:
-    from langspec.opcodes.context import Context
-from langspec.opcodes.memory import OpLoad, OpVariable, Statement
-from langspec.opcodes.types.concrete_types import OpTypeBool, OpTypeFunction, Type
+    from src.context import Context
+from src.memory import OpLoad, OpVariable, Statement
+from src.types.concrete_types import OpTypeBool, OpTypeFunction, Type
 from patched_dataclass import dataclass
 
 
 class FunctionOperator(Statement):
     ...
-    
+
+
 class OpFunction(OpCode):
     context: "Context" = None
     return_type: Type = None
@@ -36,9 +37,6 @@ class OpFunction(OpCode):
         self.return_type: Type = return_type
         self.function_type: OpTypeFunction = function_type
         super().__init__()
-
-    def validate_opcode(self) -> bool:
-        return self.function_type.return_type == self.return_type
 
     def fuzz(self, context: "Context") -> List[OpCode]:
         self.context = context.make_child_context(self)
@@ -87,6 +85,7 @@ class OpLabel(FuzzLeaf, Untyped):
 class ControlFlowOperator(Statement):
     ...
 
+
 class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
     exit_label: OpLabel = None
     selection_control: SelectionControlMask = None
@@ -101,9 +100,12 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
         true_label = if_block[0]
         false_label = else_block[0]
         try:
-            condition = random.choice(context.get_statements(
-                lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
-            ))
+            condition = random.choice(
+                context.get_statements(
+                    lambda s: not isinstance(s, Untyped)
+                    and isinstance(s.type, OpTypeBool)
+                )
+            )
         except IndexError:
             return []
         op_branch = OpBranchConditional(
@@ -156,6 +158,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 #         ).fuzz(context)[0]
 #         return [self, *self.case_labels, self.default_label, self.value]
 
+
 @dataclass
 class OpBranchConditional(FuzzLeaf, Untyped, VoidOp):
     condition: Statement = None
@@ -173,10 +176,10 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
     instructions: List[OpCode] = []
     variables: List[OpVariable] = []
     block_context = context.make_child_context()
-    import langspec.opcodes.arithmetic
-    import langspec.opcodes.logic
-    import langspec.opcodes.bitwise
-    import langspec.opcodes.conversions
+    import src.operators.arithmetic
+    import src.operators.logic
+    import src.operators.bitwise
+    import src.operators.conversions
 
     while random.random() < context.config.p_statement:
         opcodes: List[OpCode] = Statement().fuzz(block_context)

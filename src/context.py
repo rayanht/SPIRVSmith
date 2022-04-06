@@ -1,23 +1,35 @@
+import inspect
+from types import NoneType
 from uuid import UUID, uuid4
-from typing import TYPE_CHECKING, Callable, Dict, Optional, List
-from langspec.enums import ExecutionModel, StorageClass
-from langspec.opcodes import Statement, Untyped
-from langspec.opcodes.constants import Constant
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, List
+from monitor import Event, Monitor
+from src.enums import ExecutionModel, StorageClass
+from src import Statement, Untyped
+from src import predicates
+from src.constants import Constant
 import random
-from langspec.opcodes.types.abstract_types import ArithmeticType, ScalarType, Type
-from langspec.opcodes.types.concrete_types import (
+from src.types.abstract_types import ArithmeticType, ScalarType, Type
+from src.types.concrete_types import (
     OpTypeBool,
     OpTypeFunction,
+    OpTypeInt,
     OpTypePointer,
+    OpTypeVector,
     OpTypeVoid,
 )
-
-from langspec.opcodes.function import OpFunction
+from src.predicates import (
+    HasValidBaseType,
+    HasValidBaseTypeAndSign,
+    HaveSameTypeLength,
+    IsValidBitwiseOperand,
+    IsValidLogicalOperand,
+)
+from src.function import OpFunction
 
 if TYPE_CHECKING:
-    from langspec.opcodes import OpCode
+    from src import OpCode
     from run import SPIRVSmithConfig
-from langspec.opcodes.memory import OpVariable
+from src.memory import OpVariable
 
 
 class Context:
@@ -28,9 +40,15 @@ class Context:
     tvc: Dict["OpCode", str]
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
+    monitor: Monitor
 
     def __init__(
-        self, function: Optional["OpFunction"], parent_context: Optional["Context"], execution_model: ExecutionModel, config: "SPIRVSmithConfig"
+        self,
+        function: Optional["OpFunction"],
+        parent_context: Optional["Context"],
+        execution_model: ExecutionModel,
+        config: "SPIRVSmithConfig",
+        monitor: Monitor,
     ) -> None:
         self.id = uuid4()
         self.symbol_table = dict()
@@ -39,6 +57,7 @@ class Context:
         self.execution_model = execution_model
         self.tvc = dict()
         self.config = config
+        self.monitor = monitor
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -52,8 +71,13 @@ class Context:
         return f"<Context id={self.id} fn={self.function}>"
 
     @classmethod
-    def create_global_context(cls, execution_model: ExecutionModel, config: "SPIRVSmithConfig") -> "Context":
-        context = cls(None, None, execution_model, config)
+    def create_global_context(
+        cls,
+        execution_model: ExecutionModel,
+        config: "SPIRVSmithConfig",
+        monitor: Monitor,
+    ) -> "Context":
+        context = cls(None, None, execution_model, config, monitor)
         void_type = OpTypeVoid()
         main_type = OpTypeFunction()
         main_type.return_type = void_type
@@ -66,9 +90,13 @@ class Context:
 
     def make_child_context(self, function: OpTypeFunction = None):
         if function:
-            context = Context(function, self, self.execution_model, self.config)
+            context = Context(
+                function, self, self.execution_model, self.config, self.monitor
+            )
         else:
-            context = Context(self.function, self, self.execution_model, self.config)
+            context = Context(
+                self.function, self, self.execution_model, self.config, self.monitor
+            )
         context.tvc = self.tvc
         return context
 
@@ -83,7 +111,7 @@ class Context:
     def get_global_variables(self) -> List[OpVariable]:
         return list(filter(lambda tvc: isinstance(tvc, OpVariable), self.tvc.keys()))
 
-    def get_statements(self, filter_fn: Callable[[Statement], bool]) -> List[Statement]:
+    def get_statements(self, predicate: Callable[[Statement], bool]) -> List[Statement]:
         statements: List[Statement] = list(
             filter(lambda sym: isinstance(sym, Statement), self.symbol_table)
         )
@@ -93,18 +121,15 @@ class Context:
                 filter(lambda sym: isinstance(sym, Statement), parent.symbol_table)
             )
             parent = parent.parent_context
-        return list(filter(filter_fn, statements))
-    
-    def get_typed_statements(self, filter_fn: Callable[[Statement], bool]) -> List[Statement]:
-        statements = self.get_statements(
-            lambda sym: not isinstance(sym, Untyped)
-        )
-        return list(filter(filter_fn, statements))
+        return list(filter(predicate, statements))
 
-    def get_arithmetic_statements(self) -> List[Statement]:
-        return self.get_typed_statements(
-            lambda sym: isinstance(sym.type, ArithmeticType)
-        )
+    def get_typed_statements(
+        self, predicate: Optional[Callable[[Statement], bool]] = None
+    ) -> List[Statement]:
+        statements = self.get_statements(lambda sym: not isinstance(sym, Untyped))
+        if not predicate:
+            return list(statements)
+        return list(filter(predicate, statements))
 
     def get_depth(self) -> int:
         depth = 1
@@ -174,19 +199,59 @@ class Context:
             function_bodies += function.fuzz(self)
         return function_bodies
 
-    def get_constants(self, type: Optional[Type] = None) -> List[Constant]:
-        if type:
-            return list(
-                filter(
-                    lambda const: isinstance(const, Constant)
-                    and isinstance(const.type, type),
-                    self.tvc.keys(),
-                )
-            )
-        return list(self.tvc.keys())
+    def get_constants(
+        self, predicate: Optional[Callable[[Statement], bool]] = None
+    ) -> List[Constant]:
+        constants: Iterable[Constant] = filter(
+            lambda t: isinstance(t, Constant), self.tvc.keys()
+        )
+        if not predicate:
+            return list(constants)
+        return list(filter(predicate, constants))
 
-    def get_arithmetic_constants(self) -> List[Constant]:
-        return self.get_constants(ArithmeticType)
+    def get_random_operand(
+        self,
+        predicate: Callable[[Statement], bool],
+        constraint: Optional[Statement | Constant] = None,
+    ) -> Optional[Statement | Constant]:
+        statements: list[Statement] = self.get_typed_statements(predicate)
+        constants: list[Constant] = self.get_constants(predicate)
+        if inspect.stack()[1][0].f_locals["self"].__class__.__name__ == "OpSNegate":
+            print(statements)
+            print(constants)
+            print(self.get_constants())
+            exit(0)
+        if constraint:
+            statements = filter(
+                lambda sym: isinstance(sym.type, constraint.type.__class__),
+                statements,
+            )
+            constants = filter(
+                lambda const: isinstance(const.type, constraint.type.__class__),
+                constants,
+            )
+            if isinstance(constraint.type, OpTypeVector):
+                type_length_predicate = lambda x: HaveSameTypeLength(constraint, x)
+                statements = filter(type_length_predicate, statements)
+                constants = filter(type_length_predicate, constants)
+
+        statements: list[Statement] = sorted(
+            statements, key=lambda sym: sym.id, reverse=True
+        )
+        # TODO parametrize using a geometric distribution
+        try:
+            return random.SystemRandom().choice(list(statements) + list(constants))
+        except IndexError:
+            self.monitor.warning(
+                event=Event.NO_OPERAND_FOUND,
+                extra={
+                    "opcode": inspect.stack()[1][0].f_locals["self"].__class__.__name__,
+                    "constraint": str(constraint),
+                    "constants": self.get_constants(),
+                    "statements": self.get_typed_statements(),
+                },
+            )
+            return None
 
     def get_function_types(self) -> List[OpTypeFunction]:
         return list(filter(lambda t: isinstance(t, OpTypeFunction), self.tvc.keys()))
@@ -203,6 +268,9 @@ class Context:
                 self.tvc,
             )
         )
-    
+
     def is_compute_shader(self) -> bool:
-        return self.execution_model == ExecutionModel.GLCompute or self.execution_model == ExecutionModel.Kernel
+        return (
+            self.execution_model == ExecutionModel.GLCompute
+            or self.execution_model == ExecutionModel.Kernel
+        )
