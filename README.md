@@ -1,13 +1,23 @@
 # SPIRVSmith
-A differential testing tool for SPIRV compilers based on fuzzing techniques
+
+[![Maintainability](https://api.codeclimate.com/v1/badges/5f91595e621ebb1f1da2/maintainability)](https://codeclimate.com/github/rayanht/SPIRVSmith/maintainability)
+
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+SPIRVSmith is a differential testing tool for SPIRV compilers based on fuzzing techniques.
 
 
-# SPIRV Coverage
+## SPIRV Coverage
 
-## Instructions
+<details>
 
 
-### Miscellanous
+<summary>Expand</summary>
+
+### Instructions
+
+
+#### Miscellanous
 
 <details>
 
@@ -23,7 +33,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Debug
+#### Debug
 
 <details>
 
@@ -44,7 +54,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Annotation
+#### Annotation
 
 <details>
 
@@ -64,7 +74,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Extension
+####Extension
 
 <details>
 
@@ -79,7 +89,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Mode-Setting
+#### Mode-Setting
 
 <details>
 
@@ -96,7 +106,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Type-Declaration
+#### Type-Declaration
 
 <details>
 
@@ -110,7 +120,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 | OpTypeInt | :white_check_mark: |
 | OpTypeFloat | :white_check_mark: |
 | OpTypeVector | :white_check_mark: |
-| OpTypeMatrix | :red_circle: |
+| OpTypeMatrix | :white_check_mark: |
 | OpTypeImage | :red_circle: |
 | OpTypeSampler | :red_circle: |
 | OpTypeSampledImage | :red_circle: |
@@ -123,7 +133,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Constant-Creation
+#### Constant-Creation
 
 <details>
 
@@ -135,7 +145,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 | OpConstantTrue | :white_check_mark: |
 | OpConstantFalse | :white_check_mark: |
 | OpConstant | :white_check_mark: |
-| OpConstantComposite | :red_circle: |
+| OpConstantComposite | :white_check_mark: |
 | OpConstantSampler | :red_circle: |
 | OpConstantNull | :red_circle: |
 | OpSpecConstantTrue | :red_circle: |
@@ -146,7 +156,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Memory
+#### Memory
 
 <details>
 
@@ -170,7 +180,7 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 
 </details>
 
-### Function
+#### Function
 
 <details>
 
@@ -183,5 +193,211 @@ A differential testing tool for SPIRV compilers based on fuzzing techniques
 | OpFunctionParameter | :white_check_mark: |
 | OpFunctionEnd | :white_check_mark: |
 | OpFunctionCall | :red_circle: |
+
+</details>
+
+#### Image
+
+<details>
+
+<summary>Expand</summary>
+
+
+|OpCode| Status |
+|--|--|
+| OpSampledImage | :red_circle: |
+| OpImageSampleImplicitLod | :red_circle: |
+| OpImageSampleExplicitLod | :red_circle: |
+| OpImageSampleDrefImplicitLod |:red_circle:  |
+| OpImageSampleDrefExplicitLod | :red_circle: |
+| OpImageSampleProjImplicitLod | :red_circle: |
+| OpImageSampleProjExplicitLod | :red_circle: |
+| OpImageSampleProjDrefImplicitLod | :red_circle: |
+| OpImageSampleProjDrefExplicitLod | :red_circle: |
+| OpImageFetch | :red_circle: |
+| OpImageGather | :red_circle: |
+| OpImageDrefGather | :red_circle: | 
+| OpImageRead | :red_circle: |
+| OpImageWrite | :red_circle: |
+| OpImage | :red_circle: |
+| OpImageQueryFormat | :red_circle: |
+| OpImageQueryOrder | :red_circle: |
+| OpImageQuerySizeLod | :red_circle: | 
+| OpImageQuerySize | :red_circle: |
+| OpImageQueryLod | :red_circle: |
+| OpImageQueryLevels | :red_circle: |
+| OpImageQuerySamples | :red_circle: |
+| OpImageSparseSampleImplicitLod | :red_circle: |
+| OpImageSparseSampleExplicitLod | :red_circle: | 
+| OpImageSparseSampleDrefImplicitLod | :red_circle: |
+| OpImageSparseSampleDrefExplicitLod | :red_circle: |
+| OpImageSparseFetch | :red_circle: |
+| OpImageSparseGather | :red_circle: | 
+| OpImageSparseDrefGather | :red_circle: |
+| OpImageSparseTexelsResident | :red_circle: |
+| OpImageSparseRead | :red_circle: |
+
+</details>
+
+#### Conversion
+
+<details>
+
+<summary>Expand</summary>
+
+
+|OpCode| Status |
+|--|--|
+| OpConvertFToU | :white_check_mark: |
+| OpConvertFToS | :white_check_mark: |
+| OpConvertSToF | :white_check_mark: |
+| OpConvertUToF |:white_check_mark:  |
+| OpUConvert | :red_circle: |
+| OpSConvert | :red_circle: |
+| OpFConvert | :red_circle: |
+| OpQuantizeToF16 | :red_circle: |
+| OpConvertPtrToU | :red_circle: |
+| OpSatConvertSToU | :red_circle: |
+| OpSatConvertUToS | :red_circle: |
+| OpConvertUToPtr | :red_circle: | 
+| OpPtrCastToGeneric | :red_circle: |
+| OpGenericCastToPtr | :red_circle: |
+| OpGenericCastToPtrExplicit | :red_circle: |
+| OpBitcast | :red_circle: |
+
+</details>
+
+#### Composite
+
+<details>
+
+<summary>Expand</summary>
+
+
+|OpCode| Status |
+|--|--|
+| OpVectorExtractDynamic | :red_circle: |
+| OpVectorInsertDynamic | :red_circle: |
+| OpVectorShuffle | :red_circle: |
+| OpCompositeConstruct |:red_circle:  |
+| OpCompositeExtract | :red_circle: |
+| OpCompositeInsert | :red_circle: |
+| OpCopyObject | :red_circle: |
+| OpTranspose | :red_circle: |
+| OpCopyLogical | :red_circle: |
+
+</details>
+
+#### Arithmetic
+
+<details>
+
+<summary>Expand</summary>
+
+
+|OpCode| Status |
+|--|--|
+| OpSNegate | :white_check_mark: |
+| OpFNegate | :white_check_mark: |
+| OpIAdd | :white_check_mark: |
+| OpFAdd |:white_check_mark:  |
+| OpISub | :white_check_mark: |
+| OpFSub | :white_check_mark: |
+| OpIMul | :white_check_mark: |
+| OpFMul | :white_check_mark: |
+| OpUDiv | :white_check_mark: |
+| OpSDiv | :white_check_mark: |
+| OpFDiv | :white_check_mark: |
+| OpUMod | :white_check_mark: |
+| OpSRem | :white_check_mark: |
+| OpSMod | :white_check_mark: |
+| OpFRem | :white_check_mark: |
+| OpFMod | :white_check_mark: |
+| OpVectorTimesScalar | :red_circle: |
+| OpMatrixTimesScalar | :red_circle: |
+| OpVectorTimesMatrix |: red_circle: |
+| OpMatrixTimesVector | :red_circle: |
+| OpMatrixTimesMatrix | :red_circle: |
+| OpOuterProduct | :red_circle: |
+| OpDot | :red_circle: |
+| OpIAddCarry | :red_circle: |
+| OpISubBorrow | :red_circle: |
+| OpUMulExtended | :red_circle: |
+| OpSMulExtended | :red_circle: |
+
+</details>
+
+#### Bit
+
+<details>
+
+<summary>Expand</summary>
+
+
+|OpCode| Status |
+|--|--|
+| OpShiftRightLogical | :white_check_mark: |
+| OpShiftRightArithmetic | :white_check_mark: |
+| OpShiftLeftLogical | :white_check_mark: |
+| OpBitwiseOr |:white_check_mark:  |
+| OpBitwiseXor | :white_check_mark: |
+| OpBitwiseAnd | :white_check_mark: |
+| OpNot | :white_check_mark: |
+| OpBitFieldInsert | :red_circle: |
+| OpBitFieldSExtract | :red_circle: |
+| OpBitFieldUExtract | :red_circle: |
+| OpBitReverse | :red_circle: |
+| OpBitCount | :white_check_mark: |
+
+</details>
+
+#### Relational and Logical
+
+<details>
+
+<summary>Expand</summary>
+
+
+|OpCode| Status |
+|--|--|
+| OpAny | :red_circle: |
+| OpAll | :red_circle: |
+| OpIsNan | :white_check_mark: |
+| OpIsInf |:white_check_mark:  |
+| OpIsFinite | :white_check_mark: |
+| OpIsNormal | :white_check_mark: |
+| OpSignBitSet | :white_check_mark: |
+| OpOrdered | :white_check_mark: |
+| OpUnordered | :white_check_mark: |
+| OpLogicalEqual | :white_check_mark: |
+| OpLogicalNotEqual | :white_check_mark: |
+| OpLogicalOr | :white_check_mark: |
+| OpLogicalAnd | :white_check_mark: |
+| OpLogicalNot | :white_check_mark: |
+| OpSelect |:white_check_mark:  |
+| OpIEqual | :white_check_mark: |
+| OpINotEqual | :white_check_mark: |
+| OpUGreaterThan | :white_check_mark: |
+| OpSGreaterThan | :white_check_mark: |
+| OpUGreaterThanEqual | :white_check_mark: |
+| OpSGreaterThanEqual | :white_check_mark: |
+| OpULessThan | :white_check_mark: |
+| OpSLessThan | :white_check_mark: |
+| OpULessThanEqual | :white_check_mark: |
+| OpSLessThanEqual | :white_check_mark: |
+| OpFOrdEqual | :white_check_mark: |
+| OpFUnordEqual | :white_check_mark: |
+| OpFOrdNotEqual | :white_check_mark: |
+| OpFUnordNotEqual | :white_check_mark: |
+| OpFOrdLessThan | :white_check_mark: |
+| OpFUnordLessThan | :white_check_mark: |
+| OpFOrdGreaterThan | :white_check_mark: |
+| OpFUnordGreaterThan | :white_check_mark: |
+| OpFOrdLessThanEqual | :white_check_mark: |
+| OpFUnordLessThanEqual | :white_check_mark: |
+| OpFOrdGreaterThanEqual | :white_check_mark: |
+| OpFUnordGreaterThanEqual | :white_check_mark: |
+
+</details>
 
 </details>

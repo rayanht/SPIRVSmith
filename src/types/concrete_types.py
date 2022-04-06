@@ -4,7 +4,7 @@ import random
 from typing import TYPE_CHECKING, List, Tuple
 from uuid import uuid4
 
-from langspec.enums import (
+from src.enums import (
     AccessQualifier,
     Capability,
     Dim,
@@ -12,7 +12,7 @@ from langspec.enums import (
     ImageFormat,
     StorageClass,
 )
-from langspec.opcodes import (
+from src import (
     FuzzDelegator,
     FuzzLeaf,
     OpCode,
@@ -21,8 +21,8 @@ from langspec.opcodes import (
 )
 
 if TYPE_CHECKING:
-    from langspec.opcodes.context import Context
-from langspec.opcodes.types.abstract_types import (
+    from src.context import Context
+from src.types.abstract_types import (
     ArithmeticType,
     ContainerType,
     MixedContainerType,
@@ -48,7 +48,7 @@ class OpTypeInt(ScalarType, NumericalType, ArithmeticType):
 
     def fuzz(self, context: "Context") -> List[OpCode]:
         self.signed = int(bool(random.getrandbits(1)))
-        self.width = 2 ** 5  # TODO other widths with capabilities
+        self.width = 2**5  # TODO other widths with capabilities
         return [self]
 
     def get_base_type(self):
@@ -59,11 +59,12 @@ class OpTypeFloat(ScalarType, NumericalType, ArithmeticType):
     width: int = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-        self.width = 2 ** 5  # TODO other widths with capabilities
+        self.width = 2**5  # TODO other widths with capabilities
         return [self]
 
     def get_base_type(self):
         return self
+
 
 class OpTypeVector(UniformContainerType, ArithmeticType):
     type: Type = None
@@ -76,7 +77,7 @@ class OpTypeVector(UniformContainerType, ArithmeticType):
 
     def __len__(self):
         return self.size
-    
+
     def get_base_type(self):
         return self.type.get_base_type()
 
@@ -87,19 +88,17 @@ class OpTypeMatrix(UniformContainerType):
 
     def fuzz(self, context: "Context") -> List[OpCode]:
         self.size = random.choice([2, 3, 4])  # 8, 16])
-        matrix_type = OpTypeVector().fuzz(context)
-        # This is a hack
-        matrix_type[0] = OpTypeFloat().fuzz(context)[0]
-        self.type = matrix_type[-1]
-        self.type.type = matrix_type[0]
-        return [*matrix_type, self]
+        matrix_type = OpTypeVector().fuzz(context)[-1]
+        matrix_type.type = OpTypeFloat().fuzz(context)[0]
+        self.type = matrix_type
+        return [matrix_type.type, matrix_type, self]
 
     def __len__(self):
         return self.size
 
     def get_required_capabilities(self) -> List[Capability]:
         return [Capability.Matrix]
-    
+
     def get_base_type(self):
         return self.type.get_base_type()
 
@@ -120,7 +119,7 @@ class OpTypeImage(UniformContainerType):
         if context.execution_model != ExecutionModel.Fragment:
             UniformContainerType.set_zero_probability(self.__class__)
             # Exception is handled by FuzzDelegator which
-            # will randomly pick from the reparametrized 
+            # will randomly pick from the reparametrized
             # probability distribution
             raise ReparametrizationError
         self.dim = random.choice(list(Dim))
@@ -140,7 +139,7 @@ class OpTypeArray(UniformContainerType):
     def fuzz(self, context: "Context") -> List[OpCode]:
 
         self.type = ScalarType().fuzz(context)[0]
-        from langspec.opcodes.constants import OpConstant
+        from src.constants import OpConstant
 
         self.length = OpConstant()
         self.length.type = OpTypeInt()
@@ -151,7 +150,7 @@ class OpTypeArray(UniformContainerType):
 
     def __len__(self):
         return self.length.value
-    
+
     def get_base_type(self):
         return self.type.get_base_type()
 

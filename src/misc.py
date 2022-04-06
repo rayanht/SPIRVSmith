@@ -1,20 +1,20 @@
-from langspec.opcodes.function import OpFunction
+from src.function import OpFunction
 from dataclasses import dataclass
-from langspec.opcodes import (
+from src import (
     FuzzLeaf,
     OpCode,
     VoidOp,
 )
 from uuid import uuid4
 from typing import List, Sequence
-from langspec.enums import (
+from src.enums import (
     AddressingModel,
     Capability,
     ExecutionMode,
     ExecutionModel,
     MemoryModel,
 )
-from langspec.opcodes.types.concrete_types import OpTypeInt, OpTypeVoid, Type
+from src.types.concrete_types import OpTypeInt, OpTypeVoid, Type
 
 
 class OpNop(OpCode):
@@ -24,16 +24,10 @@ class OpNop(OpCode):
 class OpUndef(OpCode):
     type: Type = None
 
-    def validate_opcode(self) -> bool:
-        return not isinstance(self.type, OpTypeVoid)
-
 
 class OpSizeOf(OpCode):
     pointer: Type = None
     type: Type = None
-
-    def validate_opcode(self) -> bool:
-        return isinstance(self.type, OpTypeInt)
 
     def get_required_capabilities(self) -> List[Capability]:
         return [Capability.Addresses]
