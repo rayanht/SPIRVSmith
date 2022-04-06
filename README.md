@@ -1,6 +1,7 @@
 # SPIRVSmith
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/5f91595e621ebb1f1da2/maintainability)](https://codeclimate.com/github/rayanht/SPIRVSmith/maintainability)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Frayanht%2FSPIRVSmith.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Frayanht%2FSPIRVSmith?ref=badge_shield)
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
@@ -401,3 +402,6 @@ SPIRVSmith is a differential testing tool for SPIRV compilers based on fuzzing t
 </details>
 
 </details>
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Frayanht%2FSPIRVSmith.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Frayanht%2FSPIRVSmith?ref=badge_large)
