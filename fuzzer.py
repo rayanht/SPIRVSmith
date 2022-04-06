@@ -1,12 +1,14 @@
 from aifc import Error
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import os
 import random
 from typing import TYPE_CHECKING, List, Sequence
-from langspec.opcodes.types.concrete_types import OpTypeFloat, OpTypeInt
+
+from monitor import Event, Monitor
+from src.types.concrete_types import OpTypeFloat, OpTypeInt
 from shortuuid import uuid
-from langspec.enums import (
+from src.enums import (
     AddressingModel,
     Capability,
     ExecutionMode,
@@ -14,33 +16,36 @@ from langspec.enums import (
     MemoryModel,
 )
 import subprocess
-from langspec.opcodes import OpCode
-from langspec.opcodes.context import Context
-from langspec.opcodes.memory import OpVariable
-from langspec.opcodes.misc import (
+from src import OpCode
+from src.context import Context
+from src.memory import OpVariable
+from src.misc import (
     OpCapability,
     OpEntryPoint,
     OpExecutionMode,
     OpMemoryModel,
 )
-import logging
 
 if TYPE_CHECKING:
     from run import SPIRVSmithConfig
 
-FORMAT = "[%(levelname)s] [%(asctime)s] %(message)s"
-logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+
+import signal, sys, time
+
+terminate = False
+
+
+def signal_handling(signum, frame):
+    global terminate
+    terminate = True
+
+
+signal.signal(signal.SIGINT, signal_handling)
 
 
 @dataclass
 class Shader:
     id: str
-
-
-def id_generator(i=1):
-    while True:
-        yield i
-        i += 1
 
 
 @dataclass
@@ -82,30 +87,41 @@ class SPIRVShader(Shader):
                 f.write("\n")
 
 
+def id_generator(i=1):
+    while True:
+        yield i
+        i += 1
+
+
 @dataclass
 class ShaderGenerator:
     config: "SPIRVSmithConfig"
+    monitor: Monitor = field(default_factory=Monitor)
 
     def start(self):
         try:
             os.mkdir("out")
         except FileExistsError:
             pass
-        while True:
+        while not terminate:
             shader = self.gen_shader()
             shader.export()
-            
+
             # Without spirv-opt
-            self.assemble(shader)
-            self.validate(shader)
-            
+            if not self.assemble(shader):
+                continue
+            if not self.validate(shader):
+                continue
+
             # With spirv-opt
-            self.gen_optimised(shader)
-            self.validate(shader, opt=True)
-            
-            self.gen_amber(shader)
-            self.run_amber(shader)
-            # exit(0)
+            if self.gen_optimised(shader):
+                self.validate(shader, opt=True)
+
+            if self.gen_amber(shader):
+                self.run_amber(shader)
+
+            if terminate:
+                self.monitor.info(event=Event.TERMINATED)
 
     def assemble(self, shader: SPIRVShader):
         process: subprocess.CompletedProcess = subprocess.run(
@@ -120,11 +136,20 @@ class ShaderGenerator:
             capture_output=True,
         )
         if process.returncode != 0:
-            logging.warning(f"ASSEMBLY_FAIL - {shader.id}")
-            stderr = process.stderr.decode("utf-8")
-            logging.debug(stderr)
+            self.monitor.error(
+                event=Event.ASSEMBLER_FAILURE,
+                extra={
+                    "stderr": process.stderr.decode("utf-8"),
+                    "cli_args": str(process.args),
+                    "shader_id": shader.id,
+                },
+            )
         else:
-            logging.info(f"ASSEMBLY_SUCCESS - {shader.id}")
+            self.monitor.info(
+                event=Event.ASSEMBLER_SUCCESS, extra={"shader_id": shader.id}
+            )
+
+        return process.returncode == 0
 
     def gen_optimised(self, shader: SPIRVShader):
         os.mkdir(f"out/{shader.id}/spv_opt")
@@ -139,12 +164,21 @@ class ShaderGenerator:
             capture_output=True,
         )
         if process.returncode != 0:
-            logging.warning(f"OPTIMISER_FAIL - {shader.id}")
-            logging.debug(process.stderr)
-            logging.debug(process.args)
+            self.monitor.error(
+                event=Event.OPTIMIZER_FAILURE,
+                extra={
+                    "stderr": process.stderr.decode("utf-8"),
+                    "cli_args": str(process.args),
+                    "shader_id": shader.id,
+                },
+            )
         else:
-            logging.info(f"OPTIMISER_SUCCESS - {shader.id}")
-            
+            self.monitor.info(
+                event=Event.OPTIMIZER_SUCCESS, extra={"shader_id": shader.id}
+            )
+
+        return process.returncode == 0
+
     def validate(self, shader: SPIRVShader, opt: bool = False):
         process: subprocess.CompletedProcess = subprocess.run(
             [
@@ -154,10 +188,22 @@ class ShaderGenerator:
             capture_output=True,
         )
         if process.returncode != 0:
-            logging.warning(f"VALIDATION{'_OPT' if opt else ''}_FAIL - {shader.id}")
+            self.monitor.error(
+                event=Event.VALIDATOR_OPT_FAILURE if opt else Event.VALIDATOR_FAILURE,
+                extra={
+                    "stderr": process.stderr.decode("utf-8"),
+                    "cli_args": str(process.args),
+                    "shader_id": shader.id,
+                },
+            )
         else:
-            logging.info(f"VALIDATION{'_OPT' if opt else ''}_SUCCESS - {shader.id}")
-    
+            self.monitor.info(
+                event=Event.VALIDATOR_OPT_SUCCESS if opt else Event.VALIDATOR_SUCCESS,
+                extra={"shader_id": shader.id},
+            )
+
+        return process.returncode == 0
+
     def run_amber(self, shader: SPIRVShader):
         process: subprocess.CompletedProcess = subprocess.run(
             [
@@ -167,12 +213,18 @@ class ShaderGenerator:
             capture_output=True,
         )
         if process.returncode != 0:
-            logging.warning(f"AMBER_FAIL - {shader.id}")
-            stderr = process.stderr.decode("utf-8")
-            logging.debug(stderr)
-            exit(0)
+            self.monitor.error(
+                event=Event.AMBER_FAILURE,
+                extra={
+                    "stderr": process.stderr.decode("utf-8"),
+                    "cli_args": str(process.args),
+                    "shader_id": shader.id,
+                },
+            )
         else:
-            logging.info(f"AMBER_SUCCESS - {shader.id}")
+            self.monitor.info(event=Event.AMBER_SUCCESS, extra={"shader_id": shader.id})
+
+        return process.returncode == 0
 
     def gen_amber(self, shader: SPIRVShader):
         shader_interfaces: List[OpVariable] = shader.context.get_interfaces()
@@ -180,11 +232,23 @@ class ShaderGenerator:
         for k, interface in enumerate(shader_interfaces):
             match i := interface.type.type:
                 case OpTypeInt() if i.signed:
-                    buffers.append(AmberBuffer(f"buf{k}", AmberBufferType.INT32, random.randint(-64, 64)))
+                    buffers.append(
+                        AmberBuffer(
+                            f"buf{k}", AmberBufferType.INT32, random.randint(-64, 64)
+                        )
+                    )
                 case OpTypeInt():
-                    buffers.append(AmberBuffer(f"buf{k}", AmberBufferType.UINT32, random.randint(0, 128)))
+                    buffers.append(
+                        AmberBuffer(
+                            f"buf{k}", AmberBufferType.UINT32, random.randint(0, 128)
+                        )
+                    )
                 case OpTypeFloat():
-                    buffers.append(AmberBuffer(f"buf{k}", AmberBufferType.FLOAT, random.uniform(0, 128)))
+                    buffers.append(
+                        AmberBuffer(
+                            f"buf{k}", AmberBufferType.FLOAT, random.uniform(0, 128)
+                        )
+                    )
                 case _:
                     raise Error
         with open(f"out/{shader.id}/out.amber", "w") as fw:
@@ -200,14 +264,20 @@ class ShaderGenerator:
             fw.write(f"PIPELINE {'compute'} pipeline\n")
             fw.write(f"ATTACH {'shader'}\n")
             for i, buffer in enumerate(buffers):
-                fw.write(f"BIND BUFFER {buffer.name} AS storage DESCRIPTOR_SET 0 BINDING {i}\n")
+                fw.write(
+                    f"BIND BUFFER {buffer.name} AS storage DESCRIPTOR_SET 0 BINDING {i}\n"
+                )
             fw.write("END\n")
             fw.write("RUN pipeline 1 1 1\n")
 
     def gen_shader(self) -> SPIRVShader:
         # execution_model = random.choice(list(ExecutionModel))
-        execution_model = random.choice([ExecutionModel.GLCompute, ExecutionModel.Kernel])
-        context = Context.create_global_context(execution_model, self.config)
+        execution_model = random.choice(
+            [ExecutionModel.GLCompute, ExecutionModel.Kernel]
+        )
+        context = Context.create_global_context(
+            execution_model, self.config, self.monitor
+        )
         # Generate random types and constants to be used by the program
         context.gen_types()
         context.gen_constants()
@@ -218,9 +288,11 @@ class ShaderGenerator:
 
         # Remap IDs
         id_gen = id_generator()
+        new_tvc = {}
         for tvc in context.tvc.keys():
             tvc.id = next(id_gen)
-            context.tvc[tvc] = tvc.id
+            new_tvc[tvc] = tvc.id
+        context.tvc = new_tvc
         for opcode in program:
             opcode.id = next(id_gen)
 
@@ -247,6 +319,7 @@ class ShaderGenerator:
             context,
         )
 
+
 class AmberBufferType(Enum):
     INT8 = "int8"
     INT16 = "int16"
@@ -260,11 +333,12 @@ class AmberBufferType(Enum):
     FLOAT = "float"
     DOUBLE = "double"
 
+
 @dataclass
 class AmberBuffer:
     name: str
     type: AmberBufferType
     initializer: float | int
-    
+
     def to_amberscript(self):
         return f"BUFFER {self.name} DATA_TYPE {self.type.value} STD430 DATA\n{self.initializer}\nEND"

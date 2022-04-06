@@ -2,19 +2,19 @@ from copy import deepcopy
 import random
 from typing import TYPE_CHECKING, List, Tuple, Union
 
-from langspec.opcodes import (
+from src import (
     Constant,
     OpCode,
 )
 
 if TYPE_CHECKING:
-    from langspec.opcodes.context import Context
-from langspec.opcodes.types.abstract_types import (
+    from src.context import Context
+from src.types.abstract_types import (
     ContainerType,
     NumericalType,
     Type,
 )
-from langspec.opcodes.types.concrete_types import (
+from src.types.concrete_types import (
     OpTypeArray,
     OpTypeBool,
     OpTypeFloat,
@@ -68,16 +68,14 @@ class OpConstantComposite(Constant):
 
     def fuzz(self, context: "Context") -> List[OpCode]:
         composite_type = random.choice(
-            [OpTypeArray, OpTypeVector] #, OpTypeMatrix]
+            [OpTypeArray, OpTypeVector]  # , OpTypeMatrix]
         )().fuzz(context)
         self.type: OpTypeArray | OpTypeVector = composite_type[-1]
         base_type: Type = self.type.get_base_type()
         self.constituents = []
         if isinstance(base_type, OpTypeBool):
             for _ in range(len(self.type)):
-                entry = random.choice([OpConstantTrue, OpConstantFalse])().fuzz(
-                    context
-                )
+                entry = random.choice([OpConstantTrue, OpConstantFalse])().fuzz(context)
                 composite_type += entry[:-1]
                 self.constituents.append(entry[-1])
         elif isinstance(base_type, OpTypeInt):

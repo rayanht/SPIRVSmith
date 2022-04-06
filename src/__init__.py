@@ -1,16 +1,21 @@
 from abc import ABC
 from dataclasses import field
+import hashlib
 import inspect
+import json
+import pickle
 
 from typing import TYPE_CHECKING, Dict, Tuple
 from uuid import uuid4
 
 if TYPE_CHECKING:
-    from langspec.opcodes.context import Context
+    from src.context import Context
 from patched_dataclass import dataclass
 import random
 from typing import List
-from langspec.enums import Capability
+from src.enums import Capability
+from ulid import monotonic as ulid
+from ulid import ULID
 
 randomization_parameters = {
     "MemoryOperator": "w_memory_operation",
@@ -20,6 +25,10 @@ randomization_parameters = {
     "FunctionOperator": "w_function_operation",
     "BitwiseOperator": "w_bitwise_operation",
     "ConversionOperator": "w_conversion_operation",
+    "ScalarType": "w_scalar_type",
+    "ContainerType": "w_container_type",
+    "ArithmeticType": "w_arithmetic_type",
+    "NumericalType": "w_numerical_type",
 }
 
 excluded_identifiers = [
@@ -31,7 +40,6 @@ excluded_identifiers = [
     "keys",
     "resolve_attribute_spasm",
     "to_spasm",
-    "validate_opcode",
     "fuzz",
     "get_base_type",
 ]
@@ -58,7 +66,7 @@ class VoidOp:
 
 @dataclass
 class OpCode(ABC):
-    id: str = field(default_factory=uuid4)
+    id: ULID = field(default_factory=ulid.new)
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -69,7 +77,20 @@ class OpCode(ABC):
             return False
 
     def __hash__(self):
-        return hash(tuple([getattr(self, attr) for attr in members(self)]))
+        return int(
+            hashlib.sha224(
+                pickle.dumps(
+                    tuple([hash(getattr(self, attr)) for attr in members(self)])
+                )
+            ).hexdigest(),
+            16,
+        )
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in members(self)])})"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in members(self)])})"
 
     def get_required_capabilities(self) -> List[Capability]:
         return []
@@ -136,14 +157,16 @@ class FuzzDelegator(OpCode):
         subclasses = self.get_subclasses()
         # Get parametrization from config for top-level delegators
         PARAMETRIZATIONS[self.__class__.__name__] = {}
-        if "ArithmeticOperator" in map(lambda cls: cls.__name__, subclasses):
+        for sub in subclasses:
+            PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = 1
+        if "ArithmeticOperator" in map(
+            lambda cls: cls.__name__, subclasses
+        ) or "ScalarType" in map(lambda cls: cls.__name__, subclasses):
             for sub in subclasses:
-                PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = getattr(
-                    context.config, randomization_parameters[sub.__name__]
-                )
-        else:
-            for sub in subclasses:
-                PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = 1
+                if sub.__name__ in randomization_parameters:
+                    PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = getattr(
+                        context.config, randomization_parameters[sub.__name__]
+                    )
 
     def fuzz(self, context: "Context") -> List[OpCode]:
         if not self.__class__.is_parametrized():
@@ -175,7 +198,7 @@ class Type(FuzzDelegator):
 
 class Constant(FuzzDelegator):
     type: Type
-    
+
     def get_base_type(self):
         return self.type.get_base_type()
 
