@@ -32,20 +32,20 @@ jobs:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Terraform Init
-        working-directory: ./infra
+        working-directory: infra
         run: terraform init
 
       - name: Terraform Format
-        working-directory: ./infra
+        working-directory: infra
         run: terraform fmt -check
 
       - name: Terraform Plan
-        working-directory: ./infra
+        working-directory: infra
         run: terraform plan
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        working-directory: ./infra
+        working-directory: infra
         run: terraform apply -auto-approve
 
   build:
