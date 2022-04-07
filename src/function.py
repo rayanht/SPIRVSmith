@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from src.context import Context
 from src.memory import OpLoad, OpVariable, Statement
 from src.types.concrete_types import OpTypeBool, OpTypeFunction, Type
-from patched_dataclass import dataclass
+from utils.patched_dataclass import dataclass
 
 
 class FunctionOperator(Statement):

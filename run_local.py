@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import hydra
 from hydra.core.config_store import ConfigStore
 
-from fuzzer import ShaderGenerator
+from src.fuzzing_server import ShaderGenerator
 
 
 @dataclass
