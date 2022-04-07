@@ -96,6 +96,7 @@ jobs:
     environment: production
 
     steps:
+      - uses: actions/checkout@v3
       - name: "Run FOSSA Scan"
         uses: fossas/fossa-action@main # Use a specific version if locking is preferred
         with:
@@ -124,9 +125,10 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: "google-github-actions/setup-gcloud@v0"
+
       - name: Set up Docker credentials
         run: |-
-          - gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
+          - gcloud auth configure-docker "$GAR_LOCATION-docker.pkg.dev"
 
       - name: Set up GKE credentials
         uses: google-github-actions/get-gke-credentials@v0
