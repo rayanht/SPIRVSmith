@@ -131,3 +131,7 @@ dmypy.json
 .vscode
 
 out/
+**/spirvsmith_gcp.json
+**/.terraform*
+**/terraform.*
+!**/terraform.tfvars

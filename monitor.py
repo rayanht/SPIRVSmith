@@ -5,7 +5,7 @@ from pythonjsonlogger import jsonlogger
 import daiquiri
 
 # Eventually should do this automatically with the package version
-LOG_VERSION: str = "0.4"
+LOG_VERSION: float = 0.5
 
 
 class Event(Enum):
@@ -19,10 +19,10 @@ class Event(Enum):
     VALIDATOR_FAILURE = "VALIDATOR_FAILURE"
     VALIDATOR_OPT_SUCCESS = "VALIDATOR_OPT_SUCCESS"
     VALIDATOR_OPT_FAILURE = "VALIDATOR_OPT_FAILURE"
-
     NO_OPERAND_FOUND = "NO_OPERAND_FOUND"
-
     TERMINATED = "TERMINATED"
+    INVALID_TYPE_AMBER_BUFFER = "INVALID_TYPE_AMBER_BUFFER"
+    PAUSED = "PAUSED"
 
 
 class Monitor:

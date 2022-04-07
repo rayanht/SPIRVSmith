@@ -1,0 +1,11 @@
+.git/
+bin/
+out/
+infra/
+tests/
+.vscode/
+.terraform/
+.mypy_cache/
+.pytest_cache/
+.github/
+scripts/

@@ -4,7 +4,7 @@ from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
     from src.context import Context
 from src.types.abstract_types import ScalarType
-from patched_dataclass import dataclass
+from utils.patched_dataclass import dataclass
 from src.enums import StorageClass
 from src import (
     OpCode,

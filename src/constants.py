@@ -23,7 +23,7 @@ from src.types.concrete_types import (
     OpTypeStruct,
     OpTypeVector,
 )
-from patched_dataclass import dataclass
+from utils.patched_dataclass import dataclass
 
 
 class OpConstantTrue(Constant):
