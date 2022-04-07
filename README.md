@@ -50,8 +50,7 @@ void main () {
     while (i != -42) { // Might not terminate
         A[i] = f; // Out of  bounds ?
         f = f + f; // Roundoff
-        int j = i ++ +; // Order of side effects
-        ( i / ( i - 1)); // Divide by zero ?
+        int j = i ++ + ( i / ( i - 1)); // Order of side effects, divide by zero?
         i = j;
     }
 }
