@@ -1,6 +1,6 @@
 # SPIRVSmith
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/rayanht/SPIRVSmith/Build%20and%20Test)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/rayanht/SPIRVSmith/Build,%20Test%20and%20Deploy)
 ![GitHub](https://img.shields.io/github/license/rayanht/SPIRVSmith)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/5f91595e621ebb1f1da2/test_coverage)](https://codeclimate.com/github/rayanht/SPIRVSmith/test_coverage)
 [![Maintainability](https://api.codeclimate.com/v1/badges/5f91595e621ebb1f1da2/maintainability)](https://codeclimate.com/github/rayanht/SPIRVSmith/maintainability)
