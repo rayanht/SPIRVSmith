@@ -155,17 +155,7 @@ jobs:
         run: |-
           docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
 
-      # Set up kustomize
-      - name: Set up Kustomize
+      - name: Deploy to GCE
         run: |-
-          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
-          chmod u+x ./kustomize
-
-      # Deploy the Docker image to the GKE cluster
-      - name: Deploy to GKE
-        run: |-
-          # replacing the image name in the k8s template
-          ./kustomize edit set image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
-          ./kustomize build . | kubectl apply -f -
-          kubectl rollout status "deployment/${{ env.DEPLOYMENT_NAME }}"
-          kubectl get services -o wide
+          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" \
+            --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
