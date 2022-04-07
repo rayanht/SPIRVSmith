@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, List
 from monitor import Event, Monitor
 from src.enums import ExecutionModel, StorageClass
 from src import Statement, Untyped
-from src import predicates
 from src.constants import Constant
 import random
 from src.types.abstract_types import ArithmeticType, ScalarType, Type
@@ -18,17 +17,13 @@ from src.types.concrete_types import (
     OpTypeVoid,
 )
 from src.predicates import (
-    HasValidBaseType,
-    HasValidBaseTypeAndSign,
     HaveSameTypeLength,
-    IsValidBitwiseOperand,
-    IsValidLogicalOperand,
 )
 from src.function import OpFunction
 
 if TYPE_CHECKING:
     from src import OpCode
-    from run import SPIRVSmithConfig
+    from run_local import SPIRVSmithConfig
 from src.memory import OpVariable
 
 
@@ -216,11 +211,6 @@ class Context:
     ) -> Optional[Statement | Constant]:
         statements: list[Statement] = self.get_typed_statements(predicate)
         constants: list[Constant] = self.get_constants(predicate)
-        if inspect.stack()[1][0].f_locals["self"].__class__.__name__ == "OpSNegate":
-            print(statements)
-            print(constants)
-            print(self.get_constants())
-            exit(0)
         if constraint:
             statements = filter(
                 lambda sym: isinstance(sym.type, constraint.type.__class__),

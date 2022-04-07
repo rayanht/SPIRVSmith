@@ -10,7 +10,7 @@ from uuid import uuid4
 
 if TYPE_CHECKING:
     from src.context import Context
-from patched_dataclass import dataclass
+from utils.patched_dataclass import dataclass
 import random
 from typing import List
 from src.enums import Capability

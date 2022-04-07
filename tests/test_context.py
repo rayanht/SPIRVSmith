@@ -7,7 +7,7 @@ from src import Type, members
 from src.operators.arithmetic import OpISub
 from src.constants import OpConstant
 from src.context import Context
-from run import SPIRVSmithConfig
+from run_local import SPIRVSmithConfig
 from src.types.abstract_types import ArithmeticType
 from src.types.concrete_types import OpTypeBool, OpTypeFloat, OpTypeInt, OpTypeVector
 
