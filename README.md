@@ -25,7 +25,9 @@ SPIRVSmith attempts to find bugs in the following projects:
 ### Differential Testing
 The bread and butter of `SPIRVSmith` is **differential testing** (sometimes called differential fuzzing), in which we provide the same SPIRV shader to similar consumers (say three different SPIRV compilers for example), execute the three resulting programs and compare the values contained inside all buffers at the end of exeuction. 
 
-In a **fully deterministic** program `(== synchronous && free of undefined behaviour)`, we expect all these buffers to be exactly the same at the end of execution, regardless of what compiler was used to generate said program. If one program ends up with different buffers than the other two, we have a strong reason to believe that the compiler that generated it has a **bug**. 
+In a **fully deterministic** program `(== synchronous && free of undefined behaviour)`, we expect all these buffers to be exactly the same at the end of execution, regardless of what compiler was used to generate said program. If one program ends up with different buffers than the other two, we have a strong reason to believe that the compiler that generated it has a **bug**.
+
+This concept can be extended further by varying the platform that executes the shader. If we get different results by running the same shader on an Nvidia GPU, an AMD GPU, and an Intel integrated graphics chip then there is a good chance that either the underlying Vulkan engine or the GPU driver has a **bug** (possibly both).
 
 The constraint on determinism creates an interesting problem, how can we ensure that the **randomly** generated programs are free of undefined behaviour? Unlike existing differential testing tools, `SPIRVSmith` does not perform any static analysis or backtracking at generation-time to enforce this constraint, we rather implement the idea of **program reconditioning** by **Donaldson et al.**
 
