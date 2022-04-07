@@ -8,16 +8,12 @@ terraform {
 }
 
 provider "google" {
-  credentials = file("spirvsmith_gcp.json")
-
   project = var.project_id
   region  = var.region
   zone    = var.zone
 }
 
 provider "google-beta" {
-  credentials = file("spirvsmith_gcp.json")
-
   project = var.project_id
   region  = var.region
   zone    = var.zone
