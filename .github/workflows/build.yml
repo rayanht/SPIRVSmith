@@ -106,6 +106,7 @@ jobs:
     environment: production
 
     steps:
+      - uses: actions/checkout@v3
       # Get the GKE credentials so we can deploy to the cluster
       - id: 'auth'
         uses: 'google-github-actions/auth@v0'
