@@ -32,6 +32,28 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+    - name: Terraform Init
+      working-directory: ./infra
+      run: terraform init
+
+    - name: Terraform Format
+      working-directory: ./infra
+      run: terraform fmt -check
+
+    - name: Terraform Plan
+      working-directory: ./infra
+      run: terraform plan
+
+    - name: Terraform Apply
+      working-directory: ./infra
+      run: terraform apply -auto-approve
+
     - name: Install Poetry
       uses: abatilo/actions-poetry@v2.0.0
       with:

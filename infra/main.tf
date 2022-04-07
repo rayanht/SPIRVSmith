@@ -15,9 +15,26 @@ provider "google" {
   zone = var.zone
 }
 
+provider "google-beta" {
+  credentials = "${file("spirvsmith_gcp.json")}"
+
+  project = var.project_id
+  region  = var.region
+  zone = var.zone
+}
+
+
 resource "google_service_account" "default" {
   account_id   = "service-account-id"
   display_name = "SPIRVSmith Service Account"
+}
+
+resource "google_artifact_registry_repository" "spirvsmith-repo" {
+  provider = google-beta
+
+  repository_id = "spirvsmith-images"
+  description = "Docker repo for SPIRVSmith images"
+  format = "DOCKER"
 }
 
 resource "google_compute_network" "vpc" {
