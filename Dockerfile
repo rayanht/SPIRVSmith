@@ -1,10 +1,10 @@
 FROM python:3.10-slim
 
-RUN mkdir /src 
-COPY /src /src
+RUN mkdir /app
+RUN mkdir /app/src
+COPY . /app
 
-COPY pyproject.toml /app 
-WORKDIR /src
+WORKDIR /app
 
 ENV PYTHONPATH=${PYTHONPATH}:${PWD}
 
