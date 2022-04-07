@@ -32,6 +32,7 @@ resource "google_service_account" "default" {
 resource "google_artifact_registry_repository" "spirvsmith-repo" {
   provider = google-beta
 
+  location      = var.region
   repository_id = "spirvsmith-images"
   description   = "Docker repo for SPIRVSmith images"
   format        = "DOCKER"
