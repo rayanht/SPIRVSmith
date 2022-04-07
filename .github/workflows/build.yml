@@ -2,9 +2,9 @@ name: Build, Test and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   PROJECT_ID: spirvsmith
@@ -16,8 +16,42 @@ env:
   IMAGE: spirvsmith-primary
 
 jobs:
-  build:
+  terraform:
+    name: "Infra"
+    runs-on: ubuntu-latest
+    environment: production
 
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        working-directory: ./infra
+        run: terraform init
+
+      - name: Terraform Format
+        working-directory: ./infra
+        run: terraform fmt -check
+
+      - name: Terraform Plan
+        working-directory: ./infra
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ./infra
+        run: terraform apply -auto-approve
+
+  build:
+    name: "Build & Test"
+    needs: terraform
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -27,79 +61,105 @@ jobs:
         os: [ubuntu-18.04, macos-latest]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Poetry
-      uses: abatilo/actions-poetry@v2.0.0
-      with:
-        poetry-version: ${{ matrix.poetry-version }}
-    - name: Install dependencies
-      run: |
-        poetry install
-    - name: Test with pytest
-      run: |
-        poetry run python -m pytest
-    - name: Generate the coverage report
-      run: |
-        poetry run coverage run -m pytest
-        poetry run coverage xml -o coverage.xml
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Publish code coverage to code climate
-      uses: paambaati/codeclimate-action@v2.7.5
-      env:
-        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-      with:
-        coverageCommand: poetry run coverage report
-    - name: "Run FOSSA Scan"
-      uses: fossas/fossa-action@main # Use a specific version if locking is preferred
-      with:
-        api-key: ${{ secrets.FOSSA_API_KEY }}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
+      - name: Install dependencies
+        run: |
+          poetry install
+      - name: Test with pytest
+        run: |
+          poetry run python -m pytest
+      - name: Generate the coverage report
+        run: |
+          poetry run coverage run -m pytest
+          poetry run coverage xml -o coverage.xml
 
-    - name: "Run FOSSA Test"
-      uses: fossas/fossa-action@main # Use a specific version if locking is preferred
-      with:
-        api-key: ${{ secrets.FOSSA_API_KEY }}
-        run-tests: true
+      - name: Publish code coverage to code climate
+        uses: paambaati/codeclimate-action@v2.7.5
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageCommand: poetry run coverage report
 
-    - id: 'auth'
-      uses: 'google-github-actions/auth@v0'
-      with:
-        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+  license-scan:
+    name: "License Scan"
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
 
-    # Get the GKE credentials so we can deploy to the cluster
-    - name: Set up GKE credentials
-      uses: google-github-actions/get-gke-credentials@v0
-      with:
-        cluster_name: ${{ env.GKE_CLUSTER }}
-        location: ${{ env.GKE_ZONE }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Run FOSSA Scan"
+        uses: fossas/fossa-action@main # Use a specific version if locking is preferred
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
 
-    # Build the Docker image
-    - name: Build Docker Image
-      run: |-
-        docker build \
-          --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA" \
-          --build-arg GITHUB_SHA="$GITHUB_SHA" \
-          --build-arg GITHUB_REF="$GITHUB_REF" \
-          .
+      - name: "Run FOSSA Test"
+        uses: fossas/fossa-action@main # Use a specific version if locking is preferred
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
+          run-tests: true
 
-    - name: Publish to GCR
-      run: |-
-        docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
+  deploy:
+    name: "Deploy"
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
 
-    # Set up kustomize
-    - name: Set up Kustomize
-      run: |-
-        curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
-        chmod u+x ./kustomize
+    steps:
+      - uses: actions/checkout@v3
 
-    # Deploy the Docker image to the GKE cluster
-    - name: Deploy to GKE
-      run: |-
-        # replacing the image name in the k8s template
-        ./kustomize edit set image LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:TAG=$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA
-        ./kustomize build . | kubectl apply -f -
-        kubectl rollout status deployment/$DEPLOYMENT_NAME
-        kubectl get services -o wide
+      # Get the GKE credentials so we can deploy to the cluster
+      - id: "auth"
+        uses: "google-github-actions/auth@v0"
+        with:
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+
+      - name: Set up Cloud SDK
+        uses: "google-github-actions/setup-gcloud@v0"
+
+      - name: Set up Docker credentials
+        run: gcloud auth configure-docker "$GAR_LOCATION-docker.pkg.dev"
+
+      - name: Set up GKE credentials
+        uses: google-github-actions/get-gke-credentials@v0
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+          project_id: spirvsmith
+
+      # Build the Docker image
+      - name: Build Docker Image
+        run: |-
+          docker build \
+            --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA" \
+            --build-arg GITHUB_SHA="$GITHUB_SHA" \
+            --build-arg GITHUB_REF="$GITHUB_REF" \
+            .
+
+      - name: Publish to GCR
+        run: |-
+          docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
+
+      # Set up kustomize
+      - name: Set up Kustomize
+        run: |-
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
+          chmod u+x ./kustomize
+
+      # Deploy the Docker image to the GKE cluster
+      - name: Deploy to GKE
+        run: |-
+          # replacing the image name in the k8s template
+          ./kustomize edit set image LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:TAG=$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA
+          ./kustomize build . | kubectl apply -f -
+          kubectl rollout status deployment/$DEPLOYMENT_NAME
+          kubectl get services -o wide
