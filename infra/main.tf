@@ -12,15 +12,15 @@ provider "google" {
 
   project = var.project_id
   region  = var.region
-  zone = var.zone
+  zone    = var.zone
 }
 
 provider "google-beta" {
-  credentials = "${file("spirvsmith_gcp.json")}"
+  credentials = file("spirvsmith_gcp.json")
 
   project = var.project_id
   region  = var.region
-  zone = var.zone
+  zone    = var.zone
 }
 
 
@@ -33,8 +33,8 @@ resource "google_artifact_registry_repository" "spirvsmith-repo" {
   provider = google-beta
 
   repository_id = "spirvsmith-images"
-  description = "Docker repo for SPIRVSmith images"
-  format = "DOCKER"
+  description   = "Docker repo for SPIRVSmith images"
+  format        = "DOCKER"
 }
 
 resource "google_compute_network" "vpc" {
@@ -49,7 +49,7 @@ resource "google_compute_subnetwork" "spirvsmith-network" {
 }
 
 resource "google_container_cluster" "primary" {
-  name     = "spirvsmith-cluster"
+  name = "spirvsmith-cluster"
 
   min_master_version       = var.cluster_version
   remove_default_node_pool = true
@@ -85,7 +85,7 @@ resource "google_container_node_pool" "primary_nodes" {
     disk_size_gb    = var.disk_size_gb
     disk_type       = var.disk_type
     preemptible     = false
-    tags         = [
+    tags = [
       "gke-node",
     ]
 
