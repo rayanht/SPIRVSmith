@@ -25,7 +25,7 @@ provider "google-beta" {
 
 
 resource "google_service_account" "default" {
-  account_id   = "service-account-id"
+  account_id   = "spirv-default"
   display_name = "SPIRVSmith Service Account"
 }
 
