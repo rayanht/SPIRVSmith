@@ -78,6 +78,10 @@ void main () {
 }
 ```
 
+### Architecture
+
+<img width="680" alt="image" src="https://user-images.githubusercontent.com/42040895/162283079-cb762f8f-b018-429c-b187-a4c58b9d19bf.png">
+
 ## SPIRV Language Coverage
 
 <details>
