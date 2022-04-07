@@ -127,8 +127,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@v0"
 
       - name: Set up Docker credentials
-        run: |-
-          - gcloud auth configure-docker "$GAR_LOCATION-docker.pkg.dev"
+        run: gcloud auth configure-docker "$GAR_LOCATION-docker.pkg.dev"
 
       - name: Set up GKE credentials
         uses: google-github-actions/get-gke-credentials@v0
