@@ -1,3 +1,4 @@
+gcp_credentials = file("spirvsmith_gcp.json")
 project_id    = "spirvsmith"
 region        = "us-west1"
 zone          = "us-west1-a"
