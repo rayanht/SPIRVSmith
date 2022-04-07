@@ -117,6 +117,7 @@ jobs:
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
+          project_id: spirvsmith
 
       # Build the Docker image
       - name: Build Docker Image
