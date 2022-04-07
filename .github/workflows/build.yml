@@ -99,11 +99,6 @@ jobs:
           api-key: ${{ secrets.FOSSA_API_KEY }}
           run-tests: true
 
-      - id: "auth"
-        uses: "google-github-actions/auth@v0"
-        with:
-          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
-
   deploy:
     name: "Deploy"
     needs: build
@@ -112,6 +107,11 @@ jobs:
 
     steps:
       # Get the GKE credentials so we can deploy to the cluster
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
       - name: Set up GKE credentials
         uses: google-github-actions/get-gke-credentials@v0
         with:
