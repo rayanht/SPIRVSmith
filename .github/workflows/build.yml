@@ -50,6 +50,7 @@ jobs:
         run: terraform apply -auto-approve
 
   build:
+    name: "Build & Test"
     needs: terraform
     runs-on: ubuntu-latest
     strategy:
@@ -103,6 +104,13 @@ jobs:
         with:
           credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
 
+  deploy:
+    name: "Deploy"
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
       # Get the GKE credentials so we can deploy to the cluster
       - name: Set up GKE credentials
         uses: google-github-actions/get-gke-credentials@v0
