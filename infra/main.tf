@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "3.5.0"
+      version = "4.16.0"
     }
   }
 }
@@ -129,7 +129,7 @@ resource "google_bigquery_table" "spirv_metadata_table" {
     "type": "STRING",
     "mode": "NULLABLE",
     "description": "e.g. Vulkan or SwiftShader"
-  },
+  }
 ]
 EOF
 
