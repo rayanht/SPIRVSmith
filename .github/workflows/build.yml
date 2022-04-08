@@ -150,5 +150,5 @@ jobs:
       - name: Deploy to GCE
         run: |-
           gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" \
-            --zone "${{ env.GCE_ZONE }}" 
+            --zone "${{ env.GCE_ZONE }}" \ 
             --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
