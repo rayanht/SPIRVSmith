@@ -134,8 +134,9 @@ resource "google_bigquery_table" "spirv_metadata_table" {
 EOF
 
 }
-resource "google_pubsub_schema" "spirv_shader_pubsub_schema" {
-  name       = "spirv_shader_pubsub_schema"
+
+resource "google_pubsub_schema" "spirv_shader_pubsub_shader_schema" {
+  name       = "spirv_shader_pubsub_shader_schema"
   type       = "PROTOCOL_BUFFER"
   definition = "syntax = \"proto3\";\nmessage ShaderGenerated {\nstring shader_id = 1;\n}"
 }
@@ -169,4 +170,10 @@ resource "google_pubsub_subscription" "spirv_shader_pubsub_subscription" {
   }
 
   enable_message_ordering = false
+}
+
+resource "google_storage_bucket" "spirv_shaders_bucket" {
+  name          = "spirv_shaders_bucket"
+  location      = "US-WEST1"
+  force_destroy = true
 }
