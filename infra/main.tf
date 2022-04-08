@@ -135,8 +135,8 @@ EOF
 
 }
 
-resource "google_pubsub_schema" "spirv_shader_pubsub_shader_schema" {
-  name       = "spirv_shader_pubsub_shader_schema"
+resource "google_pubsub_schema" "spirv_shader_pubsub_schema" {
+  name       = "spirv_shader_pubsub_schema"
   type       = "PROTOCOL_BUFFER"
   definition = "syntax = \"proto3\";\nmessage ShaderGenerated {\nstring shader_id = 1;\n}"
 }
