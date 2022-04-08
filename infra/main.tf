@@ -150,7 +150,7 @@ resource "google_pubsub_topic" "spirv_shader_pubsub_topic" {
   }
 }
 
-resource "google_pubsub_subscription" "example" {
+resource "google_pubsub_subscription" "spirv_shader_pubsub_subscription" {
   name  = "spirv_shader_pubsub_subscription"
   topic = google_pubsub_topic.spirv_shader_pubsub_topic.name
 
