@@ -30,14 +30,14 @@ resource "google_service_account" "default" {
 }
 
 resource "google_compute_network" "default_network" {
-  name = "spirvsmith-network"
+  name = "spirvsmith-primary-network"
 }
 
 resource "google_artifact_registry_repository" "spirvsmith_repo" {
   provider = google-beta
 
   location      = var.region
-  repository_id = "spirvsmith-images"
+  repository_id = "spirvsmith-docker-images"
   description   = "Docker repo for SPIRVSmith images"
   format        = "DOCKER"
 }
