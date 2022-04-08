@@ -53,6 +53,22 @@ resource "google_compute_instance" "spirvsmith_primary" {
     }
   }
 
+  metadata = {
+    gce-container-declaration = <<EOT
+spec:
+  containers:
+    - image: python:3.10-slim
+      name: containervm
+      securityContext:
+        privileged: false
+      stdin: false
+      tty: false
+      volumeMounts: []
+      restartPolicy: Always
+      volumes: []
+EOT
+    google-logging-enabled    = "true"
+  }
   network_interface {
     network = google_compute_network.default_network.name
   }
