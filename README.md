@@ -77,9 +77,10 @@ void main () {
 }
 ```
 
-### Architecture
+### SPIRVSmith in the cloud
 
-<img width="680" alt="image" src="https://user-images.githubusercontent.com/42040895/162283079-cb762f8f-b018-429c-b187-a4c58b9d19bf.png">
+![SPIRVSmith drawio](https://user-images.githubusercontent.com/42040895/162422826-c65dfd6f-1f32-4dcc-be8c-8c7e6117b42b.png)
+
 
 ## SPIRV Language Coverage
 
