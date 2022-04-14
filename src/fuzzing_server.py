@@ -1,14 +1,15 @@
 from dataclasses import dataclass, field
-from enum import Enum
-from multiprocessing import Process, Value, shared_memory
+import json
+import logging
+
 import os
-import random
 from threading import Thread
 from typing import TYPE_CHECKING, List, Sequence
-from amber import AmberGenerator, AmberRunner
-
+from amber import AmberGenerator
+from google.cloud import storage
 from monitor import Event, Monitor
-from src.types.concrete_types import OpTypeFloat, OpTypeInt
+from src.recondition import recondition
+from src.types.concrete_types import OpTypeStruct
 from shortuuid import uuid
 from src.enums import (
     AddressingModel,
@@ -16,9 +17,10 @@ from src.enums import (
     ExecutionMode,
     ExecutionModel,
     MemoryModel,
+    StorageClass,
 )
 import subprocess
-from src import OpCode
+from src import FuzzDelegator, OpCode
 from src.context import Context
 from src.memory import OpVariable
 from src.misc import (
@@ -34,12 +36,26 @@ if TYPE_CHECKING:
 
 import signal
 from flask import Flask
+from google.cloud.pubsub import PublisherClient
 
 app = Flask(__name__)
 
+logging.getLogger("werkzeug").disabled = True
+
+STORAGE_CLIENT = storage.Client.from_service_account_json("infra/spirvsmith_gcp.json")
+BUCKET = STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
+
+PROJECT_ID = "spirvsmith"
+TOPIC_ID = "spirv_shader_pubsub_topic"
+PUBLISHER_CLIENT = PublisherClient.from_service_account_json(
+    "infra/spirvsmith_gcp.json"
+)
+TOPIC_PATH = PUBLISHER_CLIENT.topic_path(PROJECT_ID, TOPIC_ID)
+TOPIC = PUBLISHER_CLIENT.get_topic(request={"topic": TOPIC_PATH})
 
 terminate = False
 paused = False
+
 
 def signal_handling(signum, frame):
     global terminate
@@ -71,11 +87,13 @@ def pause_fuzzer():
     paused = True
     return ("", 204)
 
+
 @app.route("/start")
 def start_fuzzer():
     global paused
     paused = False
     return ("", 204)
+
 
 @dataclass
 class Shader:
@@ -113,7 +131,28 @@ class SPIRVShader(Shader):
                 f"OpExecutionMode %{self.execution_mode.function.id} {self.execution_mode.execution_mode} 1 1 1"
             )
             f.write("\n")
+            for i, buffer in enumerate(self.context.get_storage_buffers()):
+                struct_type: OpTypeStruct = buffer.type.type
+                f.write(f"OpDecorate %{struct_type.id} Block")
+                f.write("\n")
+                f.write(f"OpDecorate %{buffer.id} DescriptorSet 0")
+                f.write("\n")
+                f.write(f"OpDecorate %{buffer.id} Binding {i}")
+                f.write("\n")
+                for j, _ in enumerate(struct_type.types):
+                    f.write(f"OpMemberDecorate %{struct_type.id} {j} Offset {j * 32}")
+                    f.write("\n")
+            # for i, interface in enumerate(self.context.get_interfaces()):
+            #     f.write(f"OpDecorate %{interface.id} Location {i}")
+            #     f.write("\n")
+            #     # f.write(f"OpDecorate %{interface.id} Binding {i}")
+            #     # f.write("\n")
             for tvc, _ in self.context.tvc.items():
+                if (
+                    isinstance(tvc, OpVariable)
+                    and tvc.storage_class == StorageClass.Function
+                ):
+                    continue
                 f.write(tvc.to_spasm(self.context))
                 f.write("\n")
             for opcode in self.opcodes:
@@ -127,19 +166,46 @@ def id_generator(i=1):
         i += 1
 
 
+def create_GCS_folder(folder_name: str):
+    blob = BUCKET.blob(folder_name)
+    blob.upload_from_string("")
+
+
+def upload_local_file_to_GCS(local_filename: str, destination_filename: str):
+    blob = BUCKET.blob(destination_filename)
+    blob.upload_from_filename(local_filename)
+
+
+def upload_shader_data_to_GCS_and_notify_amber_clients(
+    shader: Shader, monitor: Monitor
+):
+    create_GCS_folder(shader.id)
+    upload_local_file_to_GCS(
+        f"out/{shader.id}/shader.spasm", f"{shader.id}/shader.spasm"
+    )
+    upload_local_file_to_GCS(f"out/{shader.id}/out.amber", f"{shader.id}/out.amber")
+    upload_local_file_to_GCS(f"out/{shader.id}/shader.spv", f"{shader.id}/shader.spv")
+    monitor.info(event=Event.SHADER_UPLOAD_SUCCESS, extra={"shader_id": shader.id})
+    json_object = json.dumps({"shader_id": shader.id})
+    data = str(json_object).encode("utf-8")
+
+    future = PUBLISHER_CLIENT.publish(TOPIC_PATH, data)
+    monitor.info(
+        event=Event.SHADER_PUBSUB_SUCCESS,
+        extra={"shader_id": shader.id, "message_id": future.result()},
+    )
+
+
 @dataclass
 class ShaderGenerator:
     config: "SPIRVSmithConfig"
     monitor: Monitor = field(default_factory=Monitor)
-    amber_runner: AmberRunner = field(default_factory=AmberRunner)
     amber_generator: AmberGenerator = field(default_factory=AmberGenerator)
 
     def start(self):
-        flask_thread = ServerThread(app)
-        flask_thread.start()
-
-        self.amber_runner.config = self.config
-        self.amber_runner.monitor = self.monitor
+        if self.config.misc.start_web_server:
+            flask_thread = ServerThread(app)
+            flask_thread.start()
 
         self.amber_generator.config = self.config
         self.amber_generator.monitor = self.monitor
@@ -151,25 +217,26 @@ class ShaderGenerator:
         while True:
             if terminate:
                 self.monitor.info(event=Event.TERMINATED)
-                flask_thread.shutdown()
-                flask_thread.join()
+                if self.config.misc.start_web_server:
+                    flask_thread.shutdown()
+                    flask_thread.join()
                 break
             if not paused:
                 shader = self.gen_shader()
                 shader.export()
 
-                # Without spirv-opt
-                if not self.assemble(shader):
-                    continue
-                if not self.validate(shader):
-                    continue
-
-                # With spirv-opt
-                if self.gen_optimised(shader):
-                    self.validate(shader, opt=True)
-
-                if self.amber_generator.submit(shader):
-                    self.amber_runner.submit(shader)
+                if (
+                    self.assemble(shader)
+                    and self.validate(shader)
+                    and self.gen_optimised(shader)
+                    and self.validate(shader, opt=True)
+                ):
+                    if self.config.misc.broadcast_generated_shaders:
+                        self.amber_generator.submit(shader)
+                        Thread(
+                            target=upload_shader_data_to_GCS_and_notify_amber_clients,
+                            args=(shader, self.monitor),
+                        ).start()
 
                 if paused:
                     self.monitor.info(event=Event.PAUSED)
@@ -177,7 +244,7 @@ class ShaderGenerator:
     def assemble(self, shader: SPIRVShader):
         process: subprocess.CompletedProcess = subprocess.run(
             [
-                self.config.ASSEMBLER_PATH,
+                self.config.binaries.ASSEMBLER_PATH,
                 "--target-env",
                 "spv1.3",
                 f"out/{shader.id}/shader.spasm",
@@ -206,7 +273,7 @@ class ShaderGenerator:
         os.mkdir(f"out/{shader.id}/spv_opt")
         process: subprocess.CompletedProcess = subprocess.run(
             [
-                self.config.OPTIMISER_PATH,
+                self.config.binaries.OPTIMISER_PATH,
                 "--target-env=spv1.3",
                 f"out/{shader.id}/shader.spv",
                 "-o",
@@ -233,8 +300,10 @@ class ShaderGenerator:
     def validate(self, shader: SPIRVShader, opt: bool = False):
         process: subprocess.CompletedProcess = subprocess.run(
             [
-                self.config.VALIDATOR_PATH,
-                f"out/{shader.id}/{'spv_opt/' if opt else '/'}shader.spv",
+                self.config.binaries.VALIDATOR_PATH,
+                "--target-env",
+                "vulkan1.2",
+                f"out/{shader.id}/{'spv_opt/' if opt else ''}shader.spv",
             ],
             capture_output=True,
         )
@@ -257,19 +326,22 @@ class ShaderGenerator:
 
     def gen_shader(self) -> SPIRVShader:
         # execution_model = random.choice(list(ExecutionModel))
-        execution_model = random.choice(
-            [ExecutionModel.GLCompute, ExecutionModel.Kernel]
-        )
+        # execution_model = random.choice(
+        #     [ExecutionModel.GLCompute, ExecutionModel.Kernel]
+        # )
+        execution_model = ExecutionModel.GLCompute
         context = Context.create_global_context(
             execution_model, self.config, self.monitor
         )
         # Generate random types and constants to be used by the program
         context.gen_types()
         context.gen_constants()
-        context.gen_variables()
+        context.gen_global_variables()
 
-        # Populate function bodies
-        program: List[OpCode] = context.gen_program()
+        # Populate function bodies and recondition
+        program: list[OpCode] = context.gen_program()
+        program: list[OpCode] = recondition(context, program)
+        FuzzDelegator.reset_parametrizations()
 
         # Remap IDs
         id_gen = id_generator()
@@ -283,7 +355,7 @@ class ShaderGenerator:
 
         interfaces: Sequence[OpVariable] = context.get_interfaces()
         entry_point = OpEntryPoint(
-            execution_model=ExecutionModel.GLCompute,
+            execution_model=execution_model,
             function=context.main_fn,
             name="main",
             interfaces=interfaces,
@@ -293,13 +365,17 @@ class ShaderGenerator:
             addressing_model=AddressingModel.Logical, memory_model=MemoryModel.GLSL450
         )
         # TODO extra operands
-        execution_mode = OpExecutionMode(entry_point.function, ExecutionMode.LocalSize)
+        if execution_model == ExecutionModel.GLCompute:
+            execution_mode = ExecutionMode.LocalSize
+        else:
+            execution_mode = ExecutionMode.OriginUpperLeft
+        op_execution_mode = OpExecutionMode(entry_point.function, execution_mode)
         return SPIRVShader(
             [self],
             capabilities,
             memory_model,
             entry_point,
-            execution_mode,
+            op_execution_mode,
             program,
             context,
         )

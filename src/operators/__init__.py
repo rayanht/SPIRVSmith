@@ -22,36 +22,37 @@ class UnaryOperatorFuzzMixin:
         destination_signed = None
         if not issubclass(destination_constraint, NoneType):
             destination_signed = issubclass(destination_constraint, Signed)
-        self.operand: Optional[Operand] = context.get_random_operand(
+        operand: Optional[Operand] = context.get_random_operand(
             self.OPERAND_SELECTION_PREDICATE(source_type, source_signed)
         )
-        if not self.operand:
+        if operand is None:
             return []
         if not issubclass(destination_type, NoneType):
             inner_type = destination_type().fuzz(context)[-1]
             if destination_signed is not None:
                 inner_type.signed = int(destination_signed)
-            context.tvc[inner_type] = inner_type.id
-            # if isinstance(self.operand, OpConstantComposite):
-            #     inner_type.width = self.operand.type.type.width
-            if hasattr(self.operand, "width"):
-                inner_type.width = self.operand.get_base_type().width
-            if isinstance(self.operand.type, (OpConstantComposite, OpTypeVector)):
+            context.add_to_tvc(inner_type)
+            # if isinstance(operand, OpConstantComposite):
+            #     inner_type.width = operand.type.type.width
+            if hasattr(operand, "width"):
+                inner_type.width = operand.get_base_type().width
+            if isinstance(operand.type, (OpConstantComposite, OpTypeVector)):
                 self.type = OpTypeVector().fuzz(context)[-1]
                 self.type.type = inner_type
-                self.type.size = len(self.operand.type)
-                context.tvc[self.type] = self.type.id
+                self.type.size = len(operand.type)
+                context.add_to_tvc(self.type)
             else:
                 self.type = inner_type
-            return [self]
-        self.type = self.operand.type
+        else:
+            self.type = operand.type
+        self.operand = operand
         return [self]
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.type})"
+        return f"{self.__class__.__name__}({self.operand})"
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.type})"
+        return f"{self.__class__.__name__}({self.operand})"
 
 
 class BinaryOperatorFuzzMixin:
@@ -68,37 +69,41 @@ class BinaryOperatorFuzzMixin:
         destination_signed = None
         if not issubclass(destination_constraint, NoneType):
             destination_signed = issubclass(destination_constraint, Signed)
-        self.operand1: Optional[Operand] = context.get_random_operand(
+        operand1: Optional[Operand] = context.get_random_operand(
             self.OPERAND_SELECTION_PREDICATE(source_type, source_signed)
         )
-        if not self.operand1:
+        if operand1 is None:
             return []
-        self.operand2: Optional[Operand] = context.get_random_operand(
+        operand2: Optional[Operand] = context.get_random_operand(
             self.OPERAND_SELECTION_PREDICATE(source_type, source_signed),
-            constraint=self.operand1,
+            constraint=operand1,
         )
+        if operand2 is None:
+            return []
         if not issubclass(destination_type, NoneType):
             inner_type = destination_type().fuzz(context)[-1]
             if destination_signed is not None:
                 inner_type.signed = int(destination_signed)
-            context.tvc[inner_type] = inner_type.id
-            # if isinstance(self.operand, OpConstantComposite):
-            #     inner_type.width = self.operand.type.type.width
-            if hasattr(self.operand1, "width"):
-                inner_type.width = self.operand1.get_base_type().width
-            if isinstance(self.operand1.type, (OpConstantComposite, OpTypeVector)):
+            context.add_to_tvc(inner_type)
+            # if isinstance(operand, OpConstantComposite):
+            #     inner_type.width = operand.type.type.width
+            if hasattr(operand1, "width"):
+                inner_type.width = operand1.get_base_type().width
+            if isinstance(operand1.type, (OpConstantComposite, OpTypeVector)):
                 self.type = OpTypeVector().fuzz(context)[-1]
                 self.type.type = inner_type
-                self.type.size = len(self.operand1.type)
-                context.tvc[self.type] = self.type.id
+                self.type.size = len(operand1.type)
+                context.add_to_tvc(self.type)
             else:
                 self.type = inner_type
-            return [self]
-        self.type = self.operand1.type
+        else:
+            self.type = operand1.type
+        self.operand1 = operand1
+        self.operand2 = operand2
         return [self]
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.type})"
+        return f"{self.__class__.__name__}({self.operand1})({self.operand2})"
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.type})"
+        return f"{self.__class__.__name__}({self.operand1})({self.operand2})"

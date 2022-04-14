@@ -29,9 +29,9 @@ class OpVariable(MemoryOperator):
     def fuzz(self, context: "Context") -> List[OpCode]:
 
         if context.function:
-            self.storage_class = StorageClass.Function
+            storage_class = StorageClass.Function
         else:
-            self.storage_class = (
+            storage_class = (
                 StorageClass.StorageBuffer
                 if context.is_compute_shader()
                 else StorageClass.Input
@@ -43,9 +43,9 @@ class OpVariable(MemoryOperator):
                 list(
                     filter(
                         lambda t: isinstance(t, OpTypePointer)
-                        and t.storage_class == self.storage_class
+                        and t.storage_class == storage_class
                         and (
-                            self.storage_class == StorageClass.Function
+                            storage_class == StorageClass.Function
                             if isinstance(t, OpTypeBool)
                             else False
                         )
@@ -60,13 +60,13 @@ class OpVariable(MemoryOperator):
             if context.function:
                 return []
             self.type = OpTypePointer()
-            self.type.storage_class = self.storage_class
+            self.type.storage_class = storage_class
             target_storage_class = (
                 StorageClass.StorageBuffer
                 if context.is_compute_shader()
                 else StorageClass.Input
             )
-            if self.storage_class == target_storage_class:
+            if storage_class == target_storage_class:
                 self.type.type = random.choice(
                     list(
                         filter(
@@ -85,6 +85,7 @@ class OpVariable(MemoryOperator):
                         )
                     )
                 )
+        self.storage_class = storage_class
         if dynamic:
             return [self.type, self]
         return [self]
@@ -96,10 +97,16 @@ class OpLoad(MemoryOperator):
     # memory_operands: Optional[???]
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-        self.variable: OpVariable = random.choice(
-            context.get_local_variables() + context.get_global_variables()
+        variable: OpVariable = random.choice(
+            list(
+                filter(
+                    lambda x: x.storage_class != StorageClass.Output,
+                    context.get_local_variables() + context.get_global_variables(),
+                )
+            )
         )
-        self.type: Type = self.variable.type.type
+        self.type: Type = variable.type.type
+        self.variable = variable
         return [self]
 
 
@@ -111,7 +118,7 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
     def fuzz(self, context: "Context") -> List[OpCode]:
         dynamic = False
         try:
-            self.object: Statement = random.choice(
+            object: Statement = random.choice(
                 context.get_statements(
                     lambda sym: not isinstance(sym, (OpVariable, Untyped))
                 )
@@ -123,20 +130,20 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
         )
         filtered_variables = []
         for variable in variables:
-            if variable.type.type == self.object.type:
+            if (
+                variable.type.type == object.type
+                and variable.storage_class != StorageClass.Input
+            ):
                 filtered_variables.append(variable)
         try:
             variable = random.choice(filtered_variables)
         except IndexError:
-            variable = OpVariable()
-            variable.storage_class = StorageClass.Function
-            variable.type = OpTypePointer()
-            variable.type.storage_class = variable.storage_class
-            variable.type.type = self.object.type
-            variable.context = context
-            context.tvc[variable.type] = variable.type.id
+            variable = context.create_on_demand_variable(
+                StorageClass.Function, object.type
+            )
             dynamic = True
         self.variable = variable
+        self.object = object
         if dynamic:
             return [self.variable, self]
         return [self]
