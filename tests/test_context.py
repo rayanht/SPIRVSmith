@@ -156,7 +156,6 @@ class TestContext(unittest.TestCase):
             counter[operator.operand1] += 1
             counter[operator.operand2] += 1
 
-        # print(operand_count)
         self.assertAlmostEqual(counter[constant1], N, delta=N // 10)
         self.assertAlmostEqual(counter[constant2], N, delta=N // 10)
 
