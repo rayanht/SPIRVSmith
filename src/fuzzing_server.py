@@ -42,16 +42,23 @@ app = Flask(__name__)
 
 logging.getLogger("werkzeug").disabled = True
 
-STORAGE_CLIENT = storage.Client.from_service_account_json("infra/spirvsmith_gcp.json")
-BUCKET = STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
 
-PROJECT_ID = "spirvsmith"
-TOPIC_ID = "spirv_shader_pubsub_topic"
-PUBLISHER_CLIENT = PublisherClient.from_service_account_json(
-    "infra/spirvsmith_gcp.json"
-)
-TOPIC_PATH = PUBLISHER_CLIENT.topic_path(PROJECT_ID, TOPIC_ID)
-TOPIC = PUBLISHER_CLIENT.get_topic(request={"topic": TOPIC_PATH})
+def get_GCS_bucket() -> storage.Bucket:
+    STORAGE_CLIENT = storage.Client.from_service_account_json(
+        "infra/spirvsmith_gcp.json"
+    )
+    return STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
+
+
+def get_pubsub_handle():
+    PROJECT_ID = "spirvsmith"
+    TOPIC_ID = "spirv_shader_pubsub_topic"
+    PUBLISHER_CLIENT = PublisherClient.from_service_account_json(
+        "infra/spirvsmith_gcp.json"
+    )
+    TOPIC_PATH = PUBLISHER_CLIENT.topic_path(PROJECT_ID, TOPIC_ID)
+    return PUBLISHER_CLIENT, TOPIC_PATH
+
 
 terminate = False
 paused = False
@@ -166,30 +173,36 @@ def id_generator(i=1):
         i += 1
 
 
-def create_GCS_folder(folder_name: str):
-    blob = BUCKET.blob(folder_name)
+def create_GCS_folder(bucket: storage.Bucket, folder_name: str):
+    blob = bucket.blob(folder_name)
     blob.upload_from_string("")
 
 
-def upload_local_file_to_GCS(local_filename: str, destination_filename: str):
-    blob = BUCKET.blob(destination_filename)
+def upload_local_file_to_GCS(
+    bucket: storage.Bucket, local_filename: str, destination_filename: str
+):
+    blob = bucket.blob(destination_filename)
     blob.upload_from_filename(local_filename)
 
 
 def upload_shader_data_to_GCS_and_notify_amber_clients(
-    shader: Shader, monitor: Monitor
+    publisher_client, topic_path, bucket, shader: Shader, monitor: Monitor
 ):
-    create_GCS_folder(shader.id)
+    create_GCS_folder(bucket, shader.id)
     upload_local_file_to_GCS(
-        f"out/{shader.id}/shader.spasm", f"{shader.id}/shader.spasm"
+        bucket, f"out/{shader.id}/shader.spasm", f"{shader.id}/shader.spasm"
     )
-    upload_local_file_to_GCS(f"out/{shader.id}/out.amber", f"{shader.id}/out.amber")
-    upload_local_file_to_GCS(f"out/{shader.id}/shader.spv", f"{shader.id}/shader.spv")
+    upload_local_file_to_GCS(
+        bucket, f"out/{shader.id}/out.amber", f"{shader.id}/out.amber"
+    )
+    upload_local_file_to_GCS(
+        bucket, f"out/{shader.id}/shader.spv", f"{shader.id}/shader.spv"
+    )
     monitor.info(event=Event.SHADER_UPLOAD_SUCCESS, extra={"shader_id": shader.id})
     json_object = json.dumps({"shader_id": shader.id})
     data = str(json_object).encode("utf-8")
 
-    future = PUBLISHER_CLIENT.publish(TOPIC_PATH, data)
+    future = publisher_client.publish(topic_path, data)
     monitor.info(
         event=Event.SHADER_PUBSUB_SUCCESS,
         extra={"shader_id": shader.id, "message_id": future.result()},
@@ -206,6 +219,10 @@ class ShaderGenerator:
         if self.config.misc.start_web_server:
             flask_thread = ServerThread(app)
             flask_thread.start()
+
+        if self.config.misc.broadcast_generated_shaders:
+            bucket = get_GCS_bucket()
+            publisher, topic_path = get_pubsub_handle()
 
         self.amber_generator.config = self.config
         self.amber_generator.monitor = self.monitor
@@ -235,7 +252,7 @@ class ShaderGenerator:
                         self.amber_generator.submit(shader)
                         Thread(
                             target=upload_shader_data_to_GCS_and_notify_amber_clients,
-                            args=(shader, self.monitor),
+                            args=(publisher, topic_path, bucket, shader, self.monitor),
                         ).start()
 
                 if paused:
