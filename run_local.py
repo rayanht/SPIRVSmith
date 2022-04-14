@@ -7,20 +7,23 @@ from src.fuzzing_server import ShaderGenerator
 
 
 @dataclass
-class SPIRVSmithConfig:
-    # Binaries
+class BinariesConfig:
     ASSEMBLER_PATH: str = "bin/spirv-as"
     VALIDATOR_PATH: str = "bin/spirv-val"
     OPTIMISER_PATH: str = "bin/spirv-opt"
     AMBER_PATH: str = "bin/amber"
 
-    # Limits
-    n_types: int = 10
-    n_constants: int = 15
-    n_functions: int = 1
+
+@dataclass
+class LimitsConfig:
+    n_types: int = 40
+    n_constants: int = 50
+    n_functions: int = 5
     max_depth: int = 3
 
-    # Randomness parametrization (weights)
+
+@dataclass
+class FuzzingStrategyConfig:
     ## Operations weights
     w_memory_operation: int = 4
     w_logical_operation: int = 8
@@ -29,6 +32,7 @@ class SPIRVSmithConfig:
     w_function_operation: int = 1
     w_bitwise_operation: int = 8
     w_conversion_operation: int = 8
+    w_composite_operation: int = 8
 
     ## Types weights
     w_scalar_type: int = 1
@@ -36,8 +40,33 @@ class SPIRVSmithConfig:
     w_container_type: int = 1
     w_arithmetic_type: int = 1
 
-    # Randomness parametrization (probabilities)
-    p_statement: float = 0.999
+    ## Constants weights
+    w_composite_constant: int = 1
+    w_scalar_constant: int = 1
+
+    # P(generating a statement at step t + 1 | a statement was generated at step t)
+    p_statement: float = 0.995
+
+
+@dataclass
+class MiscConfig:
+    start_web_server: bool = False
+    broadcast_generated_shaders: bool = False
+
+
+@dataclass
+class SPIRVSmithConfig:
+    # Binaries
+    binaries: BinariesConfig = BinariesConfig()
+
+    # Limits
+    limits: LimitsConfig = LimitsConfig()
+
+    # Fuzzing strategy
+    strategy: FuzzingStrategyConfig = FuzzingStrategyConfig()
+
+    # Misc
+    misc: MiscConfig = MiscConfig()
 
 
 cs = ConfigStore.instance()

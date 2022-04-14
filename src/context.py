@@ -5,14 +5,15 @@ from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, List
 from monitor import Event, Monitor
 from src.enums import ExecutionModel, StorageClass
 from src import Statement, Untyped
-from src.constants import Constant
+from src.constants import CompositeConstant, Constant, OpConstant, ScalarConstant
 import random
-from src.types.abstract_types import ArithmeticType, ScalarType, Type
+from src.types.abstract_types import ArithmeticType, ContainerType, ScalarType, Type
 from src.types.concrete_types import (
     OpTypeBool,
     OpTypeFunction,
     OpTypeInt,
     OpTypePointer,
+    OpTypeStruct,
     OpTypeVector,
     OpTypeVoid,
 )
@@ -95,6 +96,10 @@ class Context:
         context.tvc = self.tvc
         return context
 
+    def add_to_tvc(self, opcode: "OpCode"):
+        if not opcode in self.tvc:
+            self.tvc[opcode] = opcode.id
+
     def get_local_variables(self) -> List[OpVariable]:
         variables: List[OpVariable] = list(
             filter(lambda sym: isinstance(sym, OpVariable), self.symbol_table)
@@ -105,6 +110,25 @@ class Context:
 
     def get_global_variables(self) -> List[OpVariable]:
         return list(filter(lambda tvc: isinstance(tvc, OpVariable), self.tvc.keys()))
+
+    def get_random_variable(
+        self, predicate: Callable[[OpVariable], bool]
+    ) -> Optional[OpVariable]:
+        variables = list(
+            filter(predicate, self.get_local_variables() + self.get_global_variables())
+        )
+        try:
+            return random.SystemRandom().choice(variables)
+        except IndexError:
+            self.monitor.warning(
+                event=Event.NO_OPERAND_FOUND,
+                extra={
+                    "opcode": inspect.stack()[1][0].f_locals["self"].__class__.__name__,
+                    "local_vars": self.get_local_variables(),
+                    "global_vars": self.get_global_variables(),
+                },
+            )
+            return None
 
     def get_statements(self, predicate: Callable[[Statement], bool]) -> List[Statement]:
         statements: List[Statement] = list(
@@ -135,7 +159,7 @@ class Context:
         return depth
 
     def gen_types(self):
-        for _ in range(self.config.n_types):
+        for _ in range(self.config.limits.n_types):
             try:
                 opcodes: List["OpCode"] = Type().fuzz(self)
             except RecursionError:
@@ -145,38 +169,36 @@ class Context:
                     self.tvc[opcode] = opcode.id
 
     def gen_constants(self):
-        for _ in range(self.config.n_constants):
+        n_constants = self.config.limits.n_constants
+        n_scalars = (
+            self.config.strategy.w_scalar_constant
+            * n_constants
+            // (
+                self.config.strategy.w_composite_constant
+                + self.config.strategy.w_scalar_constant
+            )
+        )
+        for _ in range(n_scalars):
             try:
-                opcodes: List["OpCode"] = Constant().fuzz(self)
+                opcodes: List["OpCode"] = ScalarConstant().fuzz(self)
+            except RecursionError:
+                continue
+            for opcode in opcodes:
+                if opcode not in self.tvc:
+                    self.tvc[opcode] = opcode.id
+        for _ in range(n_constants - n_scalars):
+            try:
+                opcodes: List["OpCode"] = CompositeConstant().fuzz(self)
             except RecursionError:
                 continue
             for opcode in opcodes:
                 if opcode not in self.tvc:
                     self.tvc[opcode] = opcode.id
 
-    def gen_variables(self):
+    def gen_global_variables(self):
         for _ in range(random.randint(1, 3)):
-            opcodes: List["OpCode"] = OpVariable().fuzz(self)
-            for opcode in opcodes:
-                self.tvc[opcode] = opcode.id
-        # Generate output
-        if self.execution_model != ExecutionModel.GLCompute:
-            output: OpVariable = OpVariable()
-            output.storage_class = StorageClass.StorageBuffer
-            output.context = self
-            output.type = OpTypePointer()
-            output.type.storage_class = StorageClass.StorageBuffer
-            output.type.type = random.choice(
-                list(
-                    filter(
-                        lambda tvc: isinstance(tvc, ScalarType)
-                        and not isinstance(tvc, OpTypeBool),
-                        self.tvc.keys(),
-                    )
-                )
-            )
-            self.tvc[output.type] = output.type.id
-            self.tvc[output] = output.id
+            self.create_on_demand_variable(StorageClass.Input)
+        self.create_on_demand_variable(StorageClass.Output)
 
     def gen_program(self) -> List["OpCode"]:
         function_types: List[OpTypeFunction] = self.get_function_types()
@@ -184,10 +206,9 @@ class Context:
         functions: List[OpFunction] = []
 
         for function_type in function_types:
-            function = OpFunction(
-                return_type=function_type.return_type,
-                function_type=function_type,
-            )
+            function = OpFunction()
+            function.return_type = function_type.return_type
+            function.function_type = function_type
             if function_type == self.main_type:
                 self.main_fn = function
             functions.append(function)
@@ -259,8 +280,66 @@ class Context:
             )
         )
 
+    def get_storage_buffers(self) -> List[OpVariable]:
+        return list(
+            filter(
+                lambda s: isinstance(s, OpVariable)
+                and not s.context.function
+                and (s.storage_class == StorageClass.StorageBuffer),
+                self.tvc,
+            )
+        )
+
     def is_compute_shader(self) -> bool:
         return (
             self.execution_model == ExecutionModel.GLCompute
             or self.execution_model == ExecutionModel.Kernel
         )
+
+    def create_on_demand_numerical_constant(
+        self,
+        target_type: Type,
+        value: int = 0,
+        width: int = 32,
+        signed: Optional[int] = 0,
+    ) -> OpConstant:
+        type = target_type()
+        type.width = width
+        if hasattr(type, "signed"):
+            type.signed = signed
+        constant = OpConstant()
+        constant.type = type
+        constant.value = value
+        if constant in self.tvc:
+            return constant
+        self.add_to_tvc(type)
+        self.add_to_tvc(constant)
+        return constant
+
+    def create_on_demand_variable(
+        self,
+        storage_class: StorageClass,
+        type: Optional[Type] = None,
+    ):
+        variable: OpVariable = OpVariable()
+        variable.context = self
+
+        pointer_type = OpTypePointer()
+        pointer_type.storage_class = storage_class
+        if type:
+            pointer_type.type = type
+        else:
+            pointer_type.type = random.choice(
+                list(
+                    filter(
+                        lambda tvc: isinstance(tvc, OpTypeStruct),
+                        self.tvc.keys(),
+                    )
+                )
+            )
+        variable.type = pointer_type
+        variable.storage_class = storage_class
+        self.add_to_tvc(pointer_type)
+        if storage_class == StorageClass.Input or storage_class == StorageClass.Output:
+            self.add_to_tvc(variable)
+        return variable

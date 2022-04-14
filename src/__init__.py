@@ -25,16 +25,19 @@ randomization_parameters = {
     "FunctionOperator": "w_function_operation",
     "BitwiseOperator": "w_bitwise_operation",
     "ConversionOperator": "w_conversion_operation",
+    "CompositeOperator": "w_composite_operation",
     "ScalarType": "w_scalar_type",
     "ContainerType": "w_container_type",
     "ArithmeticType": "w_arithmetic_type",
     "NumericalType": "w_numerical_type",
+    "CompositeConstant": "w_composite_constant",
+    "ScalarConstant": "w_scalar_constant",
 }
 
 excluded_identifiers = [
     "id",
     "symbol_table",
-    "context",
+    # "context",
     "get_required_capabilities",
     "iteritems",
     "keys",
@@ -53,7 +56,7 @@ def members(inst):
     return tuple(
         [
             x
-            for x in inst.__class__.__dict__
+            for x in inst.__dict__
             # if type(y) != FunctionType
             if x not in excluded_identifiers and not x.startswith("_")
         ]
@@ -75,6 +78,12 @@ class OpCode(ABC):
             ]
         else:
             return False
+
+    def debug_hash(self):
+        print(members(self))
+        print(tuple([hash(getattr(self, attr)) for attr in members(self)]))
+        print("=========")
+        return self.__hash__()
 
     def __hash__(self):
         return int(
@@ -106,6 +115,8 @@ class OpCode(ABC):
                 attr_spasm = f" %{attr.id}"
         elif isinstance(attr, str):
             attr_spasm = f' "{attr}"'
+        elif attr.__class__.__name__ == "Context":
+            return ""
         else:
             attr_spasm = f" {str(attr)}"
         return attr_spasm
@@ -144,6 +155,11 @@ class FuzzDelegator(OpCode):
         return PARAMETRIZATIONS[cls.__name__]
 
     @classmethod
+    def reset_parametrizations(cls):
+        global PARAMETRIZATIONS
+        PARAMETRIZATIONS = {}
+
+    @classmethod
     def set_zero_probability(cls, target_cls) -> None:
         # There is a tricky case here when an OpCode can be reached
         # from multiple delegators.
@@ -154,18 +170,16 @@ class FuzzDelegator(OpCode):
         PARAMETRIZATIONS[cls.__name__][target_cls.__name__] = 0
 
     def parametrize(self, context: "Context") -> None:
-        subclasses = self.get_subclasses()
+        subclasses_names = set(map(lambda cls: cls.__name__, self.get_subclasses()))
         # Get parametrization from config for top-level delegators
         PARAMETRIZATIONS[self.__class__.__name__] = {}
-        for sub in subclasses:
-            PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = 1
-        if "ArithmeticOperator" in map(
-            lambda cls: cls.__name__, subclasses
-        ) or "ScalarType" in map(lambda cls: cls.__name__, subclasses):
-            for sub in subclasses:
-                if sub.__name__ in randomization_parameters:
-                    PARAMETRIZATIONS[self.__class__.__name__][sub.__name__] = getattr(
-                        context.config, randomization_parameters[sub.__name__]
+        for sub in subclasses_names:
+            PARAMETRIZATIONS[self.__class__.__name__][sub] = 1
+        if any([sub in subclasses_names for sub in randomization_parameters.keys()]):
+            for sub in subclasses_names:
+                if sub in randomization_parameters:
+                    PARAMETRIZATIONS[self.__class__.__name__][sub] = getattr(
+                        context.config.strategy, randomization_parameters[sub]
                     )
 
     def fuzz(self, context: "Context") -> List[OpCode]:
@@ -178,11 +192,15 @@ class FuzzDelegator(OpCode):
         ]
         try:
             return [
-                *random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)
+                *random.SystemRandom()
+                .choices(subclasses, weights=weights, k=1)[0]()
+                .fuzz(context)
             ]
         except ReparametrizationError:
             return [
-                *random.choices(subclasses, weights=weights, k=1)[0]().fuzz(context)
+                *random.SystemRandom()
+                .choices(subclasses, weights=weights, k=1)[0]()
+                .fuzz(context)
             ]
 
 

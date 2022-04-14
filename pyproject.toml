@@ -15,6 +15,8 @@ daiquiri = "^3.0.1"
 coverage = "^6.3.2"
 flake8 = "^4.0.1"
 Flask = "^2.1.1"
+google-cloud-pubsub = "^2.12.0"
+google-cloud-storage = "^2.2.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3", allow-prereleases = true}

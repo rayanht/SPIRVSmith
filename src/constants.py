@@ -1,11 +1,13 @@
 from copy import deepcopy
 import random
 from typing import TYPE_CHECKING, List, Tuple, Union
+from monitor import Event
 
 from src import (
     Constant,
     OpCode,
 )
+from src.predicates import HasValidBaseTypeAndSign, HasValidTypeAndSign
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -26,7 +28,15 @@ from src.types.concrete_types import (
 from utils.patched_dataclass import dataclass
 
 
-class OpConstantTrue(Constant):
+class ScalarConstant(Constant):
+    ...
+
+
+class CompositeConstant(Constant):
+    ...
+
+
+class OpConstantTrue(ScalarConstant):
     type: Type = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
@@ -34,7 +44,7 @@ class OpConstantTrue(Constant):
         return [self.type, self]
 
 
-class OpConstantFalse(Constant):
+class OpConstantFalse(ScalarConstant):
     type: Type = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
@@ -43,13 +53,13 @@ class OpConstantFalse(Constant):
 
 
 @dataclass
-class OpConstant(Constant):
+class OpConstant(ScalarConstant):
     type: Type = None
     value: int | float = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
 
-        self.type = NumericalType().fuzz(context)[0]
+        self.type = NumericalType().fuzz(context)[-1]
 
         if isinstance(self.type, OpTypeInt):
             if self.type.signed:
@@ -62,7 +72,7 @@ class OpConstant(Constant):
         return [self.type, self]
 
 
-class OpConstantComposite(Constant):
+class OpConstantComposite(CompositeConstant):
     type: Type = None
     constituents: Tuple[OpCode] = None
 
@@ -72,34 +82,18 @@ class OpConstantComposite(Constant):
         )().fuzz(context)
         self.type: OpTypeArray | OpTypeVector = composite_type[-1]
         base_type: Type = self.type.get_base_type()
+        signedness: bool = None
+        if hasattr(base_type, "signed"):
+            signedness = base_type.signed
         self.constituents = []
-        if isinstance(base_type, OpTypeBool):
-            for _ in range(len(self.type)):
-                entry = random.choice([OpConstantTrue, OpConstantFalse])().fuzz(context)
-                composite_type += entry[:-1]
-                self.constituents.append(entry[-1])
-        elif isinstance(base_type, OpTypeInt):
-            for _ in range(len(self.type)):
-                entry = OpConstant().fuzz(context)
-                while not isinstance(entry[-1].type, OpTypeInt):
-                    entry = OpConstant().fuzz(context)
-                new_type = deepcopy(entry[-1].type)
-                new_type.width = base_type.width
-                new_type.signed = base_type.signed
-                if not new_type.signed:
-                    entry[-1].value = abs(entry[-1].value)
-                entry[-1].type = new_type
-                composite_type.append(new_type)
-                self.constituents.append(entry[-1])
-        elif isinstance(base_type, OpTypeFloat):
-            for _ in range(len(self.type)):
-                entry = OpConstant().fuzz(context)
-                while not isinstance(entry[-1].type, OpTypeFloat):
-                    entry = OpConstant().fuzz(context)
-                new_type = deepcopy(entry[-1].type)
-                new_type.width = base_type.width
-                entry[-1].type = new_type
-                composite_type.append(new_type)
-                self.constituents.append(entry[-1])
+        for _ in range(len(self.type)):
+            # context.monitor.info(event=Event.DEBUG, extra={"base_type": base_type})
+            constituent: Constant = context.get_random_operand(
+                lambda x: HasValidTypeAndSign(x, base_type.__class__, signedness)
+            )
+            if constituent:
+                self.constituents.append(constituent)
+            else:
+                return []
         self.constituents = tuple(self.constituents)
         return [*composite_type, *self.constituents, self]

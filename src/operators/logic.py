@@ -53,9 +53,6 @@ class UnaryLogicalOperator(LogicalOperator[S, Optional[D], Optional[SC], Optiona
     type: Type = None
     operand: Operand = None
 
-    def to_spasm(self, context: "Context") -> str:
-        return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand.id}"
-
 
 class BinaryLogicalOperator(
     LogicalOperator[S, Optional[D], Optional[SC], Optional[DC]]
@@ -63,9 +60,6 @@ class BinaryLogicalOperator(
     type: Type = None
     operand1: Operand = None
     operand2: Operand = None
-
-    def to_spasm(self, context: "Context") -> str:
-        return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand1.id} %{self.operand2.id}"
 
 
 # class OpAny(UnaryLogicalOperatorFuzzMixin, UnaryLogicalOperator[OpTypeBool]):

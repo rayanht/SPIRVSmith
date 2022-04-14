@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from random import random
+import random
 import subprocess
 from typing import TYPE_CHECKING
 from monitor import Event, Monitor
@@ -36,40 +36,12 @@ class AmberBuffer:
         return f"BUFFER {self.name} DATA_TYPE {self.type.value} STD430 DATA\n{self.initializer}\nEND"
 
 
-class AmberRunner:
-    config: "SPIRVSmithConfig"
-    monitor: Monitor
-
-    def submit(self, shader: "SPIRVShader"):
-        # TODO add backend rotation
-        process: subprocess.CompletedProcess = subprocess.run(
-            [
-                self.config.AMBER_PATH,
-                f"out/{shader.id}/out.amber",
-            ],
-            capture_output=True,
-        )
-        if process.returncode != 0:
-            self.monitor.error(
-                event=Event.AMBER_FAILURE,
-                extra={
-                    "stderr": process.stderr.decode("utf-8"),
-                    "cli_args": str(process.args),
-                    "shader_id": shader.id,
-                },
-            )
-        else:
-            self.monitor.info(event=Event.AMBER_SUCCESS, extra={"shader_id": shader.id})
-
-        return process.returncode == 0
-
-
 class AmberGenerator:
     config: "SPIRVSmithConfig"
     monitor: Monitor
 
     def submit(self, shader: "SPIRVShader"):
-        shader_interfaces: list[OpVariable] = shader.context.get_interfaces()
+        shader_interfaces: list[OpVariable] = shader.context.get_storage_buffers()
         buffers: list[AmberBuffer] = []
         for k, interface in enumerate(shader_interfaces):
             match i := interface.type.type:
