@@ -53,9 +53,6 @@ class UnaryConversionOperator(ConversionOperator[S, D, Optional[SC], Optional[DC
     type: Type = None
     operand: Operand = None
 
-    def to_spasm(self, context: "Context") -> str:
-        return f"%{self.id} = {self.__class__.__name__} %{context.tvc[self.type]} %{self.operand.id}"
-
 
 class OpConvertFToU(
     UnaryOperatorFuzzMixin,

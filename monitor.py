@@ -19,16 +19,19 @@ class Event(Enum):
     VALIDATOR_FAILURE = "VALIDATOR_FAILURE"
     VALIDATOR_OPT_SUCCESS = "VALIDATOR_OPT_SUCCESS"
     VALIDATOR_OPT_FAILURE = "VALIDATOR_OPT_FAILURE"
+    SHADER_UPLOAD_SUCCESS = "SHADER_UPLOAD_SUCCESS"
+    SHADER_PUBSUB_SUCCESS = "SHADER_PUBSUB_SUCCESS"
     NO_OPERAND_FOUND = "NO_OPERAND_FOUND"
     TERMINATED = "TERMINATED"
     INVALID_TYPE_AMBER_BUFFER = "INVALID_TYPE_AMBER_BUFFER"
     PAUSED = "PAUSED"
+    DEBUG = "DEBUG"
 
 
 class Monitor:
     def __init__(self) -> None:
         daiquiri.setup(
-            level=logging.DEBUG,
+            level=logging.INFO,
             outputs=[
                 daiquiri.output.Stream(
                     formatter=daiquiri.formatter.ColorFormatter(

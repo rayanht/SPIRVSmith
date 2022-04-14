@@ -1,2 +1,0 @@
-#!bash
-rm -rf out/

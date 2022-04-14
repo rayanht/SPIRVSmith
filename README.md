@@ -326,7 +326,7 @@ void main () {
 | OpConvertFToU | :white_check_mark: |
 | OpConvertFToS | :white_check_mark: |
 | OpConvertSToF | :white_check_mark: |
-| OpConvertUToF |:white_check_mark:  |
+| OpConvertUToF | :white_check_mark:  |
 | OpUConvert | :red_circle: |
 | OpSConvert | :red_circle: |
 | OpFConvert | :red_circle: |
@@ -351,8 +351,8 @@ void main () {
 
 |OpCode| Status |
 |--|--|
-| OpVectorExtractDynamic | :red_circle: |
-| OpVectorInsertDynamic | :red_circle: |
+| OpVectorExtractDynamic | :white_check_mark: |
+| OpVectorInsertDynamic | :white_check_mark: |
 | OpVectorShuffle | :red_circle: |
 | OpCompositeConstruct |:red_circle:  |
 | OpCompositeExtract | :red_circle: |
