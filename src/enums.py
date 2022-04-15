@@ -1,7 +1,12 @@
 from enum import Enum
 
 
-class SourceLanguage(Enum):
+class SPIRVEnum(Enum):
+    def __str__(self) -> str:
+        return "None" if self.name == "NONE" else self.name
+
+
+class SourceLanguage(SPIRVEnum):
     Unknown = 0
     ESSL = 1
     GLSL = 2
@@ -11,7 +16,7 @@ class SourceLanguage(Enum):
     CPP_for_OpenCL = 6
 
 
-class ExecutionModel(Enum):
+class ExecutionModel(SPIRVEnum):
     # Vertex = 0
     # TessellationControl = 1
     # TessellationEvaluation = 2
@@ -34,33 +39,24 @@ class ExecutionModel(Enum):
     # CallableKHR = 5318
     # CallableNV = 5318
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class AddressingModel(Enum):
+class AddressingModel(SPIRVEnum):
     Logical = 0
     Physical32 = 1
     Physical64 = 2
     PhysicalStorageBuffer64 = 5348
     PhysicalStorageBuffer64EXT = 5348
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class MemoryModel(Enum):
+class MemoryModel(SPIRVEnum):
     Simple = 0
     GLSL450 = 1
     OpenCL = 2
     Vulkan = 3
     VulkanKHR = 3
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class ExecutionMode(Enum):
+class ExecutionMode(SPIRVEnum):
     Invocations = 0
     SpacingEqual = 1
     SpacingFractionalEven = 2
@@ -129,11 +125,8 @@ class ExecutionMode(Enum):
     # NumSIMDWorkitemsINTEL = 5896
     # SchedulerTargetFmaxMhzINTEL = 5903
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class StorageClass(Enum):
+class StorageClass(SPIRVEnum):
     UniformConstant = 0
     Input = 1
     Uniform = 2
@@ -165,11 +158,8 @@ class StorageClass(Enum):
     # DeviceOnlyINTEL = 5936
     # HostOnlyINTEL = 5937
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class Dim(Enum):
+class Dim(SPIRVEnum):
     Dim1D = 0
     Dim2D = 1
     Dim3D = 2
@@ -179,7 +169,7 @@ class Dim(Enum):
     SubpassData = 6
 
 
-class SamplerAddressingMode(Enum):
+class SamplerAddressingMode(SPIRVEnum):
     NONE = 0
     ClampToEdge = 1
     Clamp = 2
@@ -187,12 +177,12 @@ class SamplerAddressingMode(Enum):
     RepeatMirrored = 4
 
 
-class SamplerFilterMode(Enum):
+class SamplerFilterMode(SPIRVEnum):
     Nearest = 0
     Linear = 1
 
 
-class ImageFormat(Enum):
+class ImageFormat(SPIRVEnum):
     Unknown = 0
     Rgba32f = 1
     Rgba16f = 2
@@ -237,7 +227,7 @@ class ImageFormat(Enum):
     R64i = 41
 
 
-class ImageChannelOrder(Enum):
+class ImageChannelOrder(SPIRVEnum):
     R = 0
     A = 1
     RG = 2
@@ -260,7 +250,7 @@ class ImageChannelOrder(Enum):
     ABGR = 19
 
 
-class ImageChannelDataType(Enum):
+class ImageChannelDataType(SPIRVEnum):
     SnormInt8 = 0
     SnormInt16 = 1
     UnormInt8 = 2
@@ -280,7 +270,7 @@ class ImageChannelDataType(Enum):
     UnormInt101010_2 = 16
 
 
-class ImageOperandsShift(Enum):
+class ImageOperandsShift(SPIRVEnum):
     Bias = 0
     Lod = 1
     Grad = 2
@@ -303,7 +293,7 @@ class ImageOperandsShift(Enum):
     Offsets = 16
 
 
-class ImageOperandsMask(Enum):
+class ImageOperandsMask(SPIRVEnum):
     MaskNone = 0
     Bias = 1
     Lod = 2
@@ -327,7 +317,7 @@ class ImageOperandsMask(Enum):
     Offsets = 65536
 
 
-class FPFastMathModeShift(Enum):
+class FPFastMathModeShift(SPIRVEnum):
     NotNaN = 0
     NotInf = 1
     NSZ = 2
@@ -337,7 +327,7 @@ class FPFastMathModeShift(Enum):
     AllowReassocINTEL = 17
 
 
-class FPFastMathModeMask(Enum):
+class FPFastMathModeMask(SPIRVEnum):
     MaskNone = 0
     NotNaN = 1
     NotInf = 2
@@ -348,26 +338,26 @@ class FPFastMathModeMask(Enum):
     AllowReassocINTEL = 131072
 
 
-class FPRoundingMode(Enum):
+class FPRoundingMode(SPIRVEnum):
     RTE = 0
     RTZ = 1
     RTP = 2
     RTN = 3
 
 
-class LinkageType(Enum):
+class LinkageType(SPIRVEnum):
     Export = 0
     Import = 1
     LinkOnceODR = 2
 
 
-class AccessQualifier(Enum):
+class AccessQualifier(SPIRVEnum):
     ReadOnly = 0
     WriteOnly = 1
     ReadWrite = 2
 
 
-class FunctionParameterAttribute(Enum):
+class FunctionParameterAttribute(SPIRVEnum):
     Zext = 0
     Sext = 1
     ByVal = 2
@@ -378,7 +368,7 @@ class FunctionParameterAttribute(Enum):
     NoReadWrite = 7
 
 
-class Decoration(Enum):
+class Decoration(SPIRVEnum):
     RelaxedPrecision = 0
     SpecId = 1
     Block = 2
@@ -490,7 +480,7 @@ class Decoration(Enum):
     MediaBlockIOINTEL = 6140
 
 
-class BuiltIn(Enum):
+class BuiltIn(SPIRVEnum):
     Position = 0
     PointSize = 1
     ClipDistance = 3
@@ -614,18 +604,18 @@ class BuiltIn(Enum):
     SMIDNV = 5377
 
 
-class SelectionControlShift(Enum):
+class SelectionControlShift(SPIRVEnum):
     Flatten = 0
     DontFlatten = 1
 
 
-class SelectionControlMask(Enum):
+class SelectionControlMask(SPIRVEnum):
     MaskNone = 0
     Flatten = 1
     DontFlatten = 2
 
 
-class LoopControlShift(Enum):
+class LoopControlShift(SPIRVEnum):
     Unroll = 0
     DontUnroll = 1
     DependencyInfinite = 2
@@ -645,7 +635,7 @@ class LoopControlShift(Enum):
     NoFusionINTEL = 23
 
 
-class LoopControlMask(Enum):
+class LoopControlMask(SPIRVEnum):
     MaskNone = 0
     Unroll = 1
     DontUnroll = 2
@@ -666,7 +656,7 @@ class LoopControlMask(Enum):
     NoFusionINTEL = 8388608
 
 
-class FunctionControlShift(Enum):
+class FunctionControlShift(SPIRVEnum):
     Inline = 0
     DontInline = 1
     Pure = 2
@@ -674,7 +664,7 @@ class FunctionControlShift(Enum):
     OptNoneINTEL = 16
 
 
-class FunctionControlMask(Enum):
+class FunctionControlMask(SPIRVEnum):
     NONE = 0
     Inline = 1
     DontInline = 2
@@ -682,11 +672,8 @@ class FunctionControlMask(Enum):
     Const = 8
     # OptNoneINTEL = 65536
 
-    def __str__(self) -> str:
-        return "None" if self == FunctionControlMask.NONE else self.name
 
-
-class MemorySemanticsShift(Enum):
+class MemorySemanticsShift(SPIRVEnum):
     Acquire = 1
     Release = 2
     AcquireRelease = 3
@@ -706,7 +693,7 @@ class MemorySemanticsShift(Enum):
     Volatile = 15
 
 
-class MemorySemanticsMask(Enum):
+class MemorySemanticsMask(SPIRVEnum):
     MaskNone = 0
     Acquire = 2
     Release = 4
@@ -727,7 +714,7 @@ class MemorySemanticsMask(Enum):
     Volatile = 32768
 
 
-class MemoryAccessShift(Enum):
+class MemoryAccessShift(SPIRVEnum):
     Volatile = 0
     Aligned = 1
     Nontemporal = 2
@@ -739,7 +726,7 @@ class MemoryAccessShift(Enum):
     NonPrivatePointerKHR = 5
 
 
-class MemoryAccessMask(Enum):
+class MemoryAccessMask(SPIRVEnum):
     MaskNone = 0
     Volatile = 1
     Aligned = 2
@@ -752,7 +739,7 @@ class MemoryAccessMask(Enum):
     NonPrivatePointerKHR = 32
 
 
-class Scope(Enum):
+class Scope(SPIRVEnum):
     CrossDevice = 0
     Device = 1
     Workgroup = 2
@@ -763,7 +750,7 @@ class Scope(Enum):
     ShaderCallKHR = 6
 
 
-class GroupOperation(Enum):
+class GroupOperation(SPIRVEnum):
     Reduce = 0
     InclusiveScan = 1
     ExclusiveScan = 2
@@ -773,22 +760,22 @@ class GroupOperation(Enum):
     PartitionedExclusiveScanNV = 8
 
 
-class KernelEnqueueFlags(Enum):
+class KernelEnqueueFlags(SPIRVEnum):
     NoWait = 0
     WaitKernel = 1
     WaitWorkGroup = 2
 
 
-class KernelProfilingInfoShift(Enum):
+class KernelProfilingInfoShift(SPIRVEnum):
     CmdExecTime = 0
 
 
-class KernelProfilingInfoMask(Enum):
+class KernelProfilingInfoMask(SPIRVEnum):
     MaskNone = 0
     CmdExecTime = 1
 
 
-class Capability(Enum):
+class Capability(SPIRVEnum):
     Matrix = 0
     Shader = 1
     Geometry = 2
@@ -1009,11 +996,8 @@ class Capability(Enum):
     AtomicFloat16AddEXT = 6095
     DebugInfoModuleINTEL = 6114
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class RayFlagsShift(Enum):
+class RayFlagsShift(SPIRVEnum):
     OpaqueKHR = 0
     NoOpaqueKHR = 1
     TerminateOnFirstHitKHR = 2
@@ -1026,7 +1010,7 @@ class RayFlagsShift(Enum):
     SkipAABBsKHR = 9
 
 
-class RayFlagsMask(Enum):
+class RayFlagsMask(SPIRVEnum):
     MaskNone = 0
     OpaqueKHR = 1
     NoOpaqueKHR = 2
@@ -1040,30 +1024,30 @@ class RayFlagsMask(Enum):
     SkipAABBsKHR = 512
 
 
-class RayQueryIntersection(Enum):
+class RayQueryIntersection(SPIRVEnum):
     RayQueryCandidateIntersectionKHR = 0
     RayQueryCommittedIntersectionKHR = 1
 
 
-class RayQueryCommittedIntersectionType(Enum):
+class RayQueryCommittedIntersectionType(SPIRVEnum):
     RayQueryCommittedIntersectionNoneKHR = 0
     RayQueryCommittedIntersectionTriangleKHR = 1
     RayQueryCommittedIntersectionGeneratedKHR = 2
 
 
-class RayQueryCandidateIntersectionType(Enum):
+class RayQueryCandidateIntersectionType(SPIRVEnum):
     RayQueryCandidateIntersectionTriangleKHR = 0
     RayQueryCandidateIntersectionAABBKHR = 1
 
 
-class FragmentShadingRateShift(Enum):
+class FragmentShadingRateShift(SPIRVEnum):
     Vertical2Pixels = 0
     Vertical4Pixels = 1
     Horizontal2Pixels = 2
     Horizontal4Pixels = 3
 
 
-class FragmentShadingRateMask(Enum):
+class FragmentShadingRateMask(SPIRVEnum):
     MaskNone = 0
     Vertical2Pixels = 1
     Vertical4Pixels = 2
@@ -1071,17 +1055,17 @@ class FragmentShadingRateMask(Enum):
     Horizontal4Pixels = 8
 
 
-class FPDenormMode(Enum):
+class FPDenormMode(SPIRVEnum):
     Preserve = 0
     FlushToZero = 1
 
 
-class FPOperationMode(Enum):
+class FPOperationMode(SPIRVEnum):
     IEEE = 0
     ALT = 1
 
 
-class QuantizationModes(Enum):
+class QuantizationModes(SPIRVEnum):
     TRN = 0
     TRN_ZERO = 1
     RND = 2
@@ -1092,14 +1076,14 @@ class QuantizationModes(Enum):
     RND_CONV_ODD = 7
 
 
-class OverflowModes(Enum):
+class OverflowModes(SPIRVEnum):
     WRAP = 0
     SAT = 1
     SAT_ZERO = 2
     SAT_SYM = 3
 
 
-class PackedVectorFormat(Enum):
+class PackedVectorFormat(SPIRVEnum):
     PackedVectorFormat4x8Bit = 0
     PackedVectorFormat4x8BitKHR = 0
 

@@ -138,8 +138,8 @@ void main () {
 
 |OpCode| Status |
 |--|--|
-| OpDecorate | :red_circle: |
-| OpMemberDecorate | :red_circle: |
+| OpDecorate | :white_check_mark: |
+| OpMemberDecorate | :white_check_mark: |
 | OpDecorationGroup | :red_circle: |
 | OpGroupDecorate | :red_circle: |
 | OpGroupMemberDecorate | :red_circle: |

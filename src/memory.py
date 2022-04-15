@@ -3,18 +3,14 @@ from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.context import Context
-from src.types.abstract_types import ScalarType
-from utils.patched_dataclass import dataclass
 from src.enums import StorageClass
 from src import (
-    OpCode,
     OpCode,
     Statement,
     Untyped,
     VoidOp,
 )
 from src.types.concrete_types import OpTypeBool, OpTypePointer, OpTypeStruct, Type
-from src import OpCode
 
 
 class MemoryOperator(Statement):
@@ -26,7 +22,7 @@ class OpVariable(MemoryOperator):
     type: OpTypePointer = None
     storage_class: StorageClass = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
 
         if context.function:
             storage_class = StorageClass.Function
