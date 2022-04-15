@@ -211,7 +211,7 @@ class Context:
 
     def gen_global_variables(self):
         n = len(self.tvc)
-        for i in range(random.randint(1, 3)):
+        for i in range(random.SystemRandom().randint(1, 3)):
             variable = self.create_on_demand_variable(StorageClass.StorageBuffer)
             if len(self.tvc) != n:
                 self.add_annotation(OpDecorate(None, variable.type.type, Decoration.Block))
