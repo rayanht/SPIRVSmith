@@ -3,6 +3,13 @@ from enum import Enum
 
 class SPIRVEnum(Enum):
     def __str__(self) -> str:
+        """
+        Returns the SPIRV-legal string 
+        corresponding to a given enum value.
+
+        Returns:
+            str: The SPIRV-legal string corresponding to the enum value.
+        """
         return "None" if self.name == "NONE" else self.name
 
 
