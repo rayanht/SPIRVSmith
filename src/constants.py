@@ -1,7 +1,7 @@
 from copy import deepcopy
 import random
 from typing import TYPE_CHECKING, List, Tuple, Union
-from monitor import Event
+from src.monitor import Event
 
 from src import (
     Constant,
