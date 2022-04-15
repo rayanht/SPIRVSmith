@@ -2,8 +2,9 @@ import inspect
 from types import NoneType
 from uuid import UUID, uuid4
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, List
+from src.annotations import Annotation, OpDecorate, OpMemberDecorate
 from src.monitor import Event, Monitor
-from src.enums import ExecutionModel, StorageClass
+from src.enums import Decoration, ExecutionModel, StorageClass
 from src import Statement, Untyped
 from src.constants import CompositeConstant, Constant, OpConstant, ScalarConstant
 import random
@@ -34,6 +35,7 @@ class Context:
     function: Optional["OpFunction"]
     parent_context: Optional["Context"]
     tvc: Dict["OpCode", str]
+    annotations: list[Annotation]
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
     monitor: Monitor
@@ -42,6 +44,7 @@ class Context:
         self,
         function: Optional["OpFunction"],
         parent_context: Optional["Context"],
+        annotations: list[Annotation],
         execution_model: ExecutionModel,
         config: "SPIRVSmithConfig",
         monitor: Monitor,
@@ -49,6 +52,7 @@ class Context:
         self.id = uuid4()
         self.symbol_table = dict()
         self.function = function
+        self.annotations = annotations
         self.parent_context = parent_context
         self.execution_model = execution_model
         self.tvc = dict()
@@ -73,7 +77,7 @@ class Context:
         config: "SPIRVSmithConfig",
         monitor: Monitor,
     ) -> "Context":
-        context = cls(None, None, execution_model, config, monitor)
+        context = cls(None, None, [], execution_model, config, monitor)
         void_type = OpTypeVoid()
         main_type = OpTypeFunction()
         main_type.return_type = void_type
@@ -87,11 +91,21 @@ class Context:
     def make_child_context(self, function: OpTypeFunction = None):
         if function:
             context = Context(
-                function, self, self.execution_model, self.config, self.monitor
+                function,
+                self,
+                self.annotations,
+                self.execution_model,
+                self.config,
+                self.monitor,
             )
         else:
             context = Context(
-                self.function, self, self.execution_model, self.config, self.monitor
+                self.function,
+                self,
+                self.annotations,
+                self.execution_model,
+                self.config,
+                self.monitor,
             )
         context.tvc = self.tvc
         return context
@@ -196,9 +210,24 @@ class Context:
                     self.tvc[opcode] = opcode.id
 
     def gen_global_variables(self):
-        for _ in range(random.randint(1, 3)):
-            self.create_on_demand_variable(StorageClass.StorageBuffer)
-        self.create_on_demand_variable(StorageClass.StorageBuffer)
+        n = len(self.tvc)
+        for i in range(random.randint(1, 3)):
+            variable = self.create_on_demand_variable(StorageClass.StorageBuffer)
+            if len(self.tvc) != n:
+                self.add_annotation(OpDecorate(None, variable.type.type, Decoration.Block))
+                self.add_annotation(
+                    OpDecorate(None, variable, Decoration.DescriptorSet, (0,))
+                )
+                self.add_annotation(OpDecorate(None, variable, Decoration.Binding, (i,)))
+                offset = 0
+                for j, t in enumerate(variable.type.type.types):
+                    self.add_annotation(
+                        OpMemberDecorate(
+                            None, variable.type.type, j, Decoration.Offset, (offset,)
+                        )
+                    )
+                    offset += t.width
+            n = len(self.tvc)
 
     def gen_program(self) -> List["OpCode"]:
         function_types: List[OpTypeFunction] = self.get_function_types()
@@ -343,3 +372,6 @@ class Context:
         if storage_class != StorageClass.Function:
             self.add_to_tvc(variable)
         return variable
+
+    def add_annotation(self, annotation: Annotation):
+        self.annotations.append(annotation)
