@@ -3,9 +3,8 @@ from dataclasses import replace
 import unittest
 from src import FuzzDelegator
 from src.constants import OpConstant, OpConstantFalse, OpConstantTrue
-from src.memory import OpLoad
 from src.monitor import Monitor
-from src.enums import ExecutionModel, StorageClass
+from src.enums import ExecutionModel
 from src.context import Context
 from run_local import SPIRVSmithConfig
 from src.types.concrete_types import OpTypeBool, OpTypeInt
@@ -47,7 +46,7 @@ class TestMemory(unittest.TestCase):
         # About half of ints are signed, and the other half are unsigned
         self.assertAlmostEqual(signedness_counter[0], M // 2, delta=M // 10)
         # Almost as many floats as ints
-        self.assertAlmostEqual(N - M, M, delta=(N - M) // 10)
+        self.assertAlmostEqual(N - M, M, delta=N // 10)
         # All unsigned ints are positive
         self.assertTrue(
             all(

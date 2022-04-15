@@ -23,6 +23,7 @@ rsa = "^4.8"
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3", allow-prereleases = true}
 autoflake = "^1.4"
+pytest-flakefinder = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
