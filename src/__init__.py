@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 from utils.patched_dataclass import dataclass
 import random
 from typing import List
-from src.enums import Capability, StorageClass
+from src.enums import Capability
 from ulid import monotonic as ulid
 from ulid import ULID
 

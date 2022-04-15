@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Tuple
+from typing import Tuple
 from src import FuzzLeaf, OpCode, VoidOp
 from src.enums import Decoration
 from src.types.concrete_types import OpTypeStruct
