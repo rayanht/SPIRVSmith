@@ -8,7 +8,7 @@ from src.operators.arithmetic import OpISub
 from src.constants import OpConstant
 from src.context import Context
 from run_local import SPIRVSmithConfig
-from src.types.abstract_types import ArithmeticType, MixedContainerType, NumericalType
+from src.types.abstract_types import ArithmeticType, MiscType, MixedContainerType, NumericalType
 from src.types.concrete_types import (
     OpTypeBool,
     OpTypeFloat,
@@ -174,7 +174,7 @@ class TestContext(unittest.TestCase):
         self.context.config.strategy.w_arithmetic_type = 0
 
         Type().parametrize(self.context)
-        PARAMETRIZATIONS[Type.__name__][OpTypeVoid.__name__] = 0
+        PARAMETRIZATIONS[Type.__name__][MiscType.__name__] = 0
 
         # All possible numerical types
         type1: Type = OpTypeInt().fuzz(self.context)[-1]
@@ -210,6 +210,6 @@ class TestContext(unittest.TestCase):
         self.context.gen_types()
 
         self.assertEqual(
-            PARAMETRIZATIONS[MixedContainerType.__name__][OpTypeFunction.__name__], 0
+            PARAMETRIZATIONS[MiscType.__name__][OpTypeFunction.__name__], 0
         )
         self.assertEqual(len(self.context.get_function_types()), 5)
