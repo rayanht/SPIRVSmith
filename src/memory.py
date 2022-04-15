@@ -35,7 +35,7 @@ class OpVariable(MemoryOperator):
         self.context = context
         dynamic = False
         try:
-            self.type = random.choice(
+            self.type = random.SystemRandom().choice(
                 list(
                     filter(
                         lambda t: isinstance(t, OpTypePointer)
@@ -63,7 +63,7 @@ class OpVariable(MemoryOperator):
                 else StorageClass.Input
             )
             if storage_class == target_storage_class:
-                self.type.type = random.choice(
+                self.type.type = random.SystemRandom().choice(
                     list(
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct))
@@ -73,7 +73,7 @@ class OpVariable(MemoryOperator):
                     )
                 )
             else:
-                self.type.type = random.choice(
+                self.type.type = random.SystemRandom().choice(
                     list(
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct)),
@@ -93,7 +93,7 @@ class OpLoad(MemoryOperator):
     # memory_operands: Optional[???]
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-        variable: OpVariable = random.choice(
+        variable: OpVariable = random.SystemRandom().choice(
             list(
                 filter(
                     lambda x: x.storage_class != StorageClass.Output,
@@ -114,7 +114,7 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
     def fuzz(self, context: "Context") -> List[OpCode]:
         dynamic = False
         try:
-            object: Statement = random.choice(
+            object: Statement = random.SystemRandom().choice(
                 context.get_statements(
                     lambda sym: not isinstance(sym, (OpVariable, Untyped))
                 )
@@ -132,7 +132,7 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
             ):
                 filtered_variables.append(variable)
         try:
-            variable = random.choice(filtered_variables)
+            variable = random.SystemRandom().choice(filtered_variables)
         except IndexError:
             variable = context.create_on_demand_variable(
                 StorageClass.Function, object.type
@@ -151,7 +151,7 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
 #     indexes: List[OpCode] = []
 
 #     def fuzz(self, context: "Context") -> List[OpCode]:
-#         self.base: OpVariable = random.choice(
+#         self.base: OpVariable = random.SystemRandom().choice(
 #             context.get_local_variables() + context.get_global_variables()
 #         )
 #         self.type: Type = self.base.type.type

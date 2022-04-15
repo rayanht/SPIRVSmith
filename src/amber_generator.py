@@ -46,7 +46,7 @@ class AmberStructMember:
 class AmberStructDeclaration:
     name: str
     members: list[AmberStructMember]
-    
+
     def to_amberscript(self):
         return f"STRUCT {self.name}\n{chr(10).join([f'{member.type.value} {member.name}' for member in self.members])}\nEND"
 

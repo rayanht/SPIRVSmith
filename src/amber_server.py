@@ -40,7 +40,7 @@ def run_amber():
             "spv1.3",
             "-v",
             "1.2",
-            f"tmp.amber",
+            "tmp.amber",
         ],
         capture_output=True,
     )
