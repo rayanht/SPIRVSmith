@@ -33,7 +33,7 @@ class OpFunction(OpCode):
         function_type: OpTypeFunction = None,
     ) -> None:
         self.return_type: Type = return_type
-        self.function_control_mask: FunctionControlMask = random.choice(
+        self.function_control_mask: FunctionControlMask = random.SystemRandom().choice(
             list(FunctionControlMask)
         )
         self.function_type: OpTypeFunction = function_type
@@ -96,7 +96,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
         true_label = if_block[0]
         false_label = else_block[0]
         try:
-            condition = random.choice(
+            condition = random.SystemRandom().choice(
                 context.get_statements(
                     lambda s: not isinstance(s, Untyped)
                     and isinstance(s.type, OpTypeBool)
@@ -123,7 +123,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 #         loop_label = OpLabel().fuzz(context)[0]
 #         block = fuzz_block(context, loop_label)
 #         try:
-#             condition = random.choice(context.get_statements(
+#             condition = random.SystemRandom().choice(context.get_statements(
 #                 lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
 #             ))
 #         except IndexError:
@@ -143,12 +143,12 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 #     def fuzz(self, context: "Context") -> Tuple[OpCode]:
 #         if context.get_depth() > context.limits.max_depth:
 #             return []
-#         self.selection_control = random.choice(list(SelectionControlMask))
+#         self.selection_control = random.SystemRandom().choice(list(SelectionControlMask))
 #         self.default_label = OpLabel().fuzz(context)[0]
 #         self.case_labels = []
 #         for _ in range(random.randint(1, 5)):
 #             self.case_labels.append(OpLabel().fuzz(context)[0])
-#         self.value = random.choice(context.get_statements(
+#         self.value = random.SystemRandom().choice(context.get_statements(
 #                 lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
 #             )
 #         ).fuzz(context)[0]
