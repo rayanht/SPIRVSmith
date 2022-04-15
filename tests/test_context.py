@@ -1,21 +1,17 @@
-from collections import Counter
-from typing import Optional
 import unittest
 from src.monitor import Monitor
 from src.enums import ExecutionModel
 from src import PARAMETRIZATIONS, Type, members
 from src.operators.arithmetic import OpISub
-from src.constants import OpConstant
 from src.context import Context
 from run_local import SPIRVSmithConfig
-from src.types.abstract_types import ArithmeticType, MiscType, MixedContainerType, NumericalType
+from src.types.abstract_types import ArithmeticType, MiscType
 from src.types.concrete_types import (
     OpTypeBool,
     OpTypeFloat,
     OpTypeFunction,
     OpTypeInt,
     OpTypeVector,
-    OpTypeVoid,
 )
 
 N = 500

@@ -1,5 +1,4 @@
 import inspect
-from types import NoneType
 from uuid import UUID, uuid4
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, List
 from src.annotations import Annotation, OpDecorate, OpMemberDecorate
@@ -8,11 +7,9 @@ from src.enums import Decoration, ExecutionModel, StorageClass
 from src import Statement, Untyped
 from src.constants import CompositeConstant, Constant, OpConstant, ScalarConstant
 import random
-from src.types.abstract_types import ArithmeticType, ContainerType, ScalarType, Type
+from src.types.abstract_types import Type
 from src.types.concrete_types import (
-    OpTypeBool,
     OpTypeFunction,
-    OpTypeInt,
     OpTypePointer,
     OpTypeStruct,
     OpTypeVector,
