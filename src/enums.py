@@ -4,7 +4,8 @@ from enum import Enum
 class SPIRVEnum(Enum):
     def __str__(self) -> str:
         """
-        Returns the SPIRV-legal string 
+
+        Returns the SPIRV-legal string
         corresponding to a given enum value.
 
         Returns:
