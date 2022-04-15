@@ -1,6 +1,6 @@
 from copy import deepcopy
 import random
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from src import (
     Constant,
@@ -34,7 +34,7 @@ class CompositeConstant(Constant):
 class OpConstantTrue(ScalarConstant):
     type: Type = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.type = OpTypeBool()
         return [self.type, self]
 
@@ -42,7 +42,7 @@ class OpConstantTrue(ScalarConstant):
 class OpConstantFalse(ScalarConstant):
     type: Type = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.type = OpTypeBool()
         return [self.type, self]
 
@@ -52,7 +52,7 @@ class OpConstant(ScalarConstant):
     type: Type = None
     value: int | float = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
 
         self.type = NumericalType().fuzz(context)[-1]
 
@@ -69,9 +69,9 @@ class OpConstant(ScalarConstant):
 
 class OpConstantComposite(CompositeConstant):
     type: Type = None
-    constituents: Tuple[OpCode] = None
+    constituents: tuple[OpCode] = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         composite_type = random.SystemRandom().choice(
             [OpTypeArray, OpTypeVector]  # , OpTypeMatrix]
         )().fuzz(context)
