@@ -13,7 +13,7 @@ from src import (
     Untyped,
     VoidOp,
 )
-from src.types.concrete_types import OpTypeBool, OpTypePointer, Type
+from src.types.concrete_types import OpTypeBool, OpTypePointer, OpTypeStruct, Type
 from src import OpCode
 
 
@@ -70,7 +70,7 @@ class OpVariable(MemoryOperator):
                 self.type.type = random.choice(
                     list(
                         filter(
-                            lambda tvc: isinstance(tvc, (ScalarType))
+                            lambda tvc: isinstance(tvc, (OpTypeStruct))
                             and not isinstance(tvc, OpTypeBool),
                             context.tvc.keys(),
                         )
@@ -80,7 +80,7 @@ class OpVariable(MemoryOperator):
                 self.type.type = random.choice(
                     list(
                         filter(
-                            lambda tvc: isinstance(tvc, (ScalarType)),
+                            lambda tvc: isinstance(tvc, (OpTypeStruct)),
                             context.symbol_table.keys(),
                         )
                     )

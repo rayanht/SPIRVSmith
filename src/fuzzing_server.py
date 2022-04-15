@@ -5,9 +5,9 @@ import logging
 import os
 from threading import Thread
 from typing import TYPE_CHECKING, List, Sequence
-from amber import AmberGenerator
+from src.amber_generator import AmberGenerator
 from google.cloud import storage
-from monitor import Event, Monitor
+from src.monitor import Event, Monitor
 from src.recondition import recondition
 from src.types.concrete_types import OpTypeStruct
 from shortuuid import uuid
@@ -248,8 +248,8 @@ class ShaderGenerator:
                     and self.gen_optimised(shader)
                     and self.validate(shader, opt=True)
                 ):
+                    self.amber_generator.submit(shader)
                     if self.config.misc.broadcast_generated_shaders:
-                        self.amber_generator.submit(shader)
                         Thread(
                             target=upload_shader_data_to_GCS_and_notify_amber_clients,
                             args=(publisher, topic_path, bucket, shader, self.monitor),

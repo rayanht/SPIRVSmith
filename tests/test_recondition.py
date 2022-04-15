@@ -1,6 +1,6 @@
 from typing import Optional
 import unittest
-from monitor import Monitor
+from src.monitor import Monitor
 from src.recondition import recondition
 from run_local import SPIRVSmithConfig
 from src import Type
