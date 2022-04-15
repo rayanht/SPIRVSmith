@@ -28,14 +28,14 @@ def create_numerical_constant_in_context(
     width: int = 32,
     signed: Optional[int] = 0,
 ) -> OpTypeInt:
-    type = target_type()
-    type.width = width
+    constant_type = target_type()
+    constant_type.width = width
     if signed:
-        type.signed = signed
+        constant_type.signed = signed
     constant = OpConstant().fuzz(context)[-1]
-    constant.type = type
+    constant.type = constant_type
     constant.value = value
-    context.tvc[type] = type.id
+    context.tvc[constant_type] = constant_type.id
     context.tvc[constant] = constant.id
     return constant
 

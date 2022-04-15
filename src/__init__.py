@@ -97,10 +97,12 @@ class OpCode(ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in members(self)])})"
 
-    def get_required_capabilities(self) -> list[Capability]:
+    @staticmethod
+    def get_required_capabilities() -> list[Capability]:
         return []
 
-    def fuzz(self, context: "Context") -> list["OpCode"]:
+    @staticmethod
+    def fuzz(_: "Context") -> list["OpCode"]:
         return []
 
     def resolve_attribute_spasm(self, attr, context) -> str:
@@ -206,7 +208,9 @@ class FuzzLeaf(OpCode):
 
 
 class Type(FuzzDelegator):
-    def get_base_type(self):
+    
+    @staticmethod
+    def get_base_type():
         ...
 
 
