@@ -27,6 +27,7 @@ class TestMemory(unittest.TestCase):
         )
 
     def test_opload_finds_global_variable(self):
+        self.context.config.limits.n_types = 100
         self.context.gen_types()
         variable = self.context.create_on_demand_variable(StorageClass.StorageBuffer)
         op_load: OpLoad = OpLoad().fuzz(self.context)[-1]
