@@ -6,7 +6,7 @@ from src import (
     VoidOp,
 )
 from uuid import uuid4
-from typing import List, Sequence
+from typing import Sequence
 from src.enums import (
     AddressingModel,
     Capability,
@@ -14,7 +14,7 @@ from src.enums import (
     ExecutionModel,
     MemoryModel,
 )
-from src.types.concrete_types import OpTypeInt, OpTypeVoid, Type
+from src.types.concrete_types import Type
 
 
 class OpNop(OpCode):
@@ -29,7 +29,7 @@ class OpSizeOf(OpCode):
     pointer: Type = None
     type: Type = None
 
-    def get_required_capabilities(self) -> List[Capability]:
+    def get_required_capabilities(self) -> list[Capability]:
         return [Capability.Addresses]
 
 
@@ -64,7 +64,7 @@ class OpMemoryModel(FuzzLeaf, VoidOp):
         self.memory_model = memory_model
         super().__init__()
 
-    def get_required_capabilities(self) -> List[Capability]:
+    def get_required_capabilities(self) -> list[Capability]:
         return [Capability.Shader]
 
 

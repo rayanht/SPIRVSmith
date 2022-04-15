@@ -1,28 +1,22 @@
-from copy import deepcopy
 import random
-from typing import TYPE_CHECKING, List, Tuple, Union
-from src.monitor import Event
+from typing import TYPE_CHECKING
 
 from src import (
     Constant,
     OpCode,
 )
-from src.predicates import HasValidBaseTypeAndSign, HasValidTypeAndSign
+from src.predicates import HasValidTypeAndSign
 
 if TYPE_CHECKING:
     from src.context import Context
 from src.types.abstract_types import (
-    ContainerType,
     NumericalType,
     Type,
 )
 from src.types.concrete_types import (
     OpTypeArray,
     OpTypeBool,
-    OpTypeFloat,
     OpTypeInt,
-    OpTypeMatrix,
-    OpTypeStruct,
     OpTypeVector,
 )
 from utils.patched_dataclass import dataclass
@@ -39,7 +33,7 @@ class CompositeConstant(Constant):
 class OpConstantTrue(ScalarConstant):
     type: Type = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.type = OpTypeBool()
         return [self.type, self]
 
@@ -47,7 +41,7 @@ class OpConstantTrue(ScalarConstant):
 class OpConstantFalse(ScalarConstant):
     type: Type = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.type = OpTypeBool()
         return [self.type, self]
 
@@ -57,29 +51,31 @@ class OpConstant(ScalarConstant):
     type: Type = None
     value: int | float = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
 
         self.type = NumericalType().fuzz(context)[-1]
 
         if isinstance(self.type, OpTypeInt):
             if self.type.signed:
-                self.value = random.randint(-100, 100)
+                self.value = random.SystemRandom().randint(-100, 100)
             else:
-                self.value = random.randint(0, 100)
+                self.value = random.SystemRandom().randint(0, 100)
         else:
-            self.value = random.uniform(0, 100)
+            self.value = random.SystemRandom().uniform(0, 100)
 
         return [self.type, self]
 
 
 class OpConstantComposite(CompositeConstant):
     type: Type = None
-    constituents: Tuple[OpCode] = None
+    constituents: tuple[OpCode] = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
-        composite_type = random.choice(
-            [OpTypeArray, OpTypeVector]  # , OpTypeMatrix]
-        )().fuzz(context)
+    def fuzz(self, context: "Context") -> list[OpCode]:
+        composite_type = (
+            random.SystemRandom()
+            .choice([OpTypeArray, OpTypeVector])()  # , OpTypeMatrix]
+            .fuzz(context)
+        )
         self.type: OpTypeArray | OpTypeVector = composite_type[-1]
         base_type: Type = self.type.get_base_type()
         signedness: bool = None

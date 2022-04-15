@@ -1,70 +1,56 @@
+import copy
 from typing import Optional
 import unittest
 from src.monitor import Monitor
 from src.recondition import recondition
 from run_local import SPIRVSmithConfig
-from src import Type
+from src import FuzzDelegator, Type
 from src.constants import OpConstant, OpConstantComposite
 from src.context import Context
 from src.enums import ExecutionModel
 from src.operators.arithmetic import OpSMod
 from src.operators.composite import OpVectorExtractDynamic
 from src.types.concrete_types import OpTypeInt, OpTypeVector
-
+from dataclasses import replace
 
 monitor = Monitor()
+config = SPIRVSmithConfig()
+init_strategy = copy.deepcopy(config.strategy)
+init_limits = copy.deepcopy(config.limits)
 
-
-def id_generator(i=1):
-    while True:
-        yield i
-        i += 1
-
-
-def create_numerical_constant_in_context(
-    context: Context,
-    target_type: Type,
-    value: int = 0,
-    width: int = 32,
-    signed: Optional[int] = 0,
-) -> OpTypeInt:
-    type = target_type()
-    type.width = width
-    if signed:
-        type.signed = signed
-    constant = OpConstant().fuzz(context)[-1]
-    constant.type = type
-    constant.value = value
-    context.tvc[type] = type.id
-    context.tvc[constant] = constant.id
-    return constant
+config.misc.broadcast_generated_shaders = False
+config.misc.start_web_server = False
 
 
 class TestRecondition(unittest.TestCase):
-    def test_vector_access_is_reconditioned(self):
-        context: Context = Context.create_global_context(
-            ExecutionModel.GLCompute, SPIRVSmithConfig(), monitor
+    def setUp(self):
+        FuzzDelegator.reset_parametrizations()
+        config.limits = copy.deepcopy(init_limits)
+        config.strategy = copy.deepcopy(init_strategy)
+        self.context: Context = Context.create_global_context(
+            ExecutionModel.GLCompute, config, monitor
         )
 
+    def test_vector_access_is_reconditioned(self):
         int_type = OpTypeInt()
         int_type.width = 32
         int_type.signed = 1
-        context.tvc[int_type] = int_type.id
+        self.context.tvc[int_type] = int_type.id
 
         vec_type = OpTypeVector()
         vec_type.size = 4
         vec_type.type = int_type
-        context.tvc[vec_type] = vec_type.id
+        self.context.tvc[vec_type] = vec_type.id
 
-        index = create_numerical_constant_in_context(
-            context, OpTypeInt, value=5, signed=1, width=32
+        index = self.context.create_on_demand_numerical_constant(
+            OpTypeInt, value=5, signed=1, width=32
         )
-        context.tvc[index] = index.id
+        self.context.tvc[index] = index.id
 
         vec_constant = OpConstantComposite()
         vec_constant.type = vec_type
         vec_constant.constituents = tuple([index for _ in range(len(vec_type))])
-        context.tvc[vec_type] = vec_type.id
+        self.context.tvc[vec_type] = vec_type.id
 
         vec_access = OpVectorExtractDynamic()
         vec_access.type = int_type
@@ -73,7 +59,7 @@ class TestRecondition(unittest.TestCase):
 
         opcodes = [int_type, vec_type, index, vec_constant, vec_access]
 
-        reconditioned = recondition(context, opcodes)
+        reconditioned = recondition(self.context, opcodes)
 
         # We should have an extra OpSMod
         self.assertEqual(len(reconditioned), 6)
@@ -96,8 +82,8 @@ class TestRecondition(unittest.TestCase):
         vec_type.type = int_type
         context.tvc[vec_type] = vec_type.id
 
-        index = create_numerical_constant_in_context(
-            context, OpTypeInt, value=5, signed=1, width=32
+        index = context.create_on_demand_numerical_constant(
+            OpTypeInt, value=5, signed=1, width=32
         )
         context.tvc[index] = index.id
 

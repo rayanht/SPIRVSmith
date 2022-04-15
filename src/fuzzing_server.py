@@ -4,12 +4,11 @@ import logging
 
 import os
 from threading import Thread
-from typing import TYPE_CHECKING, List, Sequence
+from typing import TYPE_CHECKING, Sequence
 from src.amber_generator import AmberGenerator
 from google.cloud import storage
 from src.monitor import Event, Monitor
 from src.recondition import recondition
-from src.types.concrete_types import OpTypeStruct
 from shortuuid import uuid
 from src.enums import (
     AddressingModel,
@@ -109,13 +108,13 @@ class Shader:
 
 @dataclass
 class SPIRVShader(Shader):
-    capabilities: List[OpCapability]
-    # extension: Optional[List[Extension]]
-    # ext_inst: List[ExtInstImport]
+    capabilities: list[OpCapability]
+    # extension: Optional[list[Extension]]
+    # ext_inst: list[ExtInstImport]
     memory_model: OpMemoryModel
     entry_point: OpEntryPoint
     execution_mode: OpExecutionMode
-    opcodes: List[OpCode]
+    opcodes: list[OpCode]
     context: Context
 
     def export(self):
@@ -329,8 +328,8 @@ class ShaderGenerator:
         return process.returncode == 0
 
     def gen_shader(self) -> SPIRVShader:
-        # execution_model = random.choice(list(ExecutionModel))
-        # execution_model = random.choice(
+        # execution_model = random.SystemRandom().choice(list(ExecutionModel))
+        # execution_model = random.SystemRandom().choice(
         #     [ExecutionModel.GLCompute, ExecutionModel.Kernel]
         # )
         execution_model = ExecutionModel.GLCompute

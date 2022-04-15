@@ -1,7 +1,5 @@
 from enum import Enum
 import logging
-import sys
-from pythonjsonlogger import jsonlogger
 import daiquiri
 
 # Eventually should do this automatically with the package version

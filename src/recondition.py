@@ -1,25 +1,35 @@
 from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
 
 from src import OpCode
 from src.context import Context
 from src.operators.arithmetic import OpSMod, OpUMod
 from src.operators.composite import OpVectorExtractDynamic, OpVectorInsertDynamic
 
+T = TypeVar("T")
 
-class DangerousPattern(ABC):
+
+class DangerousPattern(ABC, Generic[T]):
     @abstractmethod
-    def recondition(self, opcode: OpCode):
+    def recondition(self, opcode: T):
         ...
 
     @abstractmethod
-    def get_affected_opcodes(self) -> list[OpCode]:
+    def get_affected_opcodes(self) -> set[T]:
         ...
 
 
-class ArrayOutOfBoundsVectorAccess(DangerousPattern):
+OutOfBoundsVectorOperationVulnerableOpCode = (
+    OpVectorExtractDynamic | OpVectorInsertDynamic
+)
+
+
+class OutOfBoundsVectorOperation(
+    DangerousPattern[OutOfBoundsVectorOperationVulnerableOpCode]
+):
     @staticmethod
     def recondition(
-        context: Context, opcode: OpVectorExtractDynamic | OpVectorInsertDynamic
+        context: Context, opcode: OutOfBoundsVectorOperationVulnerableOpCode
     ):
         operand1 = opcode.index
         index_type = opcode.index.type
@@ -42,7 +52,7 @@ class ArrayOutOfBoundsVectorAccess(DangerousPattern):
         return [op_mod]
 
     @staticmethod
-    def get_affected_opcodes() -> list[OpCode]:
+    def get_affected_opcodes() -> set[OutOfBoundsVectorOperationVulnerableOpCode]:
         return {OpVectorExtractDynamic, OpVectorInsertDynamic}
 
 
