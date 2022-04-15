@@ -138,22 +138,9 @@ class SPIRVShader(Shader):
                 f"OpExecutionMode %{self.execution_mode.function.id} {self.execution_mode.execution_mode} 1 1 1"
             )
             f.write("\n")
-            for i, buffer in enumerate(self.context.get_storage_buffers()):
-                struct_type: OpTypeStruct = buffer.type.type
-                f.write(f"OpDecorate %{struct_type.id} Block")
+            for annotation in self.context.annotations:
+                f.write(annotation.to_spasm(self.context))
                 f.write("\n")
-                f.write(f"OpDecorate %{buffer.id} DescriptorSet 0")
-                f.write("\n")
-                f.write(f"OpDecorate %{buffer.id} Binding {i}")
-                f.write("\n")
-                for j, _ in enumerate(struct_type.types):
-                    f.write(f"OpMemberDecorate %{struct_type.id} {j} Offset {j * 32}")
-                    f.write("\n")
-            # for i, interface in enumerate(self.context.get_interfaces()):
-            #     f.write(f"OpDecorate %{interface.id} Location {i}")
-            #     f.write("\n")
-            #     # f.write(f"OpDecorate %{interface.id} Binding {i}")
-            #     # f.write("\n")
             for tvc, _ in self.context.tvc.items():
                 if (
                     isinstance(tvc, OpVariable)
