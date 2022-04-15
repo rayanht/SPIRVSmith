@@ -17,6 +17,7 @@ env:
 jobs:
   terraform:
     name: "Infra"
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     environment: production
 
@@ -50,7 +51,6 @@ jobs:
 
   build:
     name: "Build & Test"
-    needs: terraform
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -109,7 +109,8 @@ jobs:
 
   deploy:
     name: "Deploy"
-    needs: build
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [build, terraform]
     runs-on: ubuntu-latest
     environment: production
 

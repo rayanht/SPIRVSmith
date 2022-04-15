@@ -1,12 +1,9 @@
 from abc import ABC
 from dataclasses import field
 import hashlib
-import inspect
-import json
 import pickle
 
 from typing import TYPE_CHECKING, Dict, Tuple
-from uuid import uuid4
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -108,15 +105,15 @@ class OpCode(ABC):
         return []
 
     def resolve_attribute_spasm(self, attr, context) -> str:
-        if isinstance(attr, OpCode):
+        if attr.__class__.__name__ == "Context" or attr is None:
+            return ""
+        elif isinstance(attr, OpCode):
             if isinstance(attr, (Type, Constant)):
                 attr_spasm = f" %{context.tvc[attr]}"
             else:
                 attr_spasm = f" %{attr.id}"
         elif isinstance(attr, str):
             attr_spasm = f' "{attr}"'
-        elif attr.__class__.__name__ == "Context":
-            return ""
         else:
             attr_spasm = f" {str(attr)}"
         return attr_spasm
