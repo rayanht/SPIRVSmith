@@ -1,28 +1,23 @@
 from copy import deepcopy
 import random
-from typing import TYPE_CHECKING, List, Tuple, Union
-from src.monitor import Event
+from typing import TYPE_CHECKING, List, Tuple
 
 from src import (
     Constant,
     OpCode,
 )
-from src.predicates import HasValidBaseTypeAndSign, HasValidTypeAndSign
+from src.predicates import HasValidTypeAndSign
 
 if TYPE_CHECKING:
     from src.context import Context
 from src.types.abstract_types import (
-    ContainerType,
     NumericalType,
     Type,
 )
 from src.types.concrete_types import (
     OpTypeArray,
     OpTypeBool,
-    OpTypeFloat,
     OpTypeInt,
-    OpTypeMatrix,
-    OpTypeStruct,
     OpTypeVector,
 )
 from utils.patched_dataclass import dataclass

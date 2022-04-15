@@ -14,7 +14,7 @@ from src.enums import (
     ExecutionModel,
     MemoryModel,
 )
-from src.types.concrete_types import OpTypeInt, OpTypeVoid, Type
+from src.types.concrete_types import Type
 
 
 class OpNop(OpCode):

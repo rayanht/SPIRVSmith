@@ -1,9 +1,7 @@
 import random
 from typing import TYPE_CHECKING, List, Optional, Tuple
-from uuid import UUID, uuid4
 
 from src.enums import FunctionControlMask, SelectionControlMask
-from src.constants import OpConstantTrue
 from src import (
     FuzzLeaf,
     OpCode,
@@ -14,7 +12,7 @@ from src import (
 
 if TYPE_CHECKING:
     from src.context import Context
-from src.memory import OpLoad, OpVariable, Statement
+from src.memory import OpVariable, Statement
 from src.types.concrete_types import OpTypeBool, OpTypeFunction, Type
 from utils.patched_dataclass import dataclass
 

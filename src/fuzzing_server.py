@@ -9,7 +9,6 @@ from src.amber_generator import AmberGenerator
 from google.cloud import storage
 from src.monitor import Event, Monitor
 from src.recondition import recondition
-from src.types.concrete_types import OpTypeStruct
 from shortuuid import uuid
 from src.enums import (
     AddressingModel,

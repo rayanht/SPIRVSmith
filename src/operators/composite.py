@@ -1,13 +1,10 @@
-import random
 from typing import TYPE_CHECKING
 from src import OpCode, Statement, Type
 from src.predicates import (
-    HasValidBaseType,
     HasValidTypeAndSign,
     IsScalarInteger,
     IsVectorType,
 )
-from src.types.concrete_types import OpTypeVector
 
 if TYPE_CHECKING:
     from src.context import Context
