@@ -659,6 +659,17 @@ tomli = ">=1.0.0"
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
 
 [[package]]
+name = "pytest-flakefinder"
+version = "1.0.0"
+description = "Runs tests multiple times to expose flakiness."
+category = "dev"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+pytest = ">=2.7.1"
+
+[[package]]
 name = "python-json-logger"
 version = "2.0.2"
 description = "A python library adding a json log formatter"
@@ -762,7 +773,7 @@ watchdog = ["watchdog"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "791ec5de9ed556bc409927bf67d6ddbed7649aedce6c871e8fca0e6dbebdbe8f"
+content-hash = "6b8499eeb919547aeb4cc100c633b69c4cc4cba67fb6d971c7fa2a1fc65dbdae"
 
 [metadata.files]
 antlr4-python3-runtime = [
@@ -1295,6 +1306,10 @@ pyparsing = [
 pytest = [
     {file = "pytest-7.1.1-py3-none-any.whl", hash = "sha256:92f723789a8fdd7180b6b06483874feca4c48a5c76968e03bb3e7f806a1869ea"},
     {file = "pytest-7.1.1.tar.gz", hash = "sha256:841132caef6b1ad17a9afde46dc4f6cfa59a05f9555aae5151f73bdf2820ca63"},
+]
+pytest-flakefinder = [
+    {file = "pytest-flakefinder-1.0.0.tar.gz", hash = "sha256:1bdfaeaad4699cfb3b295e24c359e403e6261eabca9ba9bdffbaba8cabe87d63"},
+    {file = "pytest_flakefinder-1.0.0-py2.py3-none-any.whl", hash = "sha256:1d7761402e6e90d8c0a34b33b19799f8ce1c396623025528dccc1329a53d4e66"},
 ]
 python-json-logger = [
     {file = "python-json-logger-2.0.2.tar.gz", hash = "sha256:202a4f29901a4b8002a6d1b958407eeb2dd1d83c18b18b816f5b64476dde9096"},
