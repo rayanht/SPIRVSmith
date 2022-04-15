@@ -1,9 +1,11 @@
 from src.enums import StorageClass
 from src.types.abstract_types import ArithmeticType
-from src.types.concrete_types import OpTypeBool, OpTypeInt, OpTypeVector
+from src.types.concrete_types import OpTypeBool, OpTypeFloat, OpTypeInt, OpTypeMatrix, OpTypeVector
 
 IsVectorType = lambda x: isinstance(x.type, OpTypeVector)
+IsMatrixType = lambda x: isinstance(x.type, OpTypeMatrix)
 IsScalarInteger = lambda x: isinstance(x.type, OpTypeInt)
+IsScalarFloat = lambda x: isinstance(x.type, OpTypeFloat)
 HasValidBaseType = lambda x, target_type: isinstance(x.get_base_type(), target_type)
 HasValidSign = (
     lambda x, signed: x.get_base_type().signed == signed if signed is not None else True
