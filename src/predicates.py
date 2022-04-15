@@ -1,6 +1,6 @@
 from src.enums import StorageClass
 from src.types.abstract_types import ArithmeticType
-from src.types.concrete_types import OpTypeBool, OpTypeFloat, OpTypeInt, OpTypeVector
+from src.types.concrete_types import OpTypeBool, OpTypeInt, OpTypeVector
 
 IsVectorType = lambda x: isinstance(x.type, OpTypeVector)
 IsScalarInteger = lambda x: isinstance(x.type, OpTypeInt)

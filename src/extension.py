@@ -1,4 +1,4 @@
-from src import OpCode, OpCode
+from src import OpCode
 
 
 class OpExtension(OpCode):

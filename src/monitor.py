@@ -1,6 +1,5 @@
 from enum import Enum
 import logging
-import sys
 from pythonjsonlogger import jsonlogger
 import daiquiri
 

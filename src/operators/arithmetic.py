@@ -1,34 +1,21 @@
-import random
 from typing import (
-    TYPE_CHECKING,
     Callable,
     Generic,
-    List,
     Optional,
-    Tuple,
     TypeVar,
-    Union,
-    get_args,
 )
-from src import OpCode, Signed, Statement, Unsigned
+from src import Signed, Statement, Unsigned
 
 from src.constants import Constant
 from src.operators import BinaryOperatorFuzzMixin, UnaryOperatorFuzzMixin
 from src.predicates import (
-    HasValidBaseType,
     HasValidBaseTypeAndSign,
     IsValidArithmeticOperand,
 )
 
-if TYPE_CHECKING:
-    from src.context import Context
-from src.types.abstract_types import (
-    NumericalType,
-)
 from src.types.concrete_types import (
     OpTypeFloat,
     OpTypeInt,
-    OpTypeVector,
     Type,
 )
 
