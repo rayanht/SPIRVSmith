@@ -328,8 +328,8 @@ class ShaderGenerator:
         return process.returncode == 0
 
     def gen_shader(self) -> SPIRVShader:
-        # execution_model = random.choice(list(ExecutionModel))
-        # execution_model = random.choice(
+        # execution_model = random.SystemRandom().choice(list(ExecutionModel))
+        # execution_model = random.SystemRandom().choice(
         #     [ExecutionModel.GLCompute, ExecutionModel.Kernel]
         # )
         execution_model = ExecutionModel.GLCompute

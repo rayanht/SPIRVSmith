@@ -72,7 +72,7 @@ class OpConstantComposite(CompositeConstant):
     constituents: Tuple[OpCode] = None
 
     def fuzz(self, context: "Context") -> List[OpCode]:
-        composite_type = random.choice(
+        composite_type = random.SystemRandom().choice(
             [OpTypeArray, OpTypeVector]  # , OpTypeMatrix]
         )().fuzz(context)
         self.type: OpTypeArray | OpTypeVector = composite_type[-1]

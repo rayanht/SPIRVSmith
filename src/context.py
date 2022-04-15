@@ -211,11 +211,15 @@ class Context:
         for i in range(random.SystemRandom().randint(1, 3)):
             variable = self.create_on_demand_variable(StorageClass.StorageBuffer)
             if len(self.tvc) != n:
-                self.add_annotation(OpDecorate(None, variable.type.type, Decoration.Block))
+                self.add_annotation(
+                    OpDecorate(None, variable.type.type, Decoration.Block)
+                )
                 self.add_annotation(
                     OpDecorate(None, variable, Decoration.DescriptorSet, (0,))
                 )
-                self.add_annotation(OpDecorate(None, variable, Decoration.Binding, (i,)))
+                self.add_annotation(
+                    OpDecorate(None, variable, Decoration.Binding, (i,))
+                )
                 offset = 0
                 for j, t in enumerate(variable.type.type.types):
                     self.add_annotation(
@@ -355,7 +359,7 @@ class Context:
         if type:
             pointer_type.type = type
         else:
-            pointer_type.type = random.choice(
+            pointer_type.type = random.SystemRandom().choice(
                 list(
                     filter(
                         lambda tvc: isinstance(tvc, OpTypeStruct),

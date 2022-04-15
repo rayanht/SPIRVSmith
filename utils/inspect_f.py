@@ -12,7 +12,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    shader_path = f"out/{random.choice(os.listdir('out/'))}/shader.spv"
+    shader_path = f"out/{random.SystemRandom().choice(os.listdir('out/'))}/shader.spv"
     if args.target == "msl":
         process: subprocess.CompletedProcess = subprocess.run(
             [
