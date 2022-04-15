@@ -146,7 +146,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 #         self.selection_control = random.SystemRandom().choice(list(SelectionControlMask))
 #         self.default_label = OpLabel().fuzz(context)[0]
 #         self.case_labels = []
-#         for _ in range(random.randint(1, 5)):
+#         for _ in range(random.SystemRandom().randint(1, 5)):
 #             self.case_labels.append(OpLabel().fuzz(context)[0])
 #         self.value = random.SystemRandom().choice(context.get_statements(
 #                 lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
@@ -178,7 +178,7 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCod
     import src.operators.conversions
     import src.operators.composite
 
-    while random.random() < context.config.strategy.p_statement:
+    while random.SystemRandom().random() < context.config.strategy.p_statement:
         opcodes: list[OpCode] = Statement().fuzz(block_context)
         nested_block = False
         for statement in opcodes:

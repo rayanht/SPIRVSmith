@@ -69,7 +69,7 @@ class AmberGenerator:
                             AmberStructMember(
                                 f"var{j}",
                                 AmberBufferType.INT32,
-                                random.randint(-64, 64),
+                                random.SystemRandom().randint(-64, 64),
                             )
                         )
                     case OpTypeInt():
@@ -77,7 +77,7 @@ class AmberGenerator:
                             AmberStructMember(
                                 f"var{j}",
                                 AmberBufferType.UINT32,
-                                random.randint(0, 128),
+                                random.SystemRandom().randint(0, 128),
                             )
                         )
                     case OpTypeFloat():
@@ -85,7 +85,7 @@ class AmberGenerator:
                             AmberStructMember(
                                 f"var{j}",
                                 AmberBufferType.FLOAT,
-                                random.uniform(-64, 64),
+                                random.SystemRandom().uniform(-64, 64),
                             )
                         )
                     case _:

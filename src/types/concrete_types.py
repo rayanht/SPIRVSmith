@@ -134,7 +134,7 @@ class OpTypeArray(UniformContainerType):
         self.type = ScalarType().fuzz(context)[0]
 
         self.length = context.create_on_demand_numerical_constant(
-            OpTypeInt, value=random.randint(1, 32), width=32, signed=0
+            OpTypeInt, value=random.SystemRandom().randint(1, 32), width=32, signed=0
         )
         return [self.type, self.length.type, self.length, self]
 
@@ -159,9 +159,11 @@ class OpTypeStruct(MixedContainerType):
     def fuzz(self, context: "Context") -> list[OpCode]:
         self.types = []
         side_effect_types = []
-        for _ in range(random.randint(2, 5)):
+        for _ in range(random.SystemRandom().randint(2, 5)):
             # TODO relax parameter type constraint
-            parameter_type = random.SystemRandom().choice([NumericalType])().fuzz(context)
+            parameter_type = (
+                random.SystemRandom().choice([NumericalType])().fuzz(context)
+            )
             if parameter_type == []:
                 continue
             self.types.append(parameter_type[-1])
@@ -179,7 +181,9 @@ class OpTypePointer(UniformContainerType):
 
     def fuzz(self, context: "Context") -> list[OpCode]:
         self.storage_class = StorageClass.StorageBuffer
-        fuzzed_type = random.SystemRandom().choice([ScalarType, ContainerType])().fuzz(context)
+        fuzzed_type = (
+            random.SystemRandom().choice([ScalarType, ContainerType])().fuzz(context)
+        )
         self.type = fuzzed_type[-1]
         return [*fuzzed_type, self]
 
@@ -197,8 +201,12 @@ class OpTypeFunction(MiscType):
         self.return_type = return_type[-1]
         self.parameter_types = []
         all_types = return_type
-        for _ in range(random.randint(4, 7)):
-            parameter_type = random.SystemRandom().choice([ScalarType, ContainerType])().fuzz(context)
+        for _ in range(random.SystemRandom().randint(4, 7)):
+            parameter_type = (
+                random.SystemRandom()
+                .choice([ScalarType, ContainerType])()
+                .fuzz(context)
+            )
             self.parameter_types.append(parameter_type[-1])
             all_types += parameter_type
         self.parameter_types = tuple(self.parameter_types)

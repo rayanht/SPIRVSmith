@@ -1,7 +1,9 @@
+import copy
+from dataclasses import replace
 import unittest
 from src.monitor import Monitor
 from src.enums import ExecutionModel
-from src import PARAMETRIZATIONS, Type, members
+from src import PARAMETRIZATIONS, FuzzDelegator, Type, members
 from src.operators.arithmetic import OpISub
 from src.context import Context
 from run_local import SPIRVSmithConfig
@@ -16,15 +18,22 @@ from src.types.concrete_types import (
 
 N = 500
 monitor = Monitor()
+config = SPIRVSmithConfig()
+init_strategy = copy.deepcopy(config.strategy)
+init_limits = copy.deepcopy(config.limits)
+
+config.misc.broadcast_generated_shaders = False
+config.misc.start_web_server = False
 
 
 class TestContext(unittest.TestCase):
     def setUp(self):
+        FuzzDelegator.reset_parametrizations()
+        config.limits = copy.deepcopy(init_limits)
+        config.strategy = copy.deepcopy(init_strategy)
         self.context: Context = Context.create_global_context(
-            ExecutionModel.GLCompute, SPIRVSmithConfig(), monitor
+            ExecutionModel.GLCompute, config, monitor
         )
-        self.context.config.misc.broadcast_generated_shaders = False
-        self.context.config.misc.start_web_server = False
 
     def test_context_registers_all_constants(self):
         self.context.create_on_demand_numerical_constant(OpTypeInt, value=0)
@@ -170,7 +179,7 @@ class TestContext(unittest.TestCase):
         self.context.config.strategy.w_arithmetic_type = 0
 
         Type().parametrize(self.context)
-        PARAMETRIZATIONS[Type.__name__][MiscType.__name__] = 0
+        Type.get_parametrization()[MiscType.__name__] = 0
 
         # All possible numerical types
         type1: Type = OpTypeInt().fuzz(self.context)[-1]
@@ -206,6 +215,6 @@ class TestContext(unittest.TestCase):
         self.context.gen_types()
 
         self.assertEqual(
-            PARAMETRIZATIONS[MiscType.__name__][OpTypeFunction.__name__], 0
+            MiscType.get_parametrization()[OpTypeFunction.__name__], 0
         )
         self.assertEqual(len(self.context.get_function_types()), 5)

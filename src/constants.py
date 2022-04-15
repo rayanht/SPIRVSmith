@@ -57,11 +57,11 @@ class OpConstant(ScalarConstant):
 
         if isinstance(self.type, OpTypeInt):
             if self.type.signed:
-                self.value = random.randint(-100, 100)
+                self.value = random.SystemRandom().randint(-100, 100)
             else:
-                self.value = random.randint(0, 100)
+                self.value = random.SystemRandom().randint(0, 100)
         else:
-            self.value = random.uniform(0, 100)
+            self.value = random.SystemRandom().uniform(0, 100)
 
         return [self.type, self]
 
@@ -71,9 +71,11 @@ class OpConstantComposite(CompositeConstant):
     constituents: tuple[OpCode] = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        composite_type = random.SystemRandom().choice(
-            [OpTypeArray, OpTypeVector]  # , OpTypeMatrix]
-        )().fuzz(context)
+        composite_type = (
+            random.SystemRandom()
+            .choice([OpTypeArray, OpTypeVector])()  # , OpTypeMatrix]
+            .fuzz(context)
+        )
         self.type: OpTypeArray | OpTypeVector = composite_type[-1]
         base_type: Type = self.type.get_base_type()
         signedness: bool = None
