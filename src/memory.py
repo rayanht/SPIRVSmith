@@ -1,5 +1,5 @@
 import random
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -92,7 +92,7 @@ class OpLoad(MemoryOperator):
     variable: OpVariable = None
     # memory_operands: Optional[???]
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         variable: OpVariable = random.SystemRandom().choice(
             list(
                 filter(
@@ -111,7 +111,7 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
     object: OpCode = None
     # memory_operands: Optional[???]
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         dynamic = False
         try:
             object: Statement = random.SystemRandom().choice(
@@ -121,7 +121,7 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
             )
         except IndexError:
             return []
-        variables: List[OpVariable] = (
+        variables: list[OpVariable] = (
             context.get_local_variables() + context.get_global_variables()
         )
         filtered_variables = []
@@ -148,9 +148,9 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
 # class OpAccessChain(MemoryOperator):
 #     type: Type = None
 #     base: OpCode = None
-#     indexes: List[OpCode] = []
+#     indexes: list[OpCode] = []
 
-#     def fuzz(self, context: "Context") -> List[OpCode]:
+#     def fuzz(self, context: "Context") -> list[OpCode]:
 #         self.base: OpVariable = random.SystemRandom().choice(
 #             context.get_local_variables() + context.get_global_variables()
 #         )
@@ -162,5 +162,5 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
 #     struct: OpTypeStruct = None
 #     array_member: int = None
 
-#     def get_required_capabilities(self) -> List[Capability]:
+#     def get_required_capabilities(self) -> list[Capability]:
 #         return [Capability.SHADER]

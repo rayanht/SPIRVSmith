@@ -1,7 +1,5 @@
-from dataclasses import dataclass
 import random
-from typing import TYPE_CHECKING, List, Tuple
-from uuid import uuid4
+from typing import TYPE_CHECKING
 
 from src.enums import (
     Capability,
@@ -41,7 +39,7 @@ class OpTypeInt(ScalarType, NumericalType, ArithmeticType):
     width: int = None
     signed: int = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.width = 2**5  # TODO other widths with capabilities
         self.signed = int(bool(random.getrandbits(1)))
         return [self]
@@ -53,7 +51,7 @@ class OpTypeInt(ScalarType, NumericalType, ArithmeticType):
 class OpTypeFloat(ScalarType, NumericalType, ArithmeticType):
     width: int = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.width = 2**5  # TODO other widths with capabilities
         return [self]
 
@@ -65,7 +63,7 @@ class OpTypeVector(UniformContainerType, ArithmeticType):
     type: Type = None
     size: int = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.type = ScalarType().fuzz(context)[0]
         self.size = random.SystemRandom().choice([2, 3, 4])  # 8, 16])
         return [self.type, self]
@@ -81,7 +79,7 @@ class OpTypeMatrix(UniformContainerType):
     type: Type = None
     size: int = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         matrix_type = OpTypeVector().fuzz(context)[-1]
         matrix_type.type = OpTypeFloat().fuzz(context)[0]
         self.type = matrix_type
@@ -91,7 +89,7 @@ class OpTypeMatrix(UniformContainerType):
     def __len__(self):
         return self.size
 
-    def get_required_capabilities(self) -> List[Capability]:
+    def get_required_capabilities(self) -> list[Capability]:
         return [Capability.Matrix]
 
     def get_base_type(self):
@@ -108,7 +106,7 @@ class OpTypeMatrix(UniformContainerType):
 #     image_format: ImageFormat = None
 #     # access_qualifier: AccessQualifier = None
 
-#     def fuzz(self, context: "Context") -> List[OpCode]:
+#     def fuzz(self, context: "Context") -> list[OpCode]:
 #         # Can't have images in compute shaders
 #         # Reparameterize probability distribution
 #         if context.execution_model != ExecutionModel.Fragment:
@@ -131,7 +129,7 @@ class OpTypeArray(UniformContainerType):
     type: Type = None
     length: OpCode = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
 
         self.type = ScalarType().fuzz(context)[0]
 
@@ -150,15 +148,15 @@ class OpTypeArray(UniformContainerType):
 # class OpTypeRuntimeArray(UniformContainerType):
 #     type: Type = None
 
-#     def fuzz(self, context: "Context") -> List[OpCode]:
+#     def fuzz(self, context: "Context") -> list[OpCode]:
 #         self.type = ScalarType().fuzz(context)[0]
 #         return [self.type, self]
 
 
 class OpTypeStruct(MixedContainerType):
-    types: Tuple[Type] = None
+    types: tuple[Type] = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.types = []
         side_effect_types = []
         for _ in range(random.randint(2, 5)):
@@ -179,7 +177,7 @@ class OpTypePointer(UniformContainerType):
     storage_class: StorageClass = None
     type: Type = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.storage_class = StorageClass.StorageBuffer
         fuzzed_type = random.SystemRandom().choice([ScalarType, ContainerType])().fuzz(context)
         self.type = fuzzed_type[-1]
@@ -188,9 +186,9 @@ class OpTypePointer(UniformContainerType):
 
 class OpTypeFunction(MiscType):
     return_type: Type = None
-    parameter_types: Tuple[Type] = None
+    parameter_types: tuple[Type] = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         if len(context.get_function_types()) >= context.config.limits.n_functions:
             MiscType.set_zero_probability(self.__class__)
             raise ReparametrizationError
