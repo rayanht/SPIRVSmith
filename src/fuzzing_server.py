@@ -4,7 +4,7 @@ import logging
 
 import os
 from threading import Thread
-from typing import TYPE_CHECKING, List, Sequence
+from typing import TYPE_CHECKING, Sequence
 from src.amber_generator import AmberGenerator
 from google.cloud import storage
 from src.monitor import Event, Monitor
@@ -108,13 +108,13 @@ class Shader:
 
 @dataclass
 class SPIRVShader(Shader):
-    capabilities: List[OpCapability]
-    # extension: Optional[List[Extension]]
-    # ext_inst: List[ExtInstImport]
+    capabilities: list[OpCapability]
+    # extension: Optional[list[Extension]]
+    # ext_inst: list[ExtInstImport]
     memory_model: OpMemoryModel
     entry_point: OpEntryPoint
     execution_mode: OpExecutionMode
-    opcodes: List[OpCode]
+    opcodes: list[OpCode]
     context: Context
 
     def export(self):

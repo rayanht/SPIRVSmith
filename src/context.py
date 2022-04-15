@@ -1,6 +1,6 @@
 import inspect
 from uuid import UUID, uuid4
-from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, List
+from typing import TYPE_CHECKING, Callable, Iterable, Optional
 from src.annotations import Annotation, OpDecorate, OpMemberDecorate
 from src.monitor import Event, Monitor
 from src.enums import Decoration, ExecutionModel, StorageClass
@@ -28,10 +28,10 @@ from src.memory import OpVariable
 
 class Context:
     id: UUID
-    symbol_table: Dict["OpCode", str]
+    symbol_table: dict["OpCode", str]
     function: Optional["OpFunction"]
     parent_context: Optional["Context"]
-    tvc: Dict["OpCode", str]
+    tvc: dict["OpCode", str]
     annotations: list[Annotation]
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
@@ -111,15 +111,15 @@ class Context:
         if not opcode in self.tvc:
             self.tvc[opcode] = opcode.id
 
-    def get_local_variables(self) -> List[OpVariable]:
-        variables: List[OpVariable] = list(
+    def get_local_variables(self) -> list[OpVariable]:
+        variables: list[OpVariable] = list(
             filter(lambda sym: isinstance(sym, OpVariable), self.symbol_table)
         )
         if self.parent_context:
             return variables + self.parent_context.get_local_variables()
         return variables
 
-    def get_global_variables(self) -> List[OpVariable]:
+    def get_global_variables(self) -> list[OpVariable]:
         return list(filter(lambda tvc: isinstance(tvc, OpVariable), self.tvc.keys()))
 
     def get_random_variable(
@@ -141,8 +141,8 @@ class Context:
             )
             return None
 
-    def get_statements(self, predicate: Callable[[Statement], bool]) -> List[Statement]:
-        statements: List[Statement] = list(
+    def get_statements(self, predicate: Callable[[Statement], bool]) -> list[Statement]:
+        statements: list[Statement] = list(
             filter(lambda sym: isinstance(sym, Statement), self.symbol_table)
         )
         parent: Optional[Context] = self.parent_context
@@ -155,7 +155,7 @@ class Context:
 
     def get_typed_statements(
         self, predicate: Optional[Callable[[Statement], bool]] = None
-    ) -> List[Statement]:
+    ) -> list[Statement]:
         statements = self.get_statements(lambda sym: not isinstance(sym, Untyped))
         if not predicate:
             return list(statements)
@@ -172,7 +172,7 @@ class Context:
     def gen_types(self):
         for _ in range(self.config.limits.n_types):
             try:
-                opcodes: List["OpCode"] = Type().fuzz(self)
+                opcodes: list["OpCode"] = Type().fuzz(self)
             except RecursionError:
                 continue
             for opcode in opcodes:
@@ -191,7 +191,7 @@ class Context:
         )
         for _ in range(n_scalars):
             try:
-                opcodes: List["OpCode"] = ScalarConstant().fuzz(self)
+                opcodes: list["OpCode"] = ScalarConstant().fuzz(self)
             except RecursionError:
                 continue
             for opcode in opcodes:
@@ -199,7 +199,7 @@ class Context:
                     self.tvc[opcode] = opcode.id
         for _ in range(n_constants - n_scalars):
             try:
-                opcodes: List["OpCode"] = CompositeConstant().fuzz(self)
+                opcodes: list["OpCode"] = CompositeConstant().fuzz(self)
             except RecursionError:
                 continue
             for opcode in opcodes:
@@ -230,10 +230,10 @@ class Context:
                     offset += t.width
             n = len(self.tvc)
 
-    def gen_program(self) -> List["OpCode"]:
-        function_types: List[OpTypeFunction] = self.get_function_types()
-        function_bodies: List["OpCode"] = []
-        functions: List[OpFunction] = []
+    def gen_program(self) -> list["OpCode"]:
+        function_types: list[OpTypeFunction] = self.get_function_types()
+        function_bodies: list["OpCode"] = []
+        functions: list[OpFunction] = []
 
         for function_type in function_types:
             function = OpFunction()
@@ -247,7 +247,7 @@ class Context:
 
     def get_constants(
         self, predicate: Optional[Callable[[Statement], bool]] = None
-    ) -> List[Constant]:
+    ) -> list[Constant]:
         constants: Iterable[Constant] = filter(
             lambda t: isinstance(t, Constant), self.tvc.keys()
         )
@@ -294,10 +294,10 @@ class Context:
             )
             return None
 
-    def get_function_types(self) -> List[OpTypeFunction]:
+    def get_function_types(self) -> list[OpTypeFunction]:
         return list(filter(lambda t: isinstance(t, OpTypeFunction), self.tvc.keys()))
 
-    def get_interfaces(self) -> List[OpVariable]:
+    def get_interfaces(self) -> list[OpVariable]:
         return list(
             filter(
                 lambda s: isinstance(s, OpVariable)
@@ -310,7 +310,7 @@ class Context:
             )
         )
 
-    def get_storage_buffers(self) -> List[OpVariable]:
+    def get_storage_buffers(self) -> list[OpVariable]:
         return list(
             filter(
                 lambda s: isinstance(s, OpVariable)

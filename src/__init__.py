@@ -3,13 +3,12 @@ from dataclasses import field
 import hashlib
 import pickle
 
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.context import Context
 from utils.patched_dataclass import dataclass
 import random
-from typing import List
 from src.enums import Capability
 from ulid import monotonic as ulid
 from ulid import ULID
@@ -98,10 +97,10 @@ class OpCode(ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in members(self)])})"
 
-    def get_required_capabilities(self) -> List[Capability]:
+    def get_required_capabilities(self) -> list[Capability]:
         return []
 
-    def fuzz(self, context: "Context") -> List["OpCode"]:
+    def fuzz(self, context: "Context") -> list["OpCode"]:
         return []
 
     def resolve_attribute_spasm(self, attr, context) -> str:
@@ -126,7 +125,7 @@ class OpCode(ABC):
             spasm = f"%{self.id} = {self.__class__.__name__}"
         for attr_name in attrs:
             attr = getattr(self, attr_name)
-            if isinstance(attr, (Tuple, List)):
+            if isinstance(attr, (tuple, list)):
                 for _attr in attr:
                     spasm += self.resolve_attribute_spasm(_attr, context)
             else:
@@ -136,7 +135,7 @@ class OpCode(ABC):
 
 # A FuzzDelegator is a transient object, we need to commit
 # reparametrizations to this global object.
-PARAMETRIZATIONS: Dict[str, Dict[str, int]] = {}
+PARAMETRIZATIONS: dict[str, dict[str, int]] = {}
 
 
 class FuzzDelegator(OpCode):
@@ -179,7 +178,7 @@ class FuzzDelegator(OpCode):
                         context.config.strategy, randomization_parameters[sub]
                     )
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         if not self.__class__.is_parametrized():
             self.parametrize(context=context)
         subclasses = self.get_subclasses()
@@ -202,7 +201,7 @@ class FuzzDelegator(OpCode):
 
 
 class FuzzLeaf(OpCode):
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         return [self]
 
 

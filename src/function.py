@@ -1,5 +1,5 @@
 import random
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from src.enums import FunctionControlMask, SelectionControlMask
 from src import (
@@ -39,9 +39,9 @@ class OpFunction(OpCode):
         self.function_type: OpTypeFunction = function_type
         super().__init__()
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         self.context = context.make_child_context(self)
-        instructions: List[Statement] = fuzz_block(self.context, None)
+        instructions: list[Statement] = fuzz_block(self.context, None)
         return [
             self,
             *instructions,
@@ -62,7 +62,7 @@ class OpFunctionEnd(FuzzLeaf, VoidOp):
 class OpReturn(FunctionOperator, OpCode, Untyped, VoidOp):
     # operand: Statement = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         target_type = context.function.function_type.return_type
         # self.operand = None
         return [self]
@@ -71,7 +71,7 @@ class OpReturn(FunctionOperator, OpCode, Untyped, VoidOp):
 class OpFunctionCall(OpCode):
     return_type: Type = None
     function: OpFunction = None
-    arguments: List[OpCode] = None
+    arguments: list[OpCode] = None
 
 
 class OpLabel(FuzzLeaf, Untyped):
@@ -86,7 +86,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
     exit_label: OpLabel = None
     selection_control: SelectionControlMask = None
 
-    def fuzz(self, context: "Context") -> List[OpCode]:
+    def fuzz(self, context: "Context") -> list[OpCode]:
         if context.get_depth() > context.config.limits.max_depth:
             return []
         self.exit_label = OpLabel().fuzz(context)[0]
@@ -115,7 +115,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 #     continue_label: OpLabel = None
 #     selection_control: SelectionControlMask = None
 
-#     def fuzz(self, context: "Context") -> List[OpCode]:
+#     def fuzz(self, context: "Context") -> list[OpCode]:
 #         if context.get_depth() > context.config.limits.max_depth:
 #             return []
 #         self.merge_label = OpLabel().fuzz(context)[0]
@@ -137,10 +137,10 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 # class OpSwitch(ControlFlowOperator, Untyped, VoidOp):
 #     selection_control: SelectionControlMask = None
 #     default_label: OpLabel = None
-#     case_labels: List[OpLabel] = None
+#     case_labels: list[OpLabel] = None
 #     value: OpCode = None
 
-#     def fuzz(self, context: "Context") -> Tuple[OpCode]:
+#     def fuzz(self, context: "Context") -> tuple[OpCode]:
 #         if context.get_depth() > context.limits.max_depth:
 #             return []
 #         self.selection_control = random.SystemRandom().choice(list(SelectionControlMask))
@@ -167,10 +167,10 @@ class OpBranch(FuzzLeaf, Untyped, VoidOp):
     label: OpLabel = None
 
 
-def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCode]:
+def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCode]:
     block_label: OpLabel = OpLabel().fuzz(context)[0]
-    instructions: List[OpCode] = []
-    variables: List[OpVariable] = []
+    instructions: list[OpCode] = []
+    variables: list[OpVariable] = []
     block_context = context.make_child_context()
     import src.operators.arithmetic
     import src.operators.logic
@@ -179,7 +179,7 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> Tuple[OpCod
     import src.operators.composite
 
     while random.random() < context.config.strategy.p_statement:
-        opcodes: List[OpCode] = Statement().fuzz(block_context)
+        opcodes: list[OpCode] = Statement().fuzz(block_context)
         nested_block = False
         for statement in opcodes:
             if isinstance(statement, OpSelectionMerge):
