@@ -2,7 +2,7 @@ import inspect
 from types import NoneType
 from uuid import UUID, uuid4
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, List
-from monitor import Event, Monitor
+from src.monitor import Event, Monitor
 from src.enums import ExecutionModel, StorageClass
 from src import Statement, Untyped
 from src.constants import CompositeConstant, Constant, OpConstant, ScalarConstant
@@ -197,8 +197,8 @@ class Context:
 
     def gen_global_variables(self):
         for _ in range(random.randint(1, 3)):
-            self.create_on_demand_variable(StorageClass.Input)
-        self.create_on_demand_variable(StorageClass.Output)
+            self.create_on_demand_variable(StorageClass.StorageBuffer)
+        self.create_on_demand_variable(StorageClass.StorageBuffer)
 
     def gen_program(self) -> List["OpCode"]:
         function_types: List[OpTypeFunction] = self.get_function_types()
@@ -340,6 +340,6 @@ class Context:
         variable.type = pointer_type
         variable.storage_class = storage_class
         self.add_to_tvc(pointer_type)
-        if storage_class == StorageClass.Input or storage_class == StorageClass.Output:
+        if storage_class != StorageClass.Function:
             self.add_to_tvc(variable)
         return variable

@@ -1,7 +1,7 @@
 from collections import Counter
 from typing import Optional
 import unittest
-from monitor import Monitor
+from src.monitor import Monitor
 from src.enums import ExecutionModel
 from src import PARAMETRIZATIONS, Type, members
 from src.operators.arithmetic import OpISub

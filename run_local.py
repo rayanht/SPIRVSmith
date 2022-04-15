@@ -18,7 +18,7 @@ class BinariesConfig:
 class LimitsConfig:
     n_types: int = 40
     n_constants: int = 50
-    n_functions: int = 5
+    n_functions: int = 1
     max_depth: int = 3
 
 
