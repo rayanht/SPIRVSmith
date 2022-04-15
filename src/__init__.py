@@ -208,7 +208,6 @@ class FuzzLeaf(OpCode):
 
 
 class Type(FuzzDelegator):
-    
     @staticmethod
     def get_base_type():
         ...

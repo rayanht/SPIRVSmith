@@ -18,7 +18,11 @@ class DangerousPattern(ABC, Generic[T]):
     def get_affected_opcodes(self) -> set[T]:
         ...
 
-OutOfBoundsVectorOperationVulnerableOpCode = OpVectorExtractDynamic | OpVectorInsertDynamic
+
+OutOfBoundsVectorOperationVulnerableOpCode = (
+    OpVectorExtractDynamic | OpVectorInsertDynamic
+)
+
 
 class OutOfBoundsVectorOperation(
     DangerousPattern[OutOfBoundsVectorOperationVulnerableOpCode]
