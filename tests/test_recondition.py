@@ -8,7 +8,7 @@ from src import FuzzDelegator, Type
 from src.constants import OpConstant, OpConstantComposite
 from src.context import Context
 from src.enums import ExecutionModel
-from src.operators.arithmetic import OpSMod
+from src.operators.arithmetic.scalar_arithmetic import OpSMod
 from src.operators.composite import OpVectorExtractDynamic
 from src.types.concrete_types import OpTypeInt, OpTypeVector
 from dataclasses import replace

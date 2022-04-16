@@ -363,7 +363,10 @@ class ShaderGenerator:
             name="main",
             interfaces=interfaces,
         )
-        capabilities = [OpCapability(capability=Capability.Shader), OpCapability(capability=Capability.Matrix)]
+        capabilities = [
+            OpCapability(capability=Capability.Shader),
+            OpCapability(capability=Capability.Matrix),
+        ]
         memory_model = OpMemoryModel(
             addressing_model=AddressingModel.Logical, memory_model=MemoryModel.GLSL450
         )
