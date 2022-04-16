@@ -246,7 +246,7 @@ class Context:
         return function_bodies
 
     def get_constants(
-        self, predicate: Optional[Callable[[Statement], bool]] = None
+        self, predicate: Optional[Callable[[Constant], bool]] = None
     ) -> list[Constant]:
         constants: Iterable[Constant] = filter(
             lambda t: isinstance(t, Constant), self.tvc.keys()
