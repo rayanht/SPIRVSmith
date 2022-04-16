@@ -5,7 +5,7 @@ from src import (
     Constant,
     OpCode,
 )
-from src.predicates import HasValidTypeAndSign
+from src.predicates import HasType, IsMatrixType
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -17,6 +17,7 @@ from src.types.concrete_types import (
     OpTypeArray,
     OpTypeBool,
     OpTypeInt,
+    OpTypeMatrix,
     OpTypeVector,
 )
 from utils.patched_dataclass import dataclass
@@ -73,23 +74,32 @@ class OpConstantComposite(CompositeConstant):
     def fuzz(self, context: "Context") -> list[OpCode]:
         composite_type = (
             random.SystemRandom()
-            .choice([OpTypeArray, OpTypeVector])()  # , OpTypeMatrix]
+            .choice([OpTypeArray, OpTypeVector, OpTypeMatrix])()
             .fuzz(context)
         )
-        self.type: OpTypeArray | OpTypeVector = composite_type[-1]
+        self.type: OpTypeArray | OpTypeVector | OpTypeMatrix = composite_type[-1]
+        self.constituents = []
+        if IsMatrixType(self):
+            column_type = self.type.type
+            for _ in range(len(self.type)):
+                column_values = OpConstantComposite()
+                column_values.type = column_type
+                column_values.constituents = tuple(
+                    column_values.fuzz_constituents(context)
+                )
+                self.constituents.append(column_values)
+        else:
+            self.constituents = self.fuzz_constituents(context)
+        self.constituents = tuple(self.constituents)
+        return [*composite_type, *self.constituents, self]
+
+    def fuzz_constituents(self, context: "Context") -> list[OpCode]:
         base_type: Type = self.type.get_base_type()
-        signedness: bool = None
-        if hasattr(base_type, "signed"):
-            signedness = base_type.signed
         self.constituents = []
         for _ in range(len(self.type)):
-            # context.monitor.info(event=Event.DEBUG, extra={"base_type": base_type})
-            constituent: Constant = context.get_random_operand(
-                lambda x: HasValidTypeAndSign(x, base_type.__class__, signedness)
-            )
+            constituent: Constant = context.get_random_operand(HasType(base_type))
             if constituent:
                 self.constituents.append(constituent)
             else:
                 return []
-        self.constituents = tuple(self.constituents)
-        return [*composite_type, *self.constituents, self]
+        return self.constituents
