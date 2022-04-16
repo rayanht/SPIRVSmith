@@ -1,6 +1,12 @@
 from src.enums import StorageClass
 from src.types.abstract_types import ArithmeticType
-from src.types.concrete_types import OpTypeBool, OpTypeFloat, OpTypeInt, OpTypeMatrix, OpTypeVector
+from src.types.concrete_types import (
+    OpTypeBool,
+    OpTypeFloat,
+    OpTypeInt,
+    OpTypeMatrix,
+    OpTypeVector,
+)
 
 IsVectorType = lambda x: isinstance(x.type, OpTypeVector)
 IsMatrixType = lambda x: isinstance(x.type, OpTypeMatrix)

@@ -9,7 +9,7 @@ from src.context import Context
 from run_local import SPIRVSmithConfig
 from src.types.concrete_types import OpTypeBool, OpTypeInt
 
-N = 1000
+N = 5000
 monitor = Monitor()
 config = SPIRVSmithConfig()
 init_strategy = copy.deepcopy(config.strategy)
