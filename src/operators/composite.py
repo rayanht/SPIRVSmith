@@ -148,10 +148,6 @@ class OpCompositeInsert(CompositeOperator):
                 else composite.get_base_type()
             )
             object = context.get_random_operand(HasType(target_type))
-            # There's no way we can't find a valid object. In the most
-            # boring case we can always just reinsert something that was
-            # already in there.
-            assert object is not None
         self.type = composite.type
         self.object = object
         self.composite = composite
