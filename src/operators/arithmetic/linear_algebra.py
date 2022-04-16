@@ -135,27 +135,26 @@ class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
         operand2 = context.get_random_operand(
             lambda x: (IsMatrixType(x) and HasFloatBaseType(x))
             and (
-                #     len(x.type) == len(operand1.type.type)
-                # <=> # columns of operand2 == # rows of operand1
-                # <=> the trivial case
-                HaveSameTypeLength(x, operand1.type)
                 #     len(x.type.type) == len(operand1.type)
                 # <=> # rows of operand2 == # columns of operand1
+                # <=> the trivial case
+                HaveSameTypeLength(x.type, operand1)
+                #     len(x.type) == len(operand1.type.type)
+                # <=> # columns of operand2 == # rows of operand1
                 # <=> the symmetric case
-                or HaveSameTypeLength(x.type, operand1)
+                or HaveSameTypeLength(x, operand1.type)
             )
         )
         if not operand2:
             return []
 
         # Handle the symmetric case
-        #     len(operand1.type.type) != len(operand2.type)
-        # <=> # rows of operand1 != # columns of operand2
+        #     len(operand1.type) != len(operand2.type.type)
+        # <=> # columns of operand1 != # rows of operand2
         # <=> the symmetric case
-        if len(operand1.type.type) != len(operand2.type):
+        if len(operand1.type) != len(operand2.type.type):
             operand1, operand2 = operand2, operand1
 
-        assert len(operand1.type.type) == len(operand2.type)
         # The resulting matrix has the same number of rows as operand1
         # and same number of columns as operand2
         self.type = OpTypeMatrix()
