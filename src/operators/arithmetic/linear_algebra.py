@@ -9,6 +9,10 @@ from src.operators.arithmetic import BinaryArithmeticOperator
 if TYPE_CHECKING:
     from src.context import Context
 from src.predicates import (
+    And,
+    HasBaseType,
+    HasFloatBaseType,
+    HasLength,
     HasValidBaseType,
     HaveSameTypeLength,
     IsMatrixType,
@@ -33,9 +37,7 @@ class OpVectorTimesScalar(BinaryArithmeticOperator[None, None, None, None]):
     operand2: Operand = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        operand1 = context.get_random_operand(
-            lambda x: IsVectorType(x) and HasValidBaseType(x, OpTypeFloat)
-        )
+        operand1 = context.get_random_operand(And(IsVectorType, HasFloatBaseType))
         if not operand1:
             return []
         operand2 = context.get_random_operand(IsScalarFloat)
@@ -53,9 +55,7 @@ class OpMatrixTimesScalar(BinaryArithmeticOperator[None, None, None, None]):
     operand2: Operand = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        operand1 = context.get_random_operand(
-            lambda x: IsMatrixType(x) and HasValidBaseType(x, OpTypeFloat)
-        )
+        operand1 = context.get_random_operand(And(IsMatrixType, HasFloatBaseType))
         if not operand1:
             return []
         operand2 = context.get_random_operand(IsScalarFloat)
@@ -74,22 +74,18 @@ class OpVectorTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
 
     def fuzz(self, context: "Context") -> list[OpCode]:
         # We pick the matrix first here because we tend to have more vectors than matrices
-        operand2 = context.get_random_operand(
-            lambda x: IsMatrixType(x) and HasValidBaseType(x, OpTypeFloat)
-        )
+        operand2 = context.get_random_operand(And(IsMatrixType, HasFloatBaseType))
         if not operand2:
             return []
         # The vector must have as many element as the matrix has rows
         operand1 = context.get_random_operand(
-            lambda x: IsVectorType(x)
-            and HasValidBaseType(x, OpTypeFloat)
-            and HaveSameTypeLength(x, operand2.type)
+            And(IsVectorType, HasFloatBaseType, HasLength(len(operand2.type.type)))
         )
         if not operand1:
             return []
         self.type = OpTypeVector()
         self.type.type = operand1.get_base_type()
-        self.type.size = len(operand2.type.type)
+        self.type.size = len(operand2.type)
         context.add_to_tvc(self.type)
         self.operand1 = operand1
         self.operand2 = operand2
@@ -102,23 +98,18 @@ class OpMatrixTimesVector(BinaryArithmeticOperator[None, None, None, None]):
     operand2: Operand = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        # We pick the matrix first here because we tend to have more vectors than matrices
+        operand1 = context.get_random_operand(And(IsMatrixType, HasFloatBaseType))
+        if not operand1:
+            return []
+        # The vector must have as many elements as the matrix has columns
         operand2 = context.get_random_operand(
-            lambda x: IsMatrixType(x) and HasValidBaseType(x, OpTypeFloat)
+            And(IsVectorType, HasFloatBaseType, HasLength(len(operand1.type)))
         )
         if not operand2:
             return []
-        # The vector must have as many elements as the matrix has columns
-        operand1 = context.get_random_operand(
-            lambda x: IsVectorType(x)
-            and HasValidBaseType(x, OpTypeFloat)
-            and HaveSameTypeLength(x, operand2)
-        )
-        if not operand1:
-            return []
         self.type = OpTypeVector()
         self.type.type = operand1.get_base_type()
-        self.type.size = len(operand2.type.type)
+        self.type.size = len(operand1.type.type)
         context.add_to_tvc(self.type)
         self.operand1 = operand1
         self.operand2 = operand2
@@ -131,9 +122,7 @@ class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
     operand2: Operand = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        operand1 = context.get_random_operand(
-            lambda x: IsMatrixType(x) and HasValidBaseType(x, OpTypeFloat)
-        )
+        operand1 = context.get_random_operand(And(IsMatrixType, HasFloatBaseType))
         if not operand1:
             return []
         # operand2 must have the same number of columns that operand1 has
@@ -141,12 +130,18 @@ class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
         # a matrix that could be multiplied by operand2 in the symmetric case
         #
         # e.g. we picked a mat2x4 for operand1 and the only other matrix
-        # in scope is a mat5x2. We can't multiply them together, but we can
-        # swap them around to solve this.
+        # in scope is a mat3x2. We can't multiply them together, but we can
+        # swap them around to resolve this.
         operand2 = context.get_random_operand(
-            lambda x: (IsMatrixType(x) and HasValidBaseType(x, OpTypeFloat))
+            lambda x: (IsMatrixType(x) and HasFloatBaseType(x))
             and (
+                #     len(x.type) == len(operand1.type.type)
+                # <=> # columns of operand2 == # rows of operand1
+                # <=> the trivial case
                 HaveSameTypeLength(x, operand1.type)
+                #     len(x.type.type) == len(operand1.type)
+                # <=> # rows of operand2 == # columns of operand1
+                # <=> the symmetric case
                 or HaveSameTypeLength(x.type, operand1)
             )
         )
@@ -154,9 +149,13 @@ class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
             return []
 
         # Handle the symmetric case
+        #     len(operand1.type.type) != len(operand2.type)
+        # <=> # rows of operand1 != # columns of operand2
+        # <=> the symmetric case
         if len(operand1.type.type) != len(operand2.type):
             operand1, operand2 = operand2, operand1
 
+        assert len(operand1.type.type) == len(operand2.type)
         # The resulting matrix has the same number of rows as operand1
         # and same number of columns as operand2
         self.type = OpTypeMatrix()
@@ -164,6 +163,7 @@ class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
         self.type.type = operand1.type.type
         # Columns
         self.type.size = len(operand2.type)
+        context.add_to_tvc(self.type)
         self.operand1 = operand1
         self.operand2 = operand2
         return [self]
@@ -175,11 +175,10 @@ class OpOuterProduct(BinaryArithmeticOperator[None, None, None, None]):
     operand2: Operand = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        predicate = lambda x: IsVectorType(x) and HasValidBaseType(x, OpTypeFloat)
-        operand1 = context.get_random_operand(predicate)
+        operand1 = context.get_random_operand(And(IsVectorType, HasFloatBaseType))
         if not operand1:
             return []
-        operand2 = context.get_random_operand(predicate)
+        operand2 = context.get_random_operand(And(IsVectorType, HasFloatBaseType))
         self.type = OpTypeMatrix()
         self.type.type = operand1.type
         self.type.size = len(operand2.type)
@@ -195,11 +194,16 @@ class OpDot(BinaryArithmeticOperator[None, None, None, None]):
     operand2: Operand = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        predicate = lambda x: IsVectorType(x) and HasValidBaseType(x, OpTypeFloat)
-        operand1 = context.get_random_operand(predicate)
+        operand1 = context.get_random_operand(And(IsVectorType, HasFloatBaseType))
         if not operand1:
             return []
-        operand2 = context.get_random_operand(predicate, operand1)
+        operand2 = context.get_random_operand(
+            And(
+                IsVectorType,
+                HasBaseType(operand1.get_base_type()),
+                HasLength(len(operand1.type)),
+            )
+        )
         self.type = operand1.get_base_type()
         self.operand1 = operand1
         self.operand2 = operand2
