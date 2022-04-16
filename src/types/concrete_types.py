@@ -76,7 +76,7 @@ class OpTypeVector(UniformContainerType, ArithmeticType):
 
 
 class OpTypeMatrix(UniformContainerType):
-    type: Type = None
+    type: OpTypeVector = None
     size: int = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
