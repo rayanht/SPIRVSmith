@@ -1,55 +1,13 @@
-from typing import (
-    Callable,
-    Generic,
-    Optional,
-    TypeVar,
-)
-from src import Signed, Statement, Unsigned
+from src import Signed, Unsigned
 
-from src.constants import Constant
+from src.operators.arithmetic import BinaryArithmeticOperator, UnaryArithmeticOperator
+
 from src.operators import BinaryOperatorFuzzMixin, UnaryOperatorFuzzMixin
-from src.predicates import (
-    HasValidBaseTypeAndSign,
-    IsValidArithmeticOperand,
-)
 
 from src.types.concrete_types import (
     OpTypeFloat,
     OpTypeInt,
-    Type,
 )
-
-Operand = Statement | Constant
-
-S = TypeVar("S")
-D = TypeVar("D")
-SC = TypeVar("SC")
-DC = TypeVar("DC")
-
-
-class ArithmeticOperator(Statement, Generic[S, D, SC, DC]):
-    OPERAND_SELECTION_PREDICATE: Callable[
-        [Operand], bool
-    ] = lambda _, target_type, signed: lambda op: IsValidArithmeticOperand(
-        op
-    ) and HasValidBaseTypeAndSign(
-        op, target_type, signed
-    )
-
-
-class UnaryArithmeticOperator(
-    ArithmeticOperator[S, Optional[D], Optional[SC], Optional[DC]]
-):
-    type: Type = None
-    operand: Operand = None
-
-
-class BinaryArithmeticOperator(
-    ArithmeticOperator[S, Optional[D], Optional[SC], Optional[DC]]
-):
-    type: Type = None
-    operand1: Operand = None
-    operand2: Operand = None
 
 
 class OpSNegate(
@@ -146,7 +104,3 @@ class OpFMod(
     BinaryOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeFloat, None, None, None]
 ):
     ...
-
-
-# class OpVectorTimesScalar(BinaryOperatorFuzzMixin, BinaryArithmeticOperator[OpTypeVector, None, None, None]):
-#     ...

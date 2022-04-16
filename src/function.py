@@ -172,7 +172,7 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCod
     instructions: list[OpCode] = []
     variables: list[OpVariable] = []
     block_context = context.make_child_context()
-    import src.operators.arithmetic
+    import src.operators.arithmetic.scalar_arithmetic
     import src.operators.logic
     import src.operators.bitwise
     import src.operators.conversions

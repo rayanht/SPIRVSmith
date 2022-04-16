@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 
 from src import OpCode
 from src.context import Context
-from src.operators.arithmetic import OpSMod, OpUMod
+from src.operators.arithmetic.scalar_arithmetic import OpSMod, OpUMod
 from src.operators.composite import OpVectorExtractDynamic, OpVectorInsertDynamic
 
 T = TypeVar("T")

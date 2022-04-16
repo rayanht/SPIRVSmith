@@ -4,7 +4,7 @@ import unittest
 from src.monitor import Monitor
 from src.enums import ExecutionModel
 from src import PARAMETRIZATIONS, FuzzDelegator, Type, members
-from src.operators.arithmetic import OpISub
+from src.operators.arithmetic.scalar_arithmetic import OpISub
 from src.context import Context
 from run_local import SPIRVSmithConfig
 from src.types.abstract_types import ArithmeticType, MiscType
@@ -214,7 +214,5 @@ class TestContext(unittest.TestCase):
 
         self.context.gen_types()
 
-        self.assertEqual(
-            MiscType.get_parametrization()[OpTypeFunction.__name__], 0
-        )
+        self.assertEqual(MiscType.get_parametrization()[OpTypeFunction.__name__], 0)
         self.assertEqual(len(self.context.get_function_types()), 5)
