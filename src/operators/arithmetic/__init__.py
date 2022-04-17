@@ -1,7 +1,13 @@
-from typing import Callable, Generic, Optional, TypeVar
-from src import Statement, Type
+from typing import Callable
+from typing import Generic
+from typing import Optional
+from typing import TypeVar
+
+from src import Statement
+from src import Type
 from src.operators import Operand
-from src.predicates import HasValidBaseTypeAndSign, IsValidArithmeticOperand
+from src.predicates import HasValidBaseTypeAndSign
+from src.predicates import IsValidArithmeticOperand
 
 
 S = TypeVar("S")

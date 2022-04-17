@@ -1,19 +1,16 @@
-from src.function import OpFunction
 from dataclasses import dataclass
-from src import (
-    FuzzLeaf,
-    OpCode,
-    VoidOp,
-)
-from uuid import uuid4
 from typing import Sequence
-from src.enums import (
-    AddressingModel,
-    Capability,
-    ExecutionMode,
-    ExecutionModel,
-    MemoryModel,
-)
+from uuid import uuid4
+
+from src import FuzzLeaf
+from src import OpCode
+from src import VoidOp
+from src.enums import AddressingModel
+from src.enums import Capability
+from src.enums import ExecutionMode
+from src.enums import ExecutionModel
+from src.enums import MemoryModel
+from src.function import OpFunction
 from src.types.concrete_types import Type
 
 

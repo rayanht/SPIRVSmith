@@ -1,5 +1,8 @@
 from dataclasses import dataclass
-from src import FuzzLeaf, OpCode, VoidOp
+
+from src import FuzzLeaf
+from src import OpCode
+from src import VoidOp
 from src.enums import Decoration
 from src.types.concrete_types import OpTypeStruct
 

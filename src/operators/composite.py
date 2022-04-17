@@ -1,19 +1,22 @@
-from math import ceil, log2
 import random
+from math import ceil
+from math import log2
 from typing import TYPE_CHECKING
-from src import OpCode, Statement, Type
+
+from src import OpCode
+from src import Statement
+from src import Type
 from src.operators import Operand
-from src.predicates import (
-    And,
-    HasBaseType,
-    HasType,
-    IsCompositeType,
-    IsMatrixType,
-    IsScalarInteger,
-    IsStructType,
-    IsVectorType,
-)
-from src.types.concrete_types import OpTypeMatrix, OpTypeVector
+from src.predicates import And
+from src.predicates import HasBaseType
+from src.predicates import HasType
+from src.predicates import IsCompositeType
+from src.predicates import IsMatrixType
+from src.predicates import IsScalarInteger
+from src.predicates import IsStructType
+from src.predicates import IsVectorType
+from src.types.concrete_types import OpTypeMatrix
+from src.types.concrete_types import OpTypeVector
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -138,7 +141,9 @@ class OpCompositeInsert(CompositeOperator):
                 random.SystemRandom().randint(0, len(composite.type) - 1),
                 random.SystemRandom().randint(0, len(composite.type.type) - 1),
             )
-            target_object = context.get_random_operand(HasType(composite.get_base_type()))
+            target_object = context.get_random_operand(
+                HasType(composite.get_base_type())
+            )
         else:
             indexes = (random.SystemRandom().randint(0, len(composite.type) - 1),)
             target_type = (

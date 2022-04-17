@@ -1,11 +1,13 @@
 import copy
 import unittest
+
+from run_local import SPIRVSmithConfig
 from src import FuzzDelegator
+from src.context import Context
+from src.enums import ExecutionModel
+from src.enums import StorageClass
 from src.memory import OpLoad
 from src.monitor import Monitor
-from src.enums import ExecutionModel, StorageClass
-from src.context import Context
-from run_local import SPIRVSmithConfig
 
 monitor = Monitor()
 config = SPIRVSmithConfig()

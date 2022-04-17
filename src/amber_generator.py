@@ -1,10 +1,13 @@
+import random
 from dataclasses import dataclass
 from enum import Enum
-import random
 from typing import TYPE_CHECKING
-from src.monitor import Event, Monitor
+
 from src.memory import OpVariable
-from src.types.concrete_types import OpTypeFloat, OpTypeInt
+from src.monitor import Event
+from src.monitor import Monitor
+from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeInt
 
 if TYPE_CHECKING:
     from run_local import SPIRVSmithConfig

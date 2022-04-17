@@ -1,14 +1,12 @@
 from src.enums import StorageClass
 from src.types.abstract_types import ArithmeticType
-from src.types.concrete_types import (
-    OpTypeArray,
-    OpTypeBool,
-    OpTypeFloat,
-    OpTypeInt,
-    OpTypeMatrix,
-    OpTypeStruct,
-    OpTypeVector,
-)
+from src.types.concrete_types import OpTypeArray
+from src.types.concrete_types import OpTypeBool
+from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeInt
+from src.types.concrete_types import OpTypeMatrix
+from src.types.concrete_types import OpTypeStruct
+from src.types.concrete_types import OpTypeVector
 
 And = lambda *ps: lambda x: all(p(x) for p in ps)
 Or = lambda *ps: lambda x: any(p(x) for p in ps)

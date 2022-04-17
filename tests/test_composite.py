@@ -1,25 +1,24 @@
 import copy
 import unittest
+
 from run_local import SPIRVSmithConfig
-from src import FuzzDelegator, Type
-from src.constants import (
-    OpConstant,
-    OpConstantComposite,
-)
-from src.monitor import Monitor
-from src.enums import ExecutionModel
+from src import FuzzDelegator
+from src import Type
+from src.constants import OpConstant
+from src.constants import OpConstantComposite
 from src.context import Context
+from src.enums import ExecutionModel
+from src.monitor import Monitor
 from src.operators.arithmetic.linear_algebra import (
     OpOuterProduct,
 )
-from src.operators.composite import (
-    OpCompositeExtract,
-    OpCompositeInsert,
-    OpTranspose,
-    OpVectorExtractDynamic,
-    OpVectorInsertDynamic,
-)
-from src.types.concrete_types import OpTypeFloat, OpTypeVector
+from src.operators.composite import OpCompositeExtract
+from src.operators.composite import OpCompositeInsert
+from src.operators.composite import OpTranspose
+from src.operators.composite import OpVectorExtractDynamic
+from src.operators.composite import OpVectorInsertDynamic
+from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeVector
 
 N = 1000
 monitor = Monitor()
