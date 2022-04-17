@@ -6,7 +6,7 @@ from src.monitor import Monitor
 from src.enums import ExecutionModel
 from src.context import Context
 from run_local import SPIRVSmithConfig
-from src.predicates import HaveSameBaseType, HaveSameType, HaveSameTypeLength
+from src.predicates import HaveSameBaseType, HaveSameType
 from src.types.concrete_types import OpTypeFloat, OpTypeInt, OpTypeVector
 
 N = 1000
