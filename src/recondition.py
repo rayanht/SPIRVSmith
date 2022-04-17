@@ -1,10 +1,14 @@
-from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from abc import ABC
+from abc import abstractmethod
+from typing import Generic
+from typing import TypeVar
 
 from src import OpCode
 from src.context import Context
-from src.operators.arithmetic.scalar_arithmetic import OpSMod, OpUMod
-from src.operators.composite import OpVectorExtractDynamic, OpVectorInsertDynamic
+from src.operators.arithmetic.scalar_arithmetic import OpSMod
+from src.operators.arithmetic.scalar_arithmetic import OpUMod
+from src.operators.composite import OpVectorExtractDynamic
+from src.operators.composite import OpVectorInsertDynamic
 
 T = TypeVar("T")
 

@@ -1,21 +1,20 @@
-from typing import (
-    Callable,
-    Generic,
-    Optional,
-    TypeVar,
-)
-from src import Signed, Statement, Unsigned
+from typing import Callable
+from typing import Generic
+from typing import Optional
+from typing import TypeVar
 
+from src import Signed
+from src import Statement
+from src import Unsigned
 from src.constants import Constant
-from src.operators import BinaryOperatorFuzzMixin, UnaryOperatorFuzzMixin
-from src.predicates import HasValidBaseTypeAndSign, IsValidLogicalOperand
-
-from src.types.concrete_types import (
-    OpTypeBool,
-    OpTypeFloat,
-    OpTypeInt,
-    Type,
-)
+from src.operators import BinaryOperatorFuzzMixin
+from src.operators import UnaryOperatorFuzzMixin
+from src.predicates import HasValidBaseTypeAndSign
+from src.predicates import IsValidLogicalOperand
+from src.types.concrete_types import OpTypeBool
+from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeInt
+from src.types.concrete_types import Type
 
 Operand = Statement | Constant
 

@@ -1,8 +1,7 @@
-from abc import ABC
-from dataclasses import field
 import hashlib
 import pickle
-
+from abc import ABC
+from dataclasses import field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

@@ -1,7 +1,9 @@
 import json
 import platform
 import subprocess
-from google.cloud import pubsub_v1, storage
+
+from google.cloud import pubsub_v1
+from google.cloud import storage
 
 AMBER_PATH = "bin/amber"
 

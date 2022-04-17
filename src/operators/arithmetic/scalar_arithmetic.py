@@ -1,13 +1,11 @@
-from src import Signed, Unsigned
-
-from src.operators.arithmetic import BinaryArithmeticOperator, UnaryArithmeticOperator
-
-from src.operators import BinaryOperatorFuzzMixin, UnaryOperatorFuzzMixin
-
-from src.types.concrete_types import (
-    OpTypeFloat,
-    OpTypeInt,
-)
+from src import Signed
+from src import Unsigned
+from src.operators import BinaryOperatorFuzzMixin
+from src.operators import UnaryOperatorFuzzMixin
+from src.operators.arithmetic import BinaryArithmeticOperator
+from src.operators.arithmetic import UnaryArithmeticOperator
+from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeInt
 
 
 class OpSNegate(

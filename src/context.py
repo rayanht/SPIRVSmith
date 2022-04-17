@@ -1,24 +1,36 @@
 import inspect
-from uuid import UUID, uuid4
-from typing import TYPE_CHECKING, Callable, Iterable, Optional
-from src.annotations import Annotation, OpDecorate, OpMemberDecorate
-from src.monitor import Event, Monitor
-from src.enums import Decoration, ExecutionModel, StorageClass
-from src import Statement, Untyped
-from src.constants import CompositeConstant, Constant, OpConstant, ScalarConstant
 import random
-from src.types.abstract_types import Type
-from src.types.concrete_types import (
-    OpTypeFunction,
-    OpTypePointer,
-    OpTypeStruct,
-    OpTypeVector,
-    OpTypeVoid,
-)
+from typing import Callable
+from typing import Iterable
+from typing import Optional
+from typing import TYPE_CHECKING
+from uuid import UUID
+from uuid import uuid4
+
+from src import Statement
+from src import Untyped
+from src.annotations import Annotation
+from src.annotations import OpDecorate
+from src.annotations import OpMemberDecorate
+from src.constants import CompositeConstant
+from src.constants import Constant
+from src.constants import OpConstant
+from src.constants import ScalarConstant
+from src.enums import Decoration
+from src.enums import ExecutionModel
+from src.enums import StorageClass
+from src.function import OpFunction
+from src.monitor import Event
+from src.monitor import Monitor
 from src.predicates import (
     HaveSameTypeLength,
 )
-from src.function import OpFunction
+from src.types.abstract_types import Type
+from src.types.concrete_types import OpTypeFunction
+from src.types.concrete_types import OpTypePointer
+from src.types.concrete_types import OpTypeStruct
+from src.types.concrete_types import OpTypeVector
+from src.types.concrete_types import OpTypeVoid
 
 if TYPE_CHECKING:
     from src import OpCode

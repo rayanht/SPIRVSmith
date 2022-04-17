@@ -1,16 +1,11 @@
 import random
 from typing import TYPE_CHECKING
 
-from src.enums import (
-    Capability,
-    StorageClass,
-)
-from src import (
-    FuzzLeaf,
-    OpCode,
-    OpCode,
-    ReparametrizationError,
-)
+from src import FuzzLeaf
+from src import OpCode
+from src import ReparametrizationError
+from src.enums import Capability
+from src.enums import StorageClass
 
 if TYPE_CHECKING:
     from src.context import Context
