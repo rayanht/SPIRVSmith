@@ -13,7 +13,6 @@ from src.predicates import (
     HasBaseType,
     HasFloatBaseType,
     HasLength,
-    HasValidBaseType,
     HaveSameTypeLength,
     IsMatrixType,
     IsScalarFloat,
