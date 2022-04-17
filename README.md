@@ -353,12 +353,12 @@ void main () {
 |--|--|
 | OpVectorExtractDynamic | :white_check_mark: |
 | OpVectorInsertDynamic | :white_check_mark: |
-| OpVectorShuffle | :red_circle: |
-| OpCompositeConstruct |:red_circle:  |
-| OpCompositeExtract | :red_circle: |
-| OpCompositeInsert | :red_circle: |
-| OpCopyObject | :red_circle: |
-| OpTranspose | :red_circle: |
+| OpVectorShuffle | :white_check_mark: |
+| OpCompositeConstruct | :red_circle:  |
+| OpCompositeExtract | :white_check_mark: |
+| OpCompositeInsert | :white_check_mark: |
+| OpCopyObject | :white_check_mark: |
+| OpTranspose | :white_check_mark: |
 | OpCopyLogical | :red_circle: |
 
 </details>

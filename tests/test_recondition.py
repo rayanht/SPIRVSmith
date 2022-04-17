@@ -1,17 +1,15 @@
 import copy
-from typing import Optional
 import unittest
 from src.monitor import Monitor
 from src.recondition import recondition
 from run_local import SPIRVSmithConfig
-from src import FuzzDelegator, Type
-from src.constants import OpConstant, OpConstantComposite
+from src import FuzzDelegator
+from src.constants import OpConstantComposite
 from src.context import Context
 from src.enums import ExecutionModel
 from src.operators.arithmetic.scalar_arithmetic import OpSMod
 from src.operators.composite import OpVectorExtractDynamic
 from src.types.concrete_types import OpTypeInt, OpTypeVector
-from dataclasses import replace
 
 monitor = Monitor()
 config = SPIRVSmithConfig()

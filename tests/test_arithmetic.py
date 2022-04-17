@@ -88,7 +88,7 @@ class TestArithmetic(unittest.TestCase):
         )[-1]
 
         # The resulting vector must have as many elements as the matrix has columns
-        self.assertEqual(len(vector_times_matrix.type), len(outer_product.type.type))
+        self.assertEqual(len(vector_times_matrix.type), len(outer_product.type))
 
     def test_matrix_times_vector_has_correct_shape(self):
         create_vector_const(self.context, OpTypeFloat, size=4)
@@ -126,6 +126,11 @@ class TestArithmetic(unittest.TestCase):
             self.context
         )[-1]
 
+        # The left matrix should have as many columns as the right matrix has rows
+        self.assertEqual(
+            len(matrix_times_matrix.operand1.type),
+            len(matrix_times_matrix.operand2.type.type),
+        )
         # The resulting matrix must have as many rows as the first operand
         self.assertEqual(
             len(matrix_times_matrix.type.type),
@@ -133,5 +138,5 @@ class TestArithmetic(unittest.TestCase):
         )
         # The resulting matrix must have as many columns as the second operand
         self.assertEqual(
-            len(matrix_times_matrix.type.type), len(matrix_times_matrix.operand2.type)
+            len(matrix_times_matrix.type), len(matrix_times_matrix.operand2.type)
         )

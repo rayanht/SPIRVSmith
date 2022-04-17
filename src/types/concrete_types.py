@@ -65,7 +65,7 @@ class OpTypeVector(UniformContainerType, ArithmeticType):
 
     def fuzz(self, context: "Context") -> list[OpCode]:
         self.type = ScalarType().fuzz(context)[0]
-        self.size = random.SystemRandom().choice([2, 3, 4])  # 8, 16])
+        self.size = random.SystemRandom().choice([2, 3, 4])
         return [self.type, self]
 
     def __len__(self):

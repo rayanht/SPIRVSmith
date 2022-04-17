@@ -1,12 +1,11 @@
 import copy
-from dataclasses import replace
 import unittest
+from run_local import SPIRVSmithConfig
 from src.monitor import Monitor
 from src.enums import ExecutionModel
-from src import PARAMETRIZATIONS, FuzzDelegator, Type, members
+from src import FuzzDelegator, Type
 from src.operators.arithmetic.scalar_arithmetic import OpISub
 from src.context import Context
-from run_local import SPIRVSmithConfig
 from src.types.abstract_types import ArithmeticType, MiscType
 from src.types.concrete_types import (
     OpTypeBool,
