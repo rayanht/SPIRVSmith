@@ -135,3 +135,7 @@ out/
 **/.terraform*
 **/terraform.*
 !**/terraform.tfvars
+
+**/**.spv
+**/**.amber
+**/**.spasm
