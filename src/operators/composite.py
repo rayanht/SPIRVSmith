@@ -13,7 +13,7 @@ from src.predicates import (
     IsStructType,
     IsVectorType,
 )
-from src.types.concrete_types import OpTypeInt, OpTypeMatrix, OpTypeStruct, OpTypeVector
+from src.types.concrete_types import OpTypeMatrix, OpTypeVector
 
 if TYPE_CHECKING:
     from src.context import Context
