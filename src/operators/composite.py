@@ -110,15 +110,14 @@ class OpCompositeExtract(CompositeOperator):
                 random.SystemRandom().randint(0, len(composite.type) - 1),
                 random.SystemRandom().randint(0, len(composite.type.type) - 1),
             )
-            type = composite.get_base_type()
+            self.type = composite.get_base_type()
         else:
             indexes = (random.SystemRandom().randint(0, len(composite.type) - 1),)
-            type = (
+            self.type = (
                 composite.type.types[indexes[0]]
                 if IsStructType(composite)
                 else composite.get_base_type()
             )
-        self.type = type
         self.composite = composite
         self.indexes = indexes
         return [self]
@@ -139,7 +138,7 @@ class OpCompositeInsert(CompositeOperator):
                 random.SystemRandom().randint(0, len(composite.type) - 1),
                 random.SystemRandom().randint(0, len(composite.type.type) - 1),
             )
-            object = context.get_random_operand(HasType(composite.get_base_type()))
+            target_object = context.get_random_operand(HasType(composite.get_base_type()))
         else:
             indexes = (random.SystemRandom().randint(0, len(composite.type) - 1),)
             target_type = (
@@ -147,24 +146,24 @@ class OpCompositeInsert(CompositeOperator):
                 if IsStructType(composite)
                 else composite.get_base_type()
             )
-            object = context.get_random_operand(HasType(target_type))
+            target_object = context.get_random_operand(HasType(target_type))
         self.type = composite.type
-        self.object = object
+        self.object = target_object
         self.composite = composite
         self.indexes = indexes
         return [self]
 
 
-class OpCopyObject(CompositeOperator):
+class OpCopytarget_object(CompositeOperator):
     type: Type = None
     object: Statement = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        object = context.get_random_operand(lambda _: True)
-        if object is None:
+        target_object = context.get_random_operand(lambda _: True)
+        if target_object is None:
             return []
-        self.type = object.type
-        self.object = object
+        self.type = target_object.type
+        self.object = target_object
         return [self]
 
 
@@ -173,15 +172,15 @@ class OpTranspose(CompositeOperator):
     object: Statement = None
 
     def fuzz(self, context: "Context") -> list[OpCode]:
-        object = context.get_random_operand(IsMatrixType)
-        if object is None:
+        target_object = context.get_random_operand(IsMatrixType)
+        if target_object is None:
             return []
         self.type = OpTypeMatrix()
         self.type.type = OpTypeVector()
-        self.type.type.type = object.get_base_type()
-        self.type.type.size = len(object.type)
-        self.type.size = len(object.type.type)
+        self.type.type.type = target_object.get_base_type()
+        self.type.type.size = len(target_object.type)
+        self.type.size = len(target_object.type.type)
         context.add_to_tvc(self.type.type)
         context.add_to_tvc(self.type)
-        self.object = object
+        self.object = target_object
         return [self]
