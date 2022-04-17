@@ -23,7 +23,7 @@ SPIRVSmith attempts to find bugs in the following projects:
 ## How does it work?
 
 ### Differential Testing
-The bread and butter of `SPIRVSmith` is **differential testing** (sometimes called differential fuzzing), in which we provide the same SPIRV shader to similar consumers (say three different SPIRV compilers for example), execute the three resulting programs and compare the values contained inside all buffers at the end of exeuction. 
+The bread and butter of `SPIRVSmith` is **differential testing** (sometimes called differential fuzzing), in which we provide the same SPIRV shader to similar consumers (say three different SPIRV compilers for example), execute the three resulting programs and compare the values contained inside all buffers at the end of exeuction.
 
 In a **fully deterministic** program `(== synchronous && free of undefined behaviour)`, we expect all these buffers to be exactly the same at the end of execution, regardless of what compiler was used to generate said program. If one program ends up with different buffers than the other two, we have a strong reason to believe that the compiler that generated it has a **bug**.
 
@@ -33,15 +33,15 @@ The constraint on determinism creates an interesting problem, how can we ensure 
 
 ### Program Reconditioning
 
-**Donaldson et al.** introduce the idea of program reconditioning as "a method for leveraging off-the-shelf test case reducers to simplify programs that expose miscompilation bugs during randomised differential testing". 
+**Donaldson et al.** introduce the idea of program reconditioning as "a method for leveraging off-the-shelf test case reducers to simplify programs that expose miscompilation bugs during randomised differential testing".
 
-This approach solves the issues raised by **Yang et al.** in the case of [CSmith](https://github.com/csmith-project/csmith) where test case reducers couldn't be used to provide concise, actionable bug reports since they would themselves often introduce undefined behaviour. 
+This approach solves the issues raised by **Yang et al.** in the case of [CSmith](https://github.com/csmith-project/csmith) where test case reducers couldn't be used to provide concise, actionable bug reports since they would themselves often introduce undefined behaviour.
 
-Program reconditioning works by decoupling the process of generating a program and the process of ensuring that said program is free of undefined behaviour. This is in contrast to **Livinskii et al.** in [YARPGen](https://github.com/intel/yarpgen) where code generation steps and static analysis steps are interleaved. 
+Program reconditioning works by decoupling the process of generating a program and the process of ensuring that said program is free of undefined behaviour. This is in contrast to **Livinskii et al.** in [YARPGen](https://github.com/intel/yarpgen) where code generation steps and static analysis steps are interleaved.
 
 **Donaldson et al.** describe a **rule-based reconditioning approach** where transforms are applied to constructs that **could** exhibit undefined behaviour. Transforms are applied to all eligible construct in a blanket manner, **no** static analysis is performed to determine which constructs are in fact worth reconditioning. Here is example of reconditioning a **GLSL** shader:
 
-#### Original 
+#### Original
 ```glsl
 float A [3]; // Not initialised
 void main () {
@@ -56,7 +56,7 @@ void main () {
 }
 ```
 
-#### Reconditioned 
+#### Reconditioned
 ```glsl
 // [ Declarations of SAFE_ABS , MAKE_IN_RANGE and SAFE_DIV ]
 uint _loop_count = 0u;
@@ -125,7 +125,7 @@ void main () {
 | OpString | :red_circle: |
 | OpLine | :red_circle: |
 | OpNoLine | :red_circle: |
-| OpModuleProcessed | :red_circle: | 
+| OpModuleProcessed | :red_circle: |
 
 </details>
 
@@ -251,7 +251,7 @@ void main () {
 | OpPtrAccessChain | :red_circle: |
 | OpPtrEqual | :red_circle: |
 | OpPtrNotEqual | :red_circle: |
-| OpPtrDiff | :red_circle: | 
+| OpPtrDiff | :red_circle: |
 
 </details>
 
@@ -291,23 +291,23 @@ void main () {
 | OpImageSampleProjDrefExplicitLod | :red_circle: |
 | OpImageFetch | :red_circle: |
 | OpImageGather | :red_circle: |
-| OpImageDrefGather | :red_circle: | 
+| OpImageDrefGather | :red_circle: |
 | OpImageRead | :red_circle: |
 | OpImageWrite | :red_circle: |
 | OpImage | :red_circle: |
 | OpImageQueryFormat | :red_circle: |
 | OpImageQueryOrder | :red_circle: |
-| OpImageQuerySizeLod | :red_circle: | 
+| OpImageQuerySizeLod | :red_circle: |
 | OpImageQuerySize | :red_circle: |
 | OpImageQueryLod | :red_circle: |
 | OpImageQueryLevels | :red_circle: |
 | OpImageQuerySamples | :red_circle: |
 | OpImageSparseSampleImplicitLod | :red_circle: |
-| OpImageSparseSampleExplicitLod | :red_circle: | 
+| OpImageSparseSampleExplicitLod | :red_circle: |
 | OpImageSparseSampleDrefImplicitLod | :red_circle: |
 | OpImageSparseSampleDrefExplicitLod | :red_circle: |
 | OpImageSparseFetch | :red_circle: |
-| OpImageSparseGather | :red_circle: | 
+| OpImageSparseGather | :red_circle: |
 | OpImageSparseDrefGather | :red_circle: |
 | OpImageSparseTexelsResident | :red_circle: |
 | OpImageSparseRead | :red_circle: |
@@ -334,7 +334,7 @@ void main () {
 | OpConvertPtrToU | :red_circle: |
 | OpSatConvertSToU | :red_circle: |
 | OpSatConvertUToS | :red_circle: |
-| OpConvertUToPtr | :red_circle: | 
+| OpConvertUToPtr | :red_circle: |
 | OpPtrCastToGeneric | :red_circle: |
 | OpGenericCastToPtr | :red_circle: |
 | OpGenericCastToPtrExplicit | :red_circle: |

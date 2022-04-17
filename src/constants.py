@@ -1,11 +1,10 @@
 import random
 from typing import TYPE_CHECKING
 
-from src import (
-    Constant,
-    OpCode,
-)
-from src.predicates import HasType, IsMatrixType
+from src import Constant
+from src import OpCode
+from src.predicates import HasType
+from src.predicates import IsMatrixType
 
 if TYPE_CHECKING:
     from src.context import Context

@@ -1,6 +1,7 @@
 from typing import (
     TYPE_CHECKING,
 )
+
 from src import OpCode
 from src.operators import Operand
 from src.operators.arithmetic import BinaryArithmeticOperator

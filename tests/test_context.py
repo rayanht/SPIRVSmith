@@ -1,19 +1,20 @@
 import copy
 import unittest
+
 from run_local import SPIRVSmithConfig
-from src.monitor import Monitor
-from src.enums import ExecutionModel
-from src import FuzzDelegator, Type
-from src.operators.arithmetic.scalar_arithmetic import OpISub
+from src import FuzzDelegator
+from src import Type
 from src.context import Context
-from src.types.abstract_types import ArithmeticType, MiscType
-from src.types.concrete_types import (
-    OpTypeBool,
-    OpTypeFloat,
-    OpTypeFunction,
-    OpTypeInt,
-    OpTypeVector,
-)
+from src.enums import ExecutionModel
+from src.monitor import Monitor
+from src.operators.arithmetic.scalar_arithmetic import OpISub
+from src.types.abstract_types import ArithmeticType
+from src.types.abstract_types import MiscType
+from src.types.concrete_types import OpTypeBool
+from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeFunction
+from src.types.concrete_types import OpTypeInt
+from src.types.concrete_types import OpTypeVector
 
 N = 500
 monitor = Monitor()

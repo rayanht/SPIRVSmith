@@ -1,12 +1,16 @@
 import copy
 import unittest
-from src import FuzzDelegator
-from src.constants import OpConstant, OpConstantFalse, OpConstantTrue
-from src.monitor import Monitor
-from src.enums import ExecutionModel
-from src.context import Context
+
 from run_local import SPIRVSmithConfig
-from src.types.concrete_types import OpTypeBool, OpTypeInt
+from src import FuzzDelegator
+from src.constants import OpConstant
+from src.constants import OpConstantFalse
+from src.constants import OpConstantTrue
+from src.context import Context
+from src.enums import ExecutionModel
+from src.monitor import Monitor
+from src.types.concrete_types import OpTypeBool
+from src.types.concrete_types import OpTypeInt
 
 N = 5000
 monitor = Monitor()

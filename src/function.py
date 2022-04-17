@@ -1,14 +1,13 @@
 import random
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
+from typing import TYPE_CHECKING
 
-from src.enums import FunctionControlMask, SelectionControlMask
-from src import (
-    FuzzLeaf,
-    OpCode,
-    OpCode,
-    Untyped,
-    VoidOp,
-)
+from src import FuzzLeaf
+from src import OpCode
+from src import Untyped
+from src import VoidOp
+from src.enums import FunctionControlMask
+from src.enums import SelectionControlMask
 
 if TYPE_CHECKING:
     from src.context import Context

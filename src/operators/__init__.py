@@ -1,6 +1,11 @@
 from types import NoneType
-from typing import Optional, get_args
-from src import Constant, OpCode, Signed, Statement
+from typing import get_args
+from typing import Optional
+
+from src import Constant
+from src import OpCode
+from src import Signed
+from src import Statement
 from src.constants import OpConstantComposite
 from src.context import Context
 from src.types.concrete_types import OpTypeVector

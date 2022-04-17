@@ -1,13 +1,19 @@
 import copy
 import unittest
-from src import FuzzDelegator, Type
-from src.constants import OpConstant, OpConstantComposite
-from src.monitor import Monitor
-from src.enums import ExecutionModel
-from src.context import Context
+
 from run_local import SPIRVSmithConfig
-from src.predicates import HaveSameBaseType, HaveSameType
-from src.types.concrete_types import OpTypeFloat, OpTypeInt, OpTypeVector
+from src import FuzzDelegator
+from src import Type
+from src.constants import OpConstant
+from src.constants import OpConstantComposite
+from src.context import Context
+from src.enums import ExecutionModel
+from src.monitor import Monitor
+from src.predicates import HaveSameBaseType
+from src.predicates import HaveSameType
+from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeInt
+from src.types.concrete_types import OpTypeVector
 
 N = 1000
 monitor = Monitor()
