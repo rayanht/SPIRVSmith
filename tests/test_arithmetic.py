@@ -126,10 +126,10 @@ class TestArithmetic(unittest.TestCase):
             self.context
         )[-1]
 
-        # The left matrix should have as many rows as the right matrix has columns
+        # The left matrix should have as many columns as the right matrix has rows
         self.assertEqual(
-            len(matrix_times_matrix.operand1.type.type),
-            len(matrix_times_matrix.operand2.type),
+            len(matrix_times_matrix.operand1.type),
+            len(matrix_times_matrix.operand2.type.type),
         )
         # The resulting matrix must have as many rows as the first operand
         self.assertEqual(
@@ -138,5 +138,5 @@ class TestArithmetic(unittest.TestCase):
         )
         # The resulting matrix must have as many columns as the second operand
         self.assertEqual(
-            len(matrix_times_matrix.type.type), len(matrix_times_matrix.operand2.type)
+            len(matrix_times_matrix.type), len(matrix_times_matrix.operand2.type)
         )
