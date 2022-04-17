@@ -1,5 +1,6 @@
 import copy
 import unittest
+from run_local import SPIRVSmithConfig
 from src import FuzzDelegator, Type
 from src.constants import (
     OpConstant,
@@ -8,16 +9,17 @@ from src.constants import (
 from src.monitor import Monitor
 from src.enums import ExecutionModel
 from src.context import Context
-from run_local import SPIRVSmithConfig
 from src.operators.arithmetic.linear_algebra import (
-    OpMatrixTimesMatrix,
-    OpMatrixTimesVector,
     OpOuterProduct,
-    OpVectorTimesMatrix,
-    OpVectorTimesScalar,
 )
-from src.operators.composite import OpCompositeExtract, OpCompositeInsert, OpTranspose, OpVectorExtractDynamic, OpVectorInsertDynamic
-from src.types.concrete_types import OpTypeFloat, OpTypeInt, OpTypeVector
+from src.operators.composite import (
+    OpCompositeExtract,
+    OpCompositeInsert,
+    OpTranspose,
+    OpVectorExtractDynamic,
+    OpVectorInsertDynamic,
+)
+from src.types.concrete_types import OpTypeFloat, OpTypeVector
 
 N = 1000
 monitor = Monitor()
@@ -63,7 +65,7 @@ class TestArithmetic(unittest.TestCase):
         )[-1]
 
         self.assertEqual(vector_extract.type, vec_const.get_base_type())
-    
+
     def test_vector_insert_preserves_type(self):
         vec_const: OpConstantComposite = create_vector_const(self.context, OpTypeFloat)
 
@@ -76,29 +78,25 @@ class TestArithmetic(unittest.TestCase):
     def test_composite_extract_has_correct_type(self):
         vec_const: OpConstantComposite = create_vector_const(self.context, OpTypeFloat)
 
-        vector_extract: OpCompositeExtract = OpCompositeExtract().fuzz(
-            self.context
-        )[-1]
+        vector_extract: OpCompositeExtract = OpCompositeExtract().fuzz(self.context)[-1]
 
         self.assertEqual(vector_extract.type, vec_const.get_base_type())
 
     def test_composite_insert_preserves_type(self):
         vec_const: OpConstantComposite = create_vector_const(self.context, OpTypeFloat)
 
-        vector_insert: OpCompositeInsert = OpCompositeInsert().fuzz(
-            self.context
-        )[-1]
+        vector_insert: OpCompositeInsert = OpCompositeInsert().fuzz(self.context)[-1]
 
         self.assertEqual(vector_insert.type, vec_const.type)
-        
+
     def test_transpose_has_correct_shape(self):
         create_vector_const(self.context, OpTypeFloat, size=4)
         create_vector_const(self.context, OpTypeFloat, size=2)
 
         outer_product: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
         self.context.symbol_table[outer_product] = outer_product.id
-        
+
         transpose: OpTranspose = OpTranspose().fuzz(self.context)[-1]
-        
+
         self.assertEqual(len(transpose.type), len(outer_product.type.type))
         self.assertEqual(len(transpose.type.type), len(outer_product.type))
