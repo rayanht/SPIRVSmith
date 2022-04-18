@@ -21,13 +21,13 @@ from src.enums import ExecutionMode
 from src.enums import ExecutionModel
 from src.enums import MemoryModel
 from src.enums import StorageClass
-from src.memory import OpVariable
 from src.misc import OpCapability
 from src.misc import OpEntryPoint
 from src.misc import OpExecutionMode
 from src.misc import OpMemoryModel
 from src.monitor import Event
 from src.monitor import Monitor
+from src.operators.memory.memory_access import OpVariable
 from src.recondition import recondition
 
 if TYPE_CHECKING:

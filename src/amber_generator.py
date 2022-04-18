@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from src.memory import OpVariable
 from src.monitor import Event
 from src.monitor import Monitor
+from src.operators.memory.memory_access import OpVariable
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 
