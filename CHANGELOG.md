@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.3.0 - 2022-04-18
+#### Bug Fixes
+- **(fuzzer)** avoid redifinition of built-in object in OpStore - (2c2114c) - Rayan Hatout
+- **(fuzzer)** rename MaskNone to NONE in SelectionControlMask SPIR-V enum to avoid assembly failure - (0871215) - Rayan Hatout
+#### Features
+- **(dependencies)** update dependencies script to additionally build spirv-cross after building spirv-tools - (f577593) - Rayan Hatout
+- **(fuzzer)** implement OpAccessChain and refactor memory operators - (6aefb1b) - Rayan Hatout
+#### Style
+- **(all)** clean up unused imports - (f7531fb) - Rayan Hatout
+
+- - -
+
 ## v0.2.0 - 2022-04-18
 #### Bug Fixes
 - **(fuzzer)** fix OpCopyObject accidentally renamed - (56f3fef) - Rayan Hatout
