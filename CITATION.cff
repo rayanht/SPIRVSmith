@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Hatout"
+  given-names: "Rayan"
+  orcid: "https://orcid.org/0000-0001-6240-1473"
+title: "SPIRVSmith"
+version: 0.1.0
+doi: 10.5281/zenodo.6466654
+date-released: 2022-04-17
+url: "https://github.com/rayanht/SPIRVSmith"
