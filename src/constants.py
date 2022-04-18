@@ -89,7 +89,7 @@ class OpConstantComposite(CompositeConstant):
                 self.constituents.append(column_values)
         else:
             self.constituents = self.fuzz_constituents(context)
-            if len(self.constituents) == 0:
+            if not self.constituents:
                 return []
         self.constituents = tuple(self.constituents)
         return [*composite_type, *self.constituents, self]
@@ -102,5 +102,5 @@ class OpConstantComposite(CompositeConstant):
             if constituent:
                 self.constituents.append(constituent)
             else:
-                return []
+                return None
         return self.constituents
