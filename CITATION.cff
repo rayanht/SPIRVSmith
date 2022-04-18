@@ -5,7 +5,7 @@ authors:
   given-names: "Rayan"
   orcid: "https://orcid.org/0000-0001-6240-1473"
 title: "SPIRVSmith"
-version: 0.1.0
+version: v0.3.0
 doi: 10.5281/zenodo.6466654
-date-released: 2022-04-17
+date-released: 2022-04-18
 url: "https://github.com/rayanht/SPIRVSmith"
