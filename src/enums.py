@@ -618,7 +618,7 @@ class SelectionControlShift(SPIRVEnum):
 
 
 class SelectionControlMask(SPIRVEnum):
-    MaskNone = 0
+    NONE = 0
     Flatten = 1
     DontFlatten = 2
 
