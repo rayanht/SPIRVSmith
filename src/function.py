@@ -11,7 +11,7 @@ from src.enums import SelectionControlMask
 
 if TYPE_CHECKING:
     from src.context import Context
-from src.memory import OpVariable, Statement
+from src.operators.memory.memory_access import OpVariable, Statement
 from src.types.concrete_types import OpTypeBool, OpTypeFunction, Type
 from utils.patched_dataclass import dataclass
 
@@ -89,7 +89,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
         if context.get_depth() > context.config.limits.max_depth:
             return []
         self.exit_label = OpLabel().fuzz(context)[0]
-        self.selection_control = None  # TODO
+        self.selection_control = SelectionControlMask.NONE
         if_block = fuzz_block(context, self.exit_label)
         else_block = fuzz_block(context, self.exit_label)
         true_label = if_block[0]

@@ -12,7 +12,7 @@ VK_ICD_FILENAMES_SWIFTSHADER = (
     "/Users/rayan/swiftshader/build/Darwin/vk_swiftshader_icd.json"
 )
 VK_ICD_FILENAMES_MOLTENVK = (
-    "/Users/rayan/VulkanSDK/1.2.198.1/macOS/share/vulkan/icd.d/MoltenVK_icd.json"
+    "/Users/rayan/VulkanSDK/1.3.204.1/macOS/share/vulkan/icd.d/MoltenVK_icd.json"
 )
 
 
@@ -34,7 +34,6 @@ def fetch_amber_file_from_GCS(shader_id: str) -> None:
 
 
 def run_amber():
-    # TODO add backend rotation
     process: subprocess.CompletedProcess = subprocess.run(
         [
             AMBER_PATH,

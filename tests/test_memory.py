@@ -6,8 +6,8 @@ from src import FuzzDelegator
 from src.context import Context
 from src.enums import ExecutionModel
 from src.enums import StorageClass
-from src.memory import OpLoad
 from src.monitor import Monitor
+from src.operators.memory.memory_access import OpLoad
 
 monitor = Monitor()
 config = SPIRVSmithConfig()

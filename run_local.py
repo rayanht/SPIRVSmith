@@ -16,8 +16,8 @@ class BinariesConfig:
 
 @dataclass
 class LimitsConfig:
-    n_types: int = 50
-    n_constants: int = 100
+    n_types: int = 20
+    n_constants: int = 50
     n_functions: int = 1
     max_depth: int = 3
 
@@ -26,13 +26,13 @@ class LimitsConfig:
 class FuzzingStrategyConfig:
     ## Operations weights
     w_memory_operation: int = 4
-    w_logical_operation: int = 8
-    w_arithmetic_operation: int = 8
-    w_control_flow_operation: int = 0
+    w_logical_operation: int = 4
+    w_arithmetic_operation: int = 4
+    w_control_flow_operation: int = 1
     w_function_operation: int = 1
-    w_bitwise_operation: int = 8
-    w_conversion_operation: int = 8
-    w_composite_operation: int = 8
+    w_bitwise_operation: int = 4
+    w_conversion_operation: int = 4
+    w_composite_operation: int = 4
 
     ## Types weights
     w_scalar_type: int = 1
@@ -42,7 +42,7 @@ class FuzzingStrategyConfig:
 
     ## Constants weights
     w_composite_constant: int = 1
-    w_scalar_constant: int = 1
+    w_scalar_constant: int = 2
 
     # P(generating a statement at step t + 1 | a statement was generated at step t)
     p_statement: float = 0.995
