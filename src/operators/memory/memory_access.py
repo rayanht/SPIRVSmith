@@ -9,6 +9,7 @@ from src.predicates import HasType
 from src.predicates import IsCompositeType
 from src.predicates import IsInputVariable
 from src.predicates import IsMatrixType
+from src.predicates import IsOutputVariable
 from src.predicates import IsPointerType
 from src.predicates import IsStructType
 from src.predicates import IsVariable
@@ -41,7 +42,7 @@ class OpLoad(MemoryOperator):
         variable: OpVariable = random.SystemRandom().choice(
             list(
                 filter(
-                    lambda x: x.storage_class != StorageClass.Output,
+                    Not(IsOutputVariable),
                     context.get_local_variables() + context.get_global_variables(),
                 )
             )
@@ -60,11 +61,13 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
         pointer: OpTypePointer = context.get_random_operand(IsPointerType)
         if not pointer:
             return []
-        object: Statement = context.get_random_operand(HasType(pointer.type.type))
+        target_object: Statement = context.get_random_operand(
+            HasType(pointer.type.type)
+        )
         if not object:
             return []
         self.pointer = pointer
-        self.object = object
+        self.object = target_object
         return [self]
 
 
