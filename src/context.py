@@ -35,7 +35,7 @@ from src.types.concrete_types import OpTypeVoid
 if TYPE_CHECKING:
     from src import OpCode
     from run_local import SPIRVSmithConfig
-from src.memory import OpVariable
+from src.operators.memory.memory_access import OpVariable
 
 
 class Context:
@@ -182,14 +182,17 @@ class Context:
         return depth
 
     def gen_types(self):
-        for _ in range(self.config.limits.n_types):
+        for _ in range(self.config.limits.n_types - 1):
             try:
                 opcodes: list["OpCode"] = Type().fuzz(self)
             except RecursionError:
                 continue
             for opcode in opcodes:
-                if opcode not in self.tvc:
-                    self.tvc[opcode] = opcode.id
+                self.add_to_tvc(opcode)
+        # We should ALWAYS have at least 1 struct type
+        struct_type: list["OpCode"] = OpTypeStruct().fuzz(self)
+        for side_effect in struct_type:
+            self.add_to_tvc(side_effect)
 
     def gen_constants(self):
         n_constants = self.config.limits.n_constants
