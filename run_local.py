@@ -24,6 +24,9 @@ class LimitsConfig:
 
 @dataclass
 class FuzzingStrategyConfig:
+    ## Extensions
+    enable_ext_glsl_std_450: bool = True
+
     ## Operations weights
     w_memory_operation: int = 4
     w_logical_operation: int = 4

@@ -179,6 +179,9 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCod
     import src.operators.conversions
     import src.operators.composite
 
+    if context.config.strategy.enable_ext_glsl_std_450:
+        import src.operators.arithmetic.glsl
+
     while random.SystemRandom().random() < context.config.strategy.p_statement:
         opcodes: list[OpCode] = Statement().fuzz(block_context)
         nested_block = False
