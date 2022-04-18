@@ -6,6 +6,7 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/5f91595e621ebb1f1da2/maintainability)](https://codeclimate.com/github/rayanht/SPIRVSmith/maintainability)
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B22322%2Fgithub.com%2Frayanht%2FSPIRVSmith.svg?type=shield)](https://app.fossa.com/projects/custom%2B22322%2Fgithub.com%2Frayanht%2FSPIRVSmith?ref=badge_shield)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![DOI](https://zenodo.org/badge/429076310.svg)](https://zenodo.org/badge/latestdoi/429076310)
 
 ## Introduction
 
