@@ -2,6 +2,20 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.2.0 - 2022-04-18
+#### Bug Fixes
+- **(fuzzer)** fix OpCopyObject accidentally renamed - (56f3fef) - Rayan Hatout
+#### Documentation
+- **(badges)** add DOI badge - (9f4ac4e) - Rayan Hatout
+#### Features
+- **(repo)** automatically push tags on a cog release - (aac8761) - Rayan Hatout
+#### Miscellaneous Chores
+- **(repo)** add a CITATION.cff file - (bbed315) - Rayan Hatout
+#### Style
+- **(all)** add missing newline in scripts and CHANGELOG - (201ad88) - Rayan Hatout
+
+- - -
+
 ## 0.1.0 - 2022-04-18
 #### Bug Fixes
 - **(fuzzer)** avoid redefinition of builtins object and type when fuzzing composite operators - (7e2643b) - Rayan Hatout
