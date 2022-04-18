@@ -18,13 +18,23 @@ Not = lambda p: lambda x: not p(x)
 
 IsTyped = lambda x: not isinstance(x, Untyped)
 IsVariable = lambda x: isinstance(x, OpVariable)
+
 HasFloatBaseType = lambda x: isinstance(x.get_base_type(), OpTypeFloat)
+HasUnsignedIntegerBaseType = (
+    lambda x: isinstance(x.get_base_type(), OpTypeInt) and x.get_base_type().signed == 0
+)
+HasSignedIntegerBaseType = (
+    lambda x: isinstance(x.get_base_type(), OpTypeInt) and x.get_base_type().signed == 1
+)
+
 IsVectorType = lambda x: isinstance(x.type, OpTypeVector)
 IsArrayType = lambda x: isinstance(x.type, OpTypeArray)
 IsMatrixType = lambda x: isinstance(x.type, OpTypeMatrix)
 IsStructType = lambda x: isinstance(x.type, OpTypeStruct)
 IsScalarInteger = lambda x: isinstance(x.type, OpTypeInt)
 IsScalarFloat = lambda x: isinstance(x.type, OpTypeFloat)
+IsScalarUnsignedInteger = lambda x: isinstance(x.type, OpTypeInt) and x.type.signed == 0
+IsScalarSignedInteger = lambda x: isinstance(x.type, OpTypeInt) and x.type.signed == 1
 IsPointerType = lambda x: isinstance(x.type, OpTypePointer)
 
 IsCompositeType = lambda x: isinstance(
