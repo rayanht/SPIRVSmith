@@ -11,3 +11,4 @@ cp amber ../../../amber-bin
 cd ../../..
 rm -rf amber
 mv amber-bin amber
+cd ..
