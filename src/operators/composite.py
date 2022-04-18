@@ -159,7 +159,7 @@ class OpCompositeInsert(CompositeOperator):
         return [self]
 
 
-class OpCopytarget_object(CompositeOperator):
+class OpCopyObject(CompositeOperator):
     type: Type = None
     object: Statement = None
 
