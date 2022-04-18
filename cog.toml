@@ -1,7 +1,10 @@
 ignore_merge_commits = false
 branch_whitelist = []
 pre_bump_hooks = []
-post_bump_hooks = []
+post_bump_hooks = [
+    "git push origin v{{version}}"
+]
+tag_prefix = "v"
 
 [commit_types]
 
