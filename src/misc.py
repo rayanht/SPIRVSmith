@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Sequence
-from uuid import uuid4
 
 from src import FuzzLeaf
 from src import OpCode

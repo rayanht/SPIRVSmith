@@ -4,20 +4,16 @@ from typing import TYPE_CHECKING
 from src.constants import OpConstant
 from src.operators.memory import MemoryOperator
 from src.operators.memory.variable import OpVariable
-from src.predicates import And
 from src.predicates import HasType
 from src.predicates import IsCompositeType
-from src.predicates import IsInputVariable
 from src.predicates import IsMatrixType
 from src.predicates import IsOutputVariable
 from src.predicates import IsPointerType
 from src.predicates import IsStructType
-from src.predicates import IsVariable
 from src.predicates import Not
 
 if TYPE_CHECKING:
     from src.context import Context
-from src.enums import StorageClass
 from src import (
     OpCode,
     Statement,
@@ -25,10 +21,8 @@ from src import (
     VoidOp,
 )
 from src.types.concrete_types import (
-    OpTypeBool,
     OpTypeInt,
     OpTypePointer,
-    OpTypeStruct,
     Type,
 )
 
