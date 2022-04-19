@@ -15,31 +15,35 @@ And = lambda *ps: lambda x: all(p(x) for p in ps)
 Or = lambda *ps: lambda x: any(p(x) for p in ps)
 Not = lambda p: lambda x: not p(x)
 
+HasType = lambda t: lambda x: x.type == t
+HasBaseType = lambda t: lambda x: x.get_base_type() == t
+HasLength = lambda n: lambda x: len(x.type) == n
+IsOfType = lambda t: lambda x: isinstance(x.type, t)
+IsOfBaseType = lambda t: lambda x: isinstance(x.get_base_type(), t)
 
 IsTyped = lambda x: not isinstance(x, Untyped)
 IsVariable = lambda x: isinstance(x, OpVariable)
 
-HasFloatBaseType = lambda x: isinstance(x.get_base_type(), OpTypeFloat)
-HasUnsignedIntegerBaseType = (
-    lambda x: isinstance(x.get_base_type(), OpTypeInt) and x.get_base_type().signed == 0
+IsOfFloatBaseType = IsOfBaseType(OpTypeFloat)
+IsOfUnsignedIntegerBaseType = (
+    lambda x: IsOfBaseType(OpTypeInt)(x) and x.get_base_type().signed == 0
 )
-HasSignedIntegerBaseType = (
-    lambda x: isinstance(x.get_base_type(), OpTypeInt) and x.get_base_type().signed == 1
+IsOfSignedIntegerBaseType = (
+    lambda x: IsOfBaseType(OpTypeInt)(x) and x.get_base_type().signed == 1
 )
 
-IsVectorType = lambda x: isinstance(x.type, OpTypeVector)
-IsArrayType = lambda x: isinstance(x.type, OpTypeArray)
-IsMatrixType = lambda x: isinstance(x.type, OpTypeMatrix)
-IsStructType = lambda x: isinstance(x.type, OpTypeStruct)
-IsScalarInteger = lambda x: isinstance(x.type, OpTypeInt)
-IsScalarFloat = lambda x: isinstance(x.type, OpTypeFloat)
-IsScalarUnsignedInteger = lambda x: isinstance(x.type, OpTypeInt) and x.type.signed == 0
-IsScalarSignedInteger = lambda x: isinstance(x.type, OpTypeInt) and x.type.signed == 1
-IsPointerType = lambda x: isinstance(x.type, OpTypePointer)
+IsVectorType = IsOfType(OpTypeVector)
+IsArrayType = IsOfType(OpTypeArray)
+IsMatrixType = IsOfType(OpTypeMatrix)
+IsStructType = IsOfType(OpTypeStruct)
+IsScalarInteger = IsOfType(OpTypeInt)
+IsScalarFloat = IsOfType(OpTypeFloat)
+IsPointerType = IsOfType(OpTypePointer)
+IsCompositeType = IsOfType((OpTypeMatrix, OpTypeVector, OpTypeStruct, OpTypeArray))
 
-IsCompositeType = lambda x: isinstance(
-    x.type, (OpTypeMatrix, OpTypeVector, OpTypeStruct, OpTypeArray)
-)
+IsScalarUnsignedInteger = lambda x: IsOfBaseType(OpTypeInt)(x) and x.type.signed == 0
+IsScalarSignedInteger = lambda x: IsOfBaseType(OpTypeInt)(x) and x.type.signed == 1
+
 HasValidBaseType = lambda x, target_type: isinstance(x.get_base_type(), target_type)
 HasValidSign = (
     lambda x, signed: x.get_base_type().signed == signed if signed is not None else True
@@ -54,10 +58,6 @@ HasValidTypeAndSign = lambda x, target_type, signed: HasValidType(
 HaveSameTypeLength = lambda x, y: len(x.type) == len(y.type)
 HaveSameType = lambda x, y: x.type == y.type
 HaveSameBaseType = lambda x, y: x.get_base_type() == y.get_base_type()
-
-HasType = lambda t: lambda x: x.type == t
-HasBaseType = lambda t: lambda x: x.get_base_type() == t
-HasLength = lambda n: lambda x: len(x.type) == n
 
 IsOutputVariable = lambda x: x.storage_class == StorageClass.Output
 IsInputVariable = lambda x: x.storage_class == StorageClass.Input

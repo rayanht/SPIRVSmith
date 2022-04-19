@@ -15,12 +15,12 @@ from src.operators import UnaryOperatorFuzzMixin
 from src.operators.arithmetic import BinaryArithmeticOperator
 from src.operators.arithmetic import UnaryArithmeticOperator
 from src.predicates import And
-from src.predicates import HasFloatBaseType
 from src.predicates import HasLength
-from src.predicates import HasSignedIntegerBaseType
 from src.predicates import HasType
-from src.predicates import HasUnsignedIntegerBaseType
 from src.predicates import IsMatrixType
+from src.predicates import IsOfFloatBaseType
+from src.predicates import IsOfSignedIntegerBaseType
+from src.predicates import IsOfUnsignedIntegerBaseType
 from src.predicates import IsScalarFloat
 from src.predicates import IsScalarSignedInteger
 from src.predicates import IsVectorType
@@ -319,7 +319,7 @@ class ModfStruct(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         if not operand:
             return []
@@ -391,7 +391,7 @@ class FClamp(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         if not operand1:
             return []
@@ -413,7 +413,7 @@ class UClamp(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasUnsignedIntegerBaseType), IsScalarSignedInteger)
+            Or(And(IsVectorType, IsOfUnsignedIntegerBaseType), IsScalarSignedInteger)
         )
         if not operand1:
             return []
@@ -435,7 +435,7 @@ class SClamp(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasSignedIntegerBaseType), IsScalarSignedInteger)
+            Or(And(IsVectorType, IsOfSignedIntegerBaseType), IsScalarSignedInteger)
         )
         if not operand1:
             return []
@@ -457,7 +457,7 @@ class FMix(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         if not operand1:
             return []
@@ -487,7 +487,7 @@ class SmoothStep(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         if not operand1:
             return []
@@ -509,7 +509,7 @@ class Fma(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         if not operand1:
             return []
@@ -534,7 +534,7 @@ class FrexpStruct(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         if not operand:
             return []
@@ -576,7 +576,7 @@ class Length(
     GLSLExtensionOperator,
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
-        operand = context.get_random_operand(And(IsVectorType, HasFloatBaseType))
+        operand = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
         if not operand:
             return []
         result_type = OpTypeFloat().fuzz(context)[-1]
@@ -596,7 +596,7 @@ class Distance(
     GLSLExtensionOperator,
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
-        operand1 = context.get_random_operand(And(IsVectorType, HasFloatBaseType))
+        operand1 = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
         if not operand1:
             return []
         operand2 = context.get_random_operand(HasType(operand1.type))
@@ -620,7 +620,7 @@ class Cross(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            And(IsVectorType, HasFloatBaseType, HasLength(3))
+            And(IsVectorType, IsOfFloatBaseType, HasLength(3))
         )
         if not operand1:
             return []
@@ -649,7 +649,7 @@ class FaceForward(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         operand2 = context.get_random_operand(HasType(operand1.type))
         operand3 = context.get_random_operand(HasType(operand1.type))
@@ -747,7 +747,7 @@ class NClamp(
 ):
     def fuzz(self, context: "Context") -> list[OpCode]:
         operand1 = context.get_random_operand(
-            Or(And(IsVectorType, HasFloatBaseType), IsScalarFloat)
+            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         if not operand1:
             return []
