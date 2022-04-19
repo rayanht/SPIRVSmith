@@ -1,14 +1,8 @@
-from typing import TYPE_CHECKING
-
 from src import OpCode
-from src import ReparametrizationError
 from src import Statement
 from src import Type
 from src import VoidOp
 from utils.patched_dataclass import dataclass
-
-if TYPE_CHECKING:
-    from src.context import Context
 
 
 @dataclass
