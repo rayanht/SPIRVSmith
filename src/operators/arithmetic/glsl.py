@@ -1,16 +1,13 @@
-import copy
 from typing import TYPE_CHECKING
 
 from src import OpCode
 from src import Signed
-from src import Type
 from src import Unsigned
 from src.annotations import OpDecorate
 from src.enums import Decoration
 from src.extension import OpExtInst
 from src.operators import BinaryOperatorFuzzMixin
 from src.operators import GLSLExtensionOperator
-from src.operators import Operand
 from src.operators import UnaryOperatorFuzzMixin
 from src.operators.arithmetic import BinaryArithmeticOperator
 from src.operators.arithmetic import UnaryArithmeticOperator

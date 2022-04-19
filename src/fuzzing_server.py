@@ -30,7 +30,6 @@ from src.monitor import Event
 from src.monitor import Monitor
 from src.operators.memory.memory_access import OpVariable
 from src.recondition import recondition
-from src.types.concrete_types import OpTypeFloat
 
 if TYPE_CHECKING:
     from run_local import SPIRVSmithConfig
