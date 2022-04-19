@@ -2,6 +2,23 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.4.0 - 2022-04-19
+#### Documentation
+- update CITATION.cff for v0.4.0 - (a3dec92) - Rayan Hatout
+- update CITATION.cff for v0.3.0 - (241d06e) - Rayan Hatout
+#### Features
+- **(fuzzer)** implement usage of OpExtension, OpExtInstImport and OpExtInst; modify fuzzer logic to include the GLSL extension - (6cba185) - Rayan Hatout
+- **(fuzzer)** add a configuration switch to enable/disable inclusion of operators from the GLSL extension when fuzzing - (91f867e) - Rayan Hatout
+- **(fuzzer)** implement fuzzing of the GLSL extension operators - (131611b) - Rayan Hatout
+- **(fuzzer)** define enum used to lookup opcode IDs in the GLSL extension - (9a2832c) - Rayan Hatout
+#### Style
+- **(all)** clean up unused imports - (68c47aa) - Rayan Hatout
+- **(fuzzer)** clean up unused imports in extension.py - (96eea50) - Rayan Hatout
+- **(fuzzer)** simplify the predicate system - (dd60a22) - Rayan Hatout
+- **(fuzzer)** reduce duplicate code in predicates - (6b46c92) - Rayan Hatout
+
+- - -
+
 ## v0.3.0 - 2022-04-18
 #### Bug Fixes
 - **(fuzzer)** avoid redifinition of built-in object in OpStore - (2c2114c) - Rayan Hatout
