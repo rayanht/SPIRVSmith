@@ -7,7 +7,8 @@ from src import Statement
 from src import Type
 from src.operators import Operand
 from src.predicates import HasValidBaseTypeAndSign
-from src.predicates import IsValidArithmeticOperand
+from src.predicates import IsOfType
+from src.types.abstract_types import ArithmeticType
 
 
 S = TypeVar("S")
@@ -19,7 +20,7 @@ DC = TypeVar("DC")
 class ArithmeticOperator(Statement, Generic[S, D, SC, DC]):
     OPERAND_SELECTION_PREDICATE: Callable[
         [Operand], bool
-    ] = lambda _, target_type, signed: lambda op: IsValidArithmeticOperand(
+    ] = lambda _, target_type, signed: lambda op: IsOfType(ArithmeticType)(
         op
     ) and HasValidBaseTypeAndSign(
         op, target_type, signed

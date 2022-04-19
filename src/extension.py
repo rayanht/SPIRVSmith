@@ -27,7 +27,3 @@ class OpExtInst(Statement):
     extension_set: OpExtInstImport = None
     instruction: OpCode = None
     operands: tuple[Statement] = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        Statement.set_zero_probability(self.__class__)
-        raise ReparametrizationError

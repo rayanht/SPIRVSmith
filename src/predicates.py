@@ -24,25 +24,27 @@ IsOfBaseType = lambda t: lambda x: isinstance(x.get_base_type(), t)
 IsTyped = lambda x: not isinstance(x, Untyped)
 IsVariable = lambda x: isinstance(x, OpVariable)
 
+IsSigned = lambda x: x.signed == 1
+
+IsBaseTypeSigned = lambda x: IsSigned(x.get_base_type())
+IsBaseTypeUnsigned = lambda x: Not(IsSigned)(x.get_base_type())
+
 IsOfFloatBaseType = IsOfBaseType(OpTypeFloat)
-IsOfUnsignedIntegerBaseType = (
-    lambda x: IsOfBaseType(OpTypeInt)(x) and x.get_base_type().signed == 0
-)
-IsOfSignedIntegerBaseType = (
-    lambda x: IsOfBaseType(OpTypeInt)(x) and x.get_base_type().signed == 1
-)
+IsOfUnsignedIntegerBaseType = And(IsOfBaseType(OpTypeInt), IsBaseTypeUnsigned)
+IsOfSignedIntegerBaseType = And(IsOfBaseType(OpTypeInt), IsBaseTypeSigned)
 
 IsVectorType = IsOfType(OpTypeVector)
 IsArrayType = IsOfType(OpTypeArray)
 IsMatrixType = IsOfType(OpTypeMatrix)
 IsStructType = IsOfType(OpTypeStruct)
-IsScalarInteger = IsOfType(OpTypeInt)
-IsScalarFloat = IsOfType(OpTypeFloat)
 IsPointerType = IsOfType(OpTypePointer)
 IsCompositeType = IsOfType((OpTypeMatrix, OpTypeVector, OpTypeStruct, OpTypeArray))
 
-IsScalarUnsignedInteger = lambda x: IsOfBaseType(OpTypeInt)(x) and x.type.signed == 0
-IsScalarSignedInteger = lambda x: IsOfBaseType(OpTypeInt)(x) and x.type.signed == 1
+IsScalarInteger = IsOfType(OpTypeInt)
+IsScalarFloat = IsOfType(OpTypeFloat)
+
+IsScalarUnsignedInteger = And(IsScalarInteger, Not(IsBaseTypeSigned))
+IsScalarSignedInteger = And(IsScalarInteger, IsBaseTypeSigned)
 
 HasValidBaseType = lambda x, target_type: isinstance(x.get_base_type(), target_type)
 HasValidSign = (
@@ -61,7 +63,3 @@ HaveSameBaseType = lambda x, y: x.get_base_type() == y.get_base_type()
 
 IsOutputVariable = lambda x: x.storage_class == StorageClass.Output
 IsInputVariable = lambda x: x.storage_class == StorageClass.Input
-IsValidArithmeticOperand = lambda x: isinstance(x.type, ArithmeticType)
-IsValidLogicalOperand = lambda x: isinstance(x.type, (OpTypeBool, ArithmeticType))
-IsValidBitwiseOperand = lambda x: isinstance(x.type, ArithmeticType)
-IsConversionOperand = lambda x: isinstance(x.type, ArithmeticType)

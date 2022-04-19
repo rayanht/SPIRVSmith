@@ -152,6 +152,8 @@ class OpCompositeInsert(CompositeOperator):
                 else composite.get_base_type()
             )
             target_object = context.get_random_operand(HasType(target_type))
+        if not target_object:
+            return []
         self.type = composite.type
         self.object = target_object
         self.composite = composite
