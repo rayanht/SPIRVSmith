@@ -93,7 +93,7 @@ class TestArithmetic(unittest.TestCase):
         create_vector_const(self.context, OpTypeFloat, size=2)
 
         outer_product: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
-        self.context.symbol_table[outer_product] = outer_product.id
+        self.context.symbol_table.append(outer_product)
 
         transpose: OpTranspose = OpTranspose().fuzz(self.context)[-1]
 

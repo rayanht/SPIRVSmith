@@ -8,6 +8,7 @@ from src import Untyped
 from src import VoidOp
 from src.enums import FunctionControlMask
 from src.enums import SelectionControlMask
+from src.extension import OpExtInst
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -190,7 +191,7 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCod
                 nested_block = True
                 break
             if isinstance(statement, Statement) and not nested_block:
-                block_context.symbol_table[statement] = statement.id
+                block_context.symbol_table.append(statement)
             if not isinstance(statement, (OpVariable, OpReturn)):
                 instructions.append(statement)
             if isinstance(statement, OpVariable):

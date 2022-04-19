@@ -8,9 +8,14 @@ from src import Signed
 from src import Statement
 from src.constants import OpConstantComposite
 from src.context import Context
+from src.extension import OpExtInst
 from src.types.concrete_types import OpTypeVector
 
 Operand = Statement | Constant
+
+
+class GLSLExtensionOperator:
+    ...
 
 
 class UnaryOperatorFuzzMixin:
@@ -51,6 +56,15 @@ class UnaryOperatorFuzzMixin:
         else:
             self.type = operand.type
         self.operand = operand
+        if isinstance(self, GLSLExtensionOperator):
+            return [
+                OpExtInst(
+                    type=self.type,
+                    extension_set=context.extension_sets["GLSL"],
+                    instruction=self.__class__,
+                    operands=tuple([self.operand]),
+                )
+            ]
         return [self]
 
     def __str__(self) -> str:
@@ -105,6 +119,15 @@ class BinaryOperatorFuzzMixin:
             self.type = operand1.type
         self.operand1 = operand1
         self.operand2 = operand2
+        if isinstance(self, GLSLExtensionOperator):
+            return [
+                OpExtInst(
+                    type=self.type,
+                    extension_set=context.extension_sets["GLSL"],
+                    instruction=self.__class__,
+                    operands=tuple([self.operand1, self.operand2]),
+                )
+            ]
         return [self]
 
     def __str__(self) -> str:

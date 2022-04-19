@@ -1,4 +1,5 @@
 import hashlib
+import inspect
 import pickle
 from abc import ABC
 from dataclasses import field
@@ -105,8 +106,12 @@ class OpCode(ABC):
         return []
 
     def resolve_attribute_spasm(self, attr, context) -> str:
+        if self.__class__.__name__ == "OpDecorate":
+            pass
         if attr.__class__.__name__ == "Context" or attr is None:
             return ""
+        elif inspect.isclass(attr) and issubclass(attr, OpCode):
+            attr_spasm = f" {attr.__name__}"
         elif isinstance(attr, OpCode):
             if isinstance(attr, (Type, Constant)):
                 attr_spasm = f" %{context.tvc[attr]}"
