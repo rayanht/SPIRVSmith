@@ -83,9 +83,10 @@ class OpConstantComposite(CompositeConstant):
             for _ in range(len(self.type)):
                 column_values = OpConstantComposite()
                 column_values.type = column_type
-                column_values.constituents = tuple(
-                    column_values.fuzz_constituents(context)
-                )
+                constituents = column_values.fuzz_constituents(context)
+                if not constituents:
+                    return []
+                column_values.constituents = tuple(constituents)
                 self.constituents.append(column_values)
         else:
             self.constituents = self.fuzz_constituents(context)

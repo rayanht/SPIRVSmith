@@ -159,9 +159,9 @@ void main () {
 
 |OpCode| Status |
 |--|--|
-| OpExtension | :red_circle: |
-| OpExtInstImport | :red_circle: |
-| OpExtInst | :red_circle: |
+| OpExtension | :white_check_mark: |
+| OpExtInstImport | :white_check_mark: |
+| OpExtInst | :white_check_mark: |
 
 </details>
 
@@ -177,7 +177,7 @@ void main () {
 | OpMemoryModel | :white_check_mark: |
 | OpEntryPoint | :white_check_mark: |
 | OpExecutionMode | :white_check_mark: |
-| OpCapability | :red_circle: |
+| OpCapability | :white_check_mark: |
 | OpExecutionModeId | :red_circle: |
 
 </details>
@@ -376,7 +376,7 @@ void main () {
 | OpSNegate | :white_check_mark: |
 | OpFNegate | :white_check_mark: |
 | OpIAdd | :white_check_mark: |
-| OpFAdd |:white_check_mark:  |
+| OpFAdd | :white_check_mark:  |
 | OpISub | :white_check_mark: |
 | OpFSub | :white_check_mark: |
 | OpIMul | :white_check_mark: |

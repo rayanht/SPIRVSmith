@@ -79,7 +79,7 @@ class TestArithmetic(unittest.TestCase):
 
         # Here we get either: mat2x2, mat2x4, mat4x2, mat4x4
         outer_product: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
-        self.context.symbol_table[outer_product] = outer_product.id
+        self.context.symbol_table.append(outer_product)
 
         # This should always find operands
         vector_times_matrix: OpVectorTimesMatrix = OpVectorTimesMatrix().fuzz(
@@ -95,7 +95,7 @@ class TestArithmetic(unittest.TestCase):
 
         # Here we get either: mat2x2, mat2x4, mat4x2, mat4x4
         outer_product: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
-        self.context.symbol_table[outer_product] = outer_product.id
+        self.context.symbol_table.append(outer_product)
 
         # This should always find operands
         matrix_times_vector: OpMatrixTimesVector = OpMatrixTimesVector().fuzz(
@@ -111,14 +111,14 @@ class TestArithmetic(unittest.TestCase):
 
         # Here we get either: mat2x2, mat2x4, mat4x2, mat4x4
         outer_product1: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
-        self.context.symbol_table[outer_product1] = outer_product1.id
+        self.context.symbol_table.append(outer_product1)
 
         # We do this to avoid having two outer products that
         # eeturn a mat2x4/mat4x2 which will fail the test
         outer_product2 = copy.deepcopy(outer_product1)
         while outer_product2 == outer_product1:
             outer_product2: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
-        self.context.symbol_table[outer_product2] = outer_product2.id
+        self.context.symbol_table.append(outer_product2)
 
         # This should always find operands
         matrix_times_matrix: OpMatrixTimesMatrix = OpMatrixTimesMatrix().fuzz(
