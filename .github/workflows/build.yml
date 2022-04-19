@@ -116,6 +116,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Compute short GitHub SHA
         id: vars
         run: echo "::set-output name=SHA_SHORT::$(git rev-parse --short HEAD)"
@@ -149,5 +151,7 @@ jobs:
           docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
 
       - name: Deploy to GCE
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
         run: |-
-          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" --zone "${{ env.GCE_ZONE }}" --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
+          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" --zone "${{ env.GCE_ZONE }}" --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }} --container-env DD_API_KEY=$DD_API_KEY"

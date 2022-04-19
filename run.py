@@ -53,8 +53,8 @@ class FuzzingStrategyConfig:
 
 @dataclass
 class MiscConfig:
-    start_web_server: bool = False
-    broadcast_generated_shaders: bool = False
+    start_web_server: bool = True
+    broadcast_generated_shaders: bool = True
 
 
 @dataclass

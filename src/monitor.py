@@ -6,6 +6,17 @@ import daiquiri
 # Eventually should do this automatically with the package version
 LOG_VERSION: float = 0.5
 
+import socket
+
+
+def is_gce_instance():
+    """Check if running in a GCE instance via DNS lookup to metadata server."""
+    try:
+        socket.getaddrinfo("metadata.google.internal", 80)
+    except socket.gaierror:
+        return False
+    return True
+
 
 class Event(Enum):
     AMBER_SUCCESS = "AMBER_SUCCESS"
@@ -29,16 +40,18 @@ class Event(Enum):
 
 class Monitor:
     def __init__(self) -> None:
-        daiquiri.setup(
-            level=logging.INFO,
-            outputs=[
+        outputs = [daiquiri.output.Datadog()]
+        if not is_gce_instance():
+            outputs.append(
                 daiquiri.output.Stream(
                     formatter=daiquiri.formatter.ColorFormatter(
                         fmt=("[%(levelname)s] [%(asctime)s] %(message)s")
                     )
                 ),
-                daiquiri.output.Datadog(),
-            ],
+            )
+        daiquiri.setup(
+            level=logging.INFO,
+            outputs=outputs,
         )
 
         self.logger = daiquiri.getLogger(__name__)

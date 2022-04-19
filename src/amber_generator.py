@@ -10,7 +10,7 @@ from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 
 if TYPE_CHECKING:
-    from run_local import SPIRVSmithConfig
+    from run import SPIRVSmithConfig
     from src.fuzzing_server import SPIRVShader
 
 
