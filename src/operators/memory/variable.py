@@ -47,7 +47,7 @@ class OpVariable(MemoryOperator):
                         )
                         # No doubly pointers in Logical Addressing
                         and not isinstance(t.type, OpTypePointer),
-                        context.symbol_table.keys(),
+                        context.symbol_table,
                     )
                 )
             )
@@ -77,7 +77,7 @@ class OpVariable(MemoryOperator):
                     list(
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct)),
-                            context.symbol_table.keys(),
+                            context.symbol_table,
                         )
                     )
                 )

@@ -21,6 +21,7 @@ from src.enums import ExecutionMode
 from src.enums import ExecutionModel
 from src.enums import MemoryModel
 from src.enums import StorageClass
+from src.extension import OpExtInstImport
 from src.misc import OpCapability
 from src.misc import OpEntryPoint
 from src.misc import OpExecutionMode
@@ -29,6 +30,7 @@ from src.monitor import Event
 from src.monitor import Monitor
 from src.operators.memory.memory_access import OpVariable
 from src.recondition import recondition
+from src.types.concrete_types import OpTypeFloat
 
 if TYPE_CHECKING:
     from run_local import SPIRVSmithConfig
@@ -126,6 +128,9 @@ class SPIRVShader(Shader):
         with open(self.filename, "w") as f:
             for capability in self.capabilities:
                 f.write(capability.to_spasm(self.context))
+                f.write("\n")
+            for ext in self.context.extension_sets.values():
+                f.write(ext.to_spasm(self.context))
                 f.write("\n")
             f.write(self.memory_model.to_spasm(self.context))
             f.write("\n")
@@ -241,7 +246,6 @@ class ShaderGenerator:
                             target=upload_shader_data_to_GCS_and_notify_amber_clients,
                             args=(publisher, topic_path, bucket, shader, self.monitor),
                         ).start()
-
                 if paused:
                     self.monitor.info(event=Event.PAUSED)
 
@@ -337,6 +341,8 @@ class ShaderGenerator:
         context = Context.create_global_context(
             execution_model, self.config, self.monitor
         )
+        if self.config.strategy.enable_ext_glsl_std_450:
+            context.extension_sets["GLSL"] = OpExtInstImport(name="GLSL.std.450")
         # Generate random types and constants to be used by the program
         context.gen_types()
         context.gen_constants()
@@ -349,6 +355,8 @@ class ShaderGenerator:
 
         # Remap IDs
         id_gen = id_generator()
+        for ext in context.extension_sets.values():
+            ext.id = next(id_gen)
         new_tvc = {}
         for tvc in context.tvc.keys():
             tvc.id = next(id_gen)

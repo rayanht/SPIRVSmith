@@ -58,7 +58,7 @@ class OpStore(MemoryOperator, OpCode, Untyped, VoidOp):
         target_object: Statement = context.get_random_operand(
             HasType(pointer.type.type)
         )
-        if not object:
+        if not target_object:
             return []
         self.pointer = pointer
         self.object = target_object

@@ -40,7 +40,7 @@ from src.operators.memory.memory_access import OpVariable
 
 class Context:
     id: UUID
-    symbol_table: dict["OpCode", str]
+    symbol_table: list["OpCode"]
     function: Optional["OpFunction"]
     parent_context: Optional["Context"]
     tvc: dict["OpCode", str]
@@ -48,6 +48,7 @@ class Context:
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
     monitor: Monitor
+    extension_sets: dict[str, "OpCode"]
 
     def __init__(
         self,
@@ -59,12 +60,13 @@ class Context:
         monitor: Monitor,
     ) -> None:
         self.id = uuid4()
-        self.symbol_table = dict()
+        self.symbol_table = []
         self.function = function
         self.annotations = annotations
         self.parent_context = parent_context
         self.execution_model = execution_model
         self.tvc = dict()
+        self.extension_sets = dict()
         self.config = config
         self.monitor = monitor
 
@@ -117,6 +119,7 @@ class Context:
                 self.monitor,
             )
         context.tvc = self.tvc
+        context.extension_sets = self.extension_sets
         return context
 
     def add_to_tvc(self, opcode: "OpCode"):
@@ -227,19 +230,30 @@ class Context:
             variable = self.create_on_demand_variable(StorageClass.StorageBuffer)
             if len(self.tvc) != n:
                 self.add_annotation(
-                    OpDecorate(None, variable.type.type, Decoration.Block)
+                    OpDecorate(target=variable.type.type, decoration=Decoration.Block)
                 )
                 self.add_annotation(
-                    OpDecorate(None, variable, Decoration.DescriptorSet, (0,))
+                    OpDecorate(
+                        target=variable,
+                        decoration=Decoration.DescriptorSet,
+                        extra_operands=(0,),
+                    )
                 )
                 self.add_annotation(
-                    OpDecorate(None, variable, Decoration.Binding, (i,))
+                    OpDecorate(
+                        target=variable,
+                        decoration=Decoration.Binding,
+                        extra_operands=(i,),
+                    )
                 )
                 offset = 0
                 for j, t in enumerate(variable.type.type.types):
                     self.add_annotation(
                         OpMemberDecorate(
-                            None, variable.type.type, j, Decoration.Offset, (offset,)
+                            target_struct=variable.type.type,
+                            member=j,
+                            decoration=Decoration.Offset,
+                            extra_operands=(offset,),
                         )
                     )
                     offset += t.width
