@@ -1,0 +1,10 @@
+init_config:
+
+instances:
+
+logs:
+  - type: tcp
+    port: 10518
+    source: python
+    service: SPIRVSmith
+    sourcecategory: sourcecode
