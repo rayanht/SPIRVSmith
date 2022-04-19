@@ -34,7 +34,7 @@ from src.types.concrete_types import OpTypeVoid
 
 if TYPE_CHECKING:
     from src import OpCode
-    from run_local import SPIRVSmithConfig
+    from run import SPIRVSmithConfig
 from src.operators.memory.memory_access import OpVariable
 
 

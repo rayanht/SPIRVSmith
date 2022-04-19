@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from run_local import SPIRVSmithConfig
+from run import SPIRVSmithConfig
 from src import FuzzDelegator
 from src.constants import OpConstant
 from src.constants import OpConstantFalse

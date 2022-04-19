@@ -32,7 +32,7 @@ from src.operators.memory.memory_access import OpVariable
 from src.recondition import recondition
 
 if TYPE_CHECKING:
-    from run_local import SPIRVSmithConfig
+    from run import SPIRVSmithConfig
 
 
 import signal
