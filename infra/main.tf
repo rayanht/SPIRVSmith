@@ -29,10 +29,6 @@ resource "google_service_account" "default" {
   display_name = "SPIRVSmith Service Account"
 }
 
-resource "google_compute_network" "default_network" {
-  name = "spirvsmith-primary-network"
-}
-
 resource "google_artifact_registry_repository" "spirvsmith_repo" {
   provider = google-beta
 
@@ -70,7 +66,8 @@ EOT
     google-logging-enabled    = "true"
   }
   network_interface {
-    network = google_compute_network.default_network.name
+    network = "default"
+    access_config {}
   }
 }
 
