@@ -183,6 +183,8 @@ class FuzzDelegator(OpCode):
                     PARAMETRIZATIONS[self.__class__.__name__][sub] = getattr(
                         context.config.strategy, randomization_parameters[sub]
                     )
+        if self.__class__.__name__ == "Statement":
+            PARAMETRIZATIONS[self.__class__.__name__]["OpExtInst"] = 0
 
     def fuzz(self, context: "Context") -> list[OpCode]:
         if not self.__class__.is_parametrized():

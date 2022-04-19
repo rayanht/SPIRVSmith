@@ -9,7 +9,8 @@ from src import Unsigned
 from src.constants import Constant
 from src.operators import UnaryOperatorFuzzMixin
 from src.predicates import HasValidBaseTypeAndSign
-from src.predicates import IsConversionOperand
+from src.predicates import IsOfType
+from src.types.abstract_types import ArithmeticType
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import Type
@@ -25,7 +26,7 @@ DC = TypeVar("DC")
 class ConversionOperator(Statement, Generic[S, D, SC, DC]):
     OPERAND_SELECTION_PREDICATE: Callable[
         [Statement], bool
-    ] = lambda _, target_type, signed: lambda op: IsConversionOperand(
+    ] = lambda _, target_type, signed: lambda op: IsOfType(ArithmeticType)(
         op
     ) and HasValidBaseTypeAndSign(
         op, target_type, signed

@@ -8,7 +8,8 @@ from src.constants import Constant
 from src.operators import BinaryOperatorFuzzMixin
 from src.operators import UnaryOperatorFuzzMixin
 from src.predicates import HasValidBaseTypeAndSign
-from src.predicates import IsValidBitwiseOperand
+from src.predicates import IsOfType
+from src.types.abstract_types import ArithmeticType
 from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import Type
 
@@ -23,7 +24,7 @@ DC = TypeVar("DC")
 class BitwiseOperator(Statement, Generic[S, D, SC, DC]):
     OPERAND_SELECTION_PREDICATE: Callable[
         [Operand], bool
-    ] = lambda _, target_type, signed: lambda op: IsValidBitwiseOperand(
+    ] = lambda _, target_type, signed: lambda op: IsOfType(ArithmeticType)(
         op
     ) and HasValidBaseTypeAndSign(
         op, target_type, signed
