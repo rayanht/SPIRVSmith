@@ -40,15 +40,14 @@ class Event(Enum):
 
 class Monitor:
     def __init__(self) -> None:
-        outputs = [daiquiri.output.Datadog()]
-        if not is_gce_instance():
-            outputs.append(
-                daiquiri.output.Stream(
-                    formatter=daiquiri.formatter.ColorFormatter(
-                        fmt=("[%(levelname)s] [%(asctime)s] %(message)s")
-                    )
-                ),
-            )
+        outputs = [
+            daiquiri.output.Stream(
+                formatter=daiquiri.formatter.ColorFormatter(
+                    fmt=("[%(levelname)s] [%(asctime)s] %(message)s")
+                )
+            ),
+            daiquiri.output.Datadog(),
+        ]
         daiquiri.setup(
             level=logging.INFO,
             outputs=outputs,
