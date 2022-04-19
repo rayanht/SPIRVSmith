@@ -8,7 +8,6 @@ from src import Untyped
 from src import VoidOp
 from src.enums import FunctionControlMask
 from src.enums import SelectionControlMask
-from src.extension import OpExtInst
 
 if TYPE_CHECKING:
     from src.context import Context
