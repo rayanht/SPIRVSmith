@@ -50,7 +50,7 @@ resource "google_compute_instance" "spirvsmith_primary" {
     }
   }
   service_account {
-    email  = google_service_account.default.email
+    email  = "spirvsmith-primary@spirvsmith.iam.gserviceaccount.com"
     scopes = ["cloud-platform"]
   }
 
