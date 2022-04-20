@@ -2,6 +2,7 @@ FROM python:3.10-slim
 
 RUN apt-get update
 RUN apt-get -y install curl
+RUN apt-get install jq
 
 RUN mkdir /app
 COPY . /app
