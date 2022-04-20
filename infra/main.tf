@@ -48,6 +48,10 @@ resource "google_compute_instance" "spirvsmith_primary" {
       image = "cos-cloud/cos-stable"
     }
   }
+  service_account {
+    email  = google_service_account.default.email
+    scopes = ["cloud-platform"]
+  }
 
   metadata = {
     gce-container-declaration = <<EOT
