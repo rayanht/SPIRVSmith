@@ -39,9 +39,10 @@ resource "google_artifact_registry_repository" "spirvsmith_repo" {
 }
 
 resource "google_compute_instance" "spirvsmith_primary" {
-  name         = "spirvsmith-primary"
-  description  = "SPIRVSmith generating node"
-  machine_type = var.machine_type
+  name                      = "spirvsmith-primary"
+  description               = "SPIRVSmith generating node"
+  machine_type              = var.machine_type
+  allow_stopping_for_update = true
 
   boot_disk {
     initialize_params {
