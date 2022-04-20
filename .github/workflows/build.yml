@@ -154,4 +154,4 @@ jobs:
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
         run: |-
-          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" --zone "${{ env.GCE_ZONE }}" --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }} --container-env DD_API_KEY=$DD_API_KEY"
+          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" --zone "${{ env.GCE_ZONE }}" --container-env DD_API_KEY=$DD_API_KEY --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
