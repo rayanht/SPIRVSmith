@@ -153,5 +153,6 @@ jobs:
       - name: Deploy to GCE
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          GOOGLE_CREDENTIALS:  ${{ secrets.GCP_CREDENTIALS }}
         run: |-
-          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" --zone "${{ env.GCE_ZONE }}" --container-env DD_API_KEY=$DD_API_KEY --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
+          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" --zone "${{ env.GCE_ZONE }}" --container-env DD_API_KEY=$DD_API_KEY GOOGLE_CREDENTIALS=$GOOGLE_CREDENTIALS --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
