@@ -137,30 +137,6 @@ EOF
 
 }
 
-resource "google_bigquery_table" "spirv_shader_generator_strategy_table" {
-  dataset_id          = google_bigquery_dataset.spirv_dataset.dataset_id
-  table_id            = "generator_strategy"
-  deletion_protection = false
-
-  schema = <<EOF
-[
-  {
-    "name": "generator_id",
-    "type": "STRING",
-    "mode": "REQUIRED",
-    "description": "Generator unique identifier."
-  },
-  {
-    "name": "strategy",
-    "type": "JSON",
-    "mode": "REQUIRED",
-    "description": "Fuzzing strategy associated to a run."
-  }
-]
-EOF
-
-}
-
 resource "google_storage_bucket" "spirv_shaders_bucket" {
   name          = "spirv_shaders_bucket"
   location      = "US-WEST1"
