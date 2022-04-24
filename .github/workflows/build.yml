@@ -42,12 +42,12 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ./infra
-        run: terraform plan -out=tfplan -input=false > /dev/null 2>&1
+        run: terraform plan -input=false > /dev/null 2>&1
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: ./infra
-        run: terraform apply -input=false tfplan > /dev/null 2>&1
+        run: terraform apply -input=false > /dev/null 2>&1
 
   build:
     name: "Build & Test"
