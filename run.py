@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 
 import hydra
@@ -53,7 +54,7 @@ class FuzzingStrategyConfig:
 
 @dataclass
 class MiscConfig:
-    start_web_server: bool = True
+    start_web_server: bool = False
     broadcast_generated_shaders: bool = True
 
 

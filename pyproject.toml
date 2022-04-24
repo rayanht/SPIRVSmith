@@ -5,7 +5,7 @@ description = ""
 authors = ["Rayan Hatout <rayan.hatout@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.11"
 shortuuid = "^1.0.8"
 hydra-core = "^1.1.1"
 ulid-py = "^1.1"
@@ -20,6 +20,7 @@ google-cloud-storage = "^2.2.1"
 paramiko = "^2.10.3"
 rsa = "^4.8"
 yq = "^2.14.0"
+google-cloud-bigquery = "^3.0.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3", allow-prereleases = true}

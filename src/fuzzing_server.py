@@ -8,8 +8,10 @@ from threading import Thread
 from typing import Sequence
 from typing import TYPE_CHECKING
 
+import ulid
 from google.cloud import storage
 from shortuuid import uuid
+from ulid import ULID
 
 from src import FuzzDelegator
 from src import OpCode
@@ -34,35 +36,18 @@ from src.recondition import recondition
 if TYPE_CHECKING:
     from run import SPIRVSmithConfig
 
+from google.cloud import bigquery
 
 import signal
 from flask import Flask
-from google.cloud.pubsub import PublisherClient
 
 app = Flask(__name__)
 
 logging.getLogger("werkzeug").disabled = True
 
 
-def get_GCS_bucket() -> storage.Bucket:
-    STORAGE_CLIENT = storage.Client.from_service_account_json(
-        "infra/spirvsmith_gcp.json"
-    )
-    return STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
-
-
-def get_pubsub_handle():
-    PROJECT_ID = "spirvsmith"
-    TOPIC_ID = "spirv_shader_pubsub_topic"
-    PUBLISHER_CLIENT = PublisherClient.from_service_account_json(
-        "infra/spirvsmith_gcp.json"
-    )
-    TOPIC_PATH = PUBLISHER_CLIENT.topic_path(PROJECT_ID, TOPIC_ID)
-    return PUBLISHER_CLIENT, TOPIC_PATH
-
-
-terminate = False
-paused = False
+def get_BQ_client() -> bigquery.Client:
+    return bigquery.Client.from_service_account_json("infra/spirvsmith_gcp.json")
 
 
 def signal_handling(signum, frame):
@@ -176,9 +161,10 @@ def upload_local_file_to_GCS(
     blob.upload_from_filename(local_filename)
 
 
-def upload_shader_data_to_GCS_and_notify_amber_clients(
-    publisher_client, topic_path, bucket, shader: Shader, monitor: Monitor
-):
+def broadcast_shader_data(generator_id: ULID, shader: Shader, monitor: Monitor):
+    bucket = storage.Client.from_service_account_json(
+        "infra/spirvsmith_gcp.json"
+    ).get_bucket("spirv_shaders_bucket")
     create_GCS_folder(bucket, shader.id)
     upload_local_file_to_GCS(
         bucket, f"out/{shader.id}/shader.spasm", f"{shader.id}/shader.spasm"
@@ -189,15 +175,36 @@ def upload_shader_data_to_GCS_and_notify_amber_clients(
     upload_local_file_to_GCS(
         bucket, f"out/{shader.id}/shader.spv", f"{shader.id}/shader.spv"
     )
-    monitor.info(event=Event.SHADER_UPLOAD_SUCCESS, extra={"shader_id": shader.id})
-    json_object = json.dumps({"shader_id": shader.id})
-    data = str(json_object).encode("utf-8")
-
-    future = publisher_client.publish(topic_path, data)
-    monitor.info(
-        event=Event.SHADER_PUBSUB_SUCCESS,
-        extra={"shader_id": shader.id, "message_id": future.result()},
+    monitor.info(event=Event.GCS_UPLOAD_SUCCESS, extra={"shader_id": shader.id})
+    BQ_client = get_BQ_client()
+    errors = BQ_client.insert_rows_json(
+        "spirvsmith.spirv.shader_data",
+        [
+            {
+                "shader_id": shader.id,
+                "generator_id": str(generator_id),
+                "buffer_dump": None,
+                "platform_os": None,
+                "platform_hardware_type": None,
+                "platform_hardware_info": None,
+                "platform_backend": None,
+            }
+        ],
     )
+    if errors == []:
+        monitor.info(
+            event=Event.BQ_SHADER_DATA_UPSERT_SUCCESS,
+            extra={"shader_id": shader.id, "generator_id": str(generator_id)},
+        )
+    else:
+        monitor.error(
+            event=Event.BQ_SHADER_DATA_UPSERT_FAILURE,
+            extra={
+                "errors": errors,
+                "shader_id": shader.id,
+                "generator_id": str(generator_id),
+            },
+        )
 
 
 @dataclass
@@ -205,6 +212,7 @@ class ShaderGenerator:
     config: "SPIRVSmithConfig"
     monitor: Monitor = field(default_factory=Monitor)
     amber_generator: AmberGenerator = field(default_factory=AmberGenerator)
+    generator_id: ULID = field(default_factory=ulid.new)
 
     def start(self):
         if self.config.misc.start_web_server:
@@ -212,8 +220,26 @@ class ShaderGenerator:
             flask_thread.start()
 
         if self.config.misc.broadcast_generated_shaders:
-            bucket = get_GCS_bucket()
-            publisher, topic_path = get_pubsub_handle()
+            BQ_client = get_BQ_client()
+            errors = BQ_client.insert_rows_json(
+                "spirvsmith.spirv.generator_strategy",
+                [
+                    {
+                        "generator_id": str(self.generator_id),
+                        "strategy": json.dumps(str(self.config.strategy)),
+                    }
+                ],
+            )
+            if errors == []:
+                self.monitor.info(
+                    event=Event.BQ_GENERATOR_REGISTRATION_SUCCESS,
+                    extra={"generator_id": str(self.generator_id)},
+                )
+            else:
+                self.monitor.error(
+                    event=Event.BQ_GENERATOR_REGISTRATION_FAILURE,
+                    extra={"errors": errors, "generator_id": str(self.generator_id)},
+                )
 
         self.amber_generator.config = self.config
         self.amber_generator.monitor = self.monitor
@@ -242,8 +268,8 @@ class ShaderGenerator:
                     self.amber_generator.submit(shader)
                     if self.config.misc.broadcast_generated_shaders:
                         Thread(
-                            target=upload_shader_data_to_GCS_and_notify_amber_clients,
-                            args=(publisher, topic_path, bucket, shader, self.monitor),
+                            target=broadcast_shader_data,
+                            args=(self.generator_id, shader, self.monitor),
                         ).start()
                 if paused:
                     self.monitor.info(event=Event.PAUSED)
