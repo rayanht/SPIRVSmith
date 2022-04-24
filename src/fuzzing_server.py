@@ -2,14 +2,19 @@ import json
 import logging
 import os
 import subprocess
+from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 from threading import Thread
 from typing import Sequence
 from typing import TYPE_CHECKING
 
+import firebase_admin
 import ulid
+from firebase_admin import credentials
+from firebase_admin import firestore
 from google.cloud import storage
+from omegaconf import OmegaConf
 from shortuuid import uuid
 from ulid import ULID
 
@@ -48,6 +53,10 @@ logging.getLogger("werkzeug").disabled = True
 
 def get_BQ_client() -> bigquery.Client:
     return bigquery.Client.from_service_account_json("infra/spirvsmith_gcp.json")
+
+
+terminate = False
+paused = False
 
 
 def signal_handling(signum, frame):
@@ -220,26 +229,14 @@ class ShaderGenerator:
             flask_thread.start()
 
         if self.config.misc.broadcast_generated_shaders:
-            BQ_client = get_BQ_client()
-            errors = BQ_client.insert_rows_json(
-                "spirvsmith.spirv.generator_strategy",
-                [
-                    {
-                        "generator_id": str(self.generator_id),
-                        "strategy": json.dumps(str(self.config.strategy)),
-                    }
-                ],
+            cred = credentials.Certificate("infra/spirvsmith_gcp.json")
+            firebase_admin.initialize_app(cred)
+
+            firestore_client = firestore.client()
+            document_reference = firestore_client.collection("configurations").document(
+                str(self.generator_id)
             )
-            if errors == []:
-                self.monitor.info(
-                    event=Event.BQ_GENERATOR_REGISTRATION_SUCCESS,
-                    extra={"generator_id": str(self.generator_id)},
-                )
-            else:
-                self.monitor.error(
-                    event=Event.BQ_GENERATOR_REGISTRATION_FAILURE,
-                    extra={"errors": errors, "generator_id": str(self.generator_id)},
-                )
+            document_reference.set(OmegaConf.to_container(self.config))
 
         self.amber_generator.config = self.config
         self.amber_generator.monitor = self.monitor

@@ -21,6 +21,7 @@ paramiko = "^2.10.3"
 rsa = "^4.8"
 yq = "^2.14.0"
 google-cloud-bigquery = "^3.0.1"
+firebase-admin = "^5.2.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3", allow-prereleases = true}
