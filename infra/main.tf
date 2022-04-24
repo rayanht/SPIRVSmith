@@ -83,10 +83,10 @@ resource "google_bigquery_dataset" "spirv_dataset" {
   default_table_expiration_ms = 3600000
 }
 
-resource "google_bigquery_table" "spirv_metadata_table" {
+resource "google_bigquery_table" "spirv_shader_data_table" {
   dataset_id          = google_bigquery_dataset.spirv_dataset.dataset_id
-  table_id            = "metadata"
-  deletion_protection = false # Schema is subject to change for now
+  table_id            = "shader_data"
+  deletion_protection = false
 
   schema = <<EOF
 [
@@ -97,10 +97,10 @@ resource "google_bigquery_table" "spirv_metadata_table" {
     "description": "Shader identifier. Not a primary key."
   },
   {
-    "name": "expected_reports",
-    "type": "INT64",
+    "name": "generator_id",
+    "type": "STRING",
     "mode": "REQUIRED",
-    "description": "Number of reports to be expected by the aggregator node before checking for a mismatch."
+    "description": "Generator unique identifier."
   },
   {
     "name": "buffer_dump",
@@ -137,41 +137,28 @@ EOF
 
 }
 
-resource "google_pubsub_schema" "spirv_shader_pubsub_schema" {
-  name       = "spirv_shader_pubsub_schema"
-  type       = "PROTOCOL_BUFFER"
-  definition = "syntax = \"proto3\";\nmessage ShaderGenerated {\nstring shader_id = 1;\n}"
-}
+resource "google_bigquery_table" "spirv_shader_generator_strategy_table" {
+  dataset_id          = google_bigquery_dataset.spirv_dataset.dataset_id
+  table_id            = "generator_strategy"
+  deletion_protection = false
 
-resource "google_pubsub_topic" "spirv_shader_pubsub_topic" {
-  name = "spirv_shader_pubsub_topic"
-
-  depends_on = [google_pubsub_schema.spirv_shader_pubsub_schema]
-  schema_settings {
-    schema   = "projects/spirvsmith/schemas/spirv_shader_pubsub_schema"
-    encoding = "JSON"
+  schema = <<EOF
+[
+  {
+    "name": "generator_id",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "Generator unique identifier."
+  },
+  {
+    "name": "strategy",
+    "type": "JSON",
+    "mode": "REQUIRED",
+    "description": "Fuzzing strategy associated to a run."
   }
-}
+]
+EOF
 
-resource "google_pubsub_subscription" "spirv_shader_pubsub_subscription" {
-  name  = "spirv_shader_pubsub_subscription"
-  topic = google_pubsub_topic.spirv_shader_pubsub_topic.name
-
-  # 20 minutes
-  message_retention_duration = "1200s"
-  retain_acked_messages      = true
-
-  ack_deadline_seconds = 20
-
-  expiration_policy {
-    ttl = "300000.5s"
-  }
-
-  retry_policy {
-    minimum_backoff = "10s"
-  }
-
-  enable_message_ordering = false
 }
 
 resource "google_storage_bucket" "spirv_shaders_bucket" {
