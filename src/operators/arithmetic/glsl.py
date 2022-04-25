@@ -296,18 +296,21 @@ class Determinant(
         ]
 
 
-# TODO: investigate how to recondition this, there is undefined behaviour if the matrix is singular or nearly singular, disabled for now
 # class MatrixInverse(
 #     UnaryArithmeticOperator[None, None, None, None], GLSLExtensionOperator
 # ):
-#     type: Type = None
-#     operand: Operand = None
-
 #     def fuzz(self, context: "Context") -> list[OpCode]:
-#         operand = context.get_random_operand(lambda x: IsMatrixType(x) and len(x.type) == len(x.type.type))
-#         self.type = operand1.get_base_type()
-#         self.operand = operand
-#         return [self]
+#         operand = context.get_random_operand(
+#             lambda x: IsMatrixType(x) and len(x.type) == len(x.type.type)
+#         )
+#         return [
+#             OpExtInst(
+#                 type=operand.type,
+#                 extension_set=context.extension_sets["GLSL"],
+#                 instruction=self.__class__,
+#                 operands=(operand,),
+#             )
+#         ]
 
 
 class ModfStruct(
@@ -478,26 +481,26 @@ class Step(
     ...
 
 
-class SmoothStep(
-    BinaryArithmeticOperator[OpTypeFloat, None, None, None],
-    GLSLExtensionOperator,
-):
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        operand1 = context.get_random_operand(
-            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
-        )
-        if not operand1:
-            return []
-        operand2 = context.get_random_operand(HasType(operand1.type))
-        operand3 = context.get_random_operand(HasType(operand1.type))
-        return [
-            OpExtInst(
-                type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
-                operands=(operand1, operand2, operand3),
-            )
-        ]
+# class SmoothStep(
+#     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
+#     GLSLExtensionOperator,
+# ):
+#     def fuzz(self, context: "Context") -> list[OpCode]:
+#         operand1 = context.get_random_operand(
+#             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
+#         )
+#         if not operand1:
+#             return []
+#         operand2 = context.get_random_operand(HasType(operand1.type))
+#         operand3 = context.get_random_operand(HasType(operand1.type))
+#         return [
+#             OpExtInst(
+#                 type=operand1.type,
+#                 extension_set=context.extension_sets["GLSL"],
+#                 instruction=self.__class__,
+#                 operands=(operand1, operand2, operand3),
+#             )
+#         ]
 
 
 class Fma(
