@@ -15,6 +15,7 @@ from src.annotations import OpMemberDecorate
 from src.constants import CompositeConstant
 from src.constants import Constant
 from src.constants import OpConstant
+from src.constants import OpConstantComposite
 from src.constants import ScalarConstant
 from src.enums import Decoration
 from src.enums import ExecutionModel
@@ -402,6 +403,20 @@ class Context:
         if storage_class != StorageClass.Function:
             self.add_to_tvc(variable)
         return variable
+
+    def create_on_demand_vector_constant(
+        self, inner_constant: OpConstant, size: int = 4
+    ) -> OpConstantComposite:
+        vector_type = OpTypeVector()
+        vector_type.type = inner_constant.type
+        vector_type.size = size
+        self.add_to_tvc(vector_type)
+
+        vector_const = OpConstantComposite()
+        vector_const.type = vector_type
+        vector_const.constituents = tuple([inner_constant for _ in range(size)])
+        self.add_to_tvc(vector_const)
+        return vector_const
 
     def add_annotation(self, annotation: Annotation):
         self.annotations.append(annotation)

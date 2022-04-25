@@ -31,7 +31,7 @@ class UnaryArithmeticOperator(
     ArithmeticOperator[S, Optional[D], Optional[SC], Optional[DC]]
 ):
     type: Type = None
-    operand: Operand = None
+    operand1: Operand = None
 
 
 class BinaryArithmeticOperator(
