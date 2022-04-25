@@ -35,7 +35,7 @@ class ConversionOperator(Statement, Generic[S, D, SC, DC]):
 
 class UnaryConversionOperator(ConversionOperator[S, D, Optional[SC], Optional[DC]]):
     type: Type = None
-    operand: Operand = None
+    operand1: Operand = None
 
 
 class OpConvertFToU(

@@ -55,23 +55,23 @@ class UnaryOperatorFuzzMixin:
                 self.type = inner_type
         else:
             self.type = operand.type
-        self.operand = operand
+        self.operand1 = operand
         if isinstance(self, GLSLExtensionOperator):
             return [
                 OpExtInst(
                     type=self.type,
                     extension_set=context.extension_sets["GLSL"],
                     instruction=self.__class__,
-                    operands=tuple([self.operand]),
+                    operands=tuple([self.operand1]),
                 )
             ]
         return [self]
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.operand})"
+        return f"{self.__class__.__name__}({self.operand1})"
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.operand})"
+        return f"{self.__class__.__name__}({self.operand1})"
 
 
 class BinaryOperatorFuzzMixin:
