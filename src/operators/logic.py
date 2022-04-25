@@ -39,7 +39,7 @@ class LogicalOperator(Statement, Generic[S, D, SC, DC]):
 
 class UnaryLogicalOperator(LogicalOperator[S, Optional[D], Optional[SC], Optional[DC]]):
     type: Type = None
-    operand: Operand = None
+    operand1: Operand = None
 
 
 class BinaryLogicalOperator(
