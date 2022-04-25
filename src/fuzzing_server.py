@@ -119,6 +119,11 @@ class SPIRVShader(Shader):
         os.mkdir(f"out/{self.id}")
         self.filename = f"out/{self.id}/shader.spasm"
         with open(self.filename, "w") as f:
+            f.write("; Magic:     0x07230203 (SPIR-V)\n")
+            f.write("; Version:   0x00010300 (Version: 1.3.0)\n")
+            f.write("; Generator: 0x00220001 (SPIRVSmith)\n")
+            f.write(f"; Bound:     {len(self.opcodes) + len(self.context.tvc) - 1}\n")
+            f.write("; Schema:    0\n")
             for capability in self.capabilities:
                 f.write(capability.to_spasm(self.context))
                 f.write("\n")
