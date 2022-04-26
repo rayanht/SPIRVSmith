@@ -173,7 +173,7 @@ def upload_local_file_to_GCS(
     blob.upload_from_filename(local_filename)
 
 
-def broadcast_shader_data(generator_id: ULID, shader: Shader, monitor: Monitor):
+def broadcast_shader_data(generator_id: ULID, shader: SPIRVShader, monitor: Monitor):
     bucket = storage.Client.from_service_account_json(
         "infra/spirvsmith_gcp.json"
     ).get_bucket("spirv_shaders_bucket")
@@ -194,6 +194,7 @@ def broadcast_shader_data(generator_id: ULID, shader: Shader, monitor: Monitor):
         [
             {
                 "shader_id": shader.id,
+                "n_buffers": len(shader.context.get_storage_buffers()),
                 "generator_id": str(generator_id),
                 "buffer_dump": None,
                 "platform_os": None,
