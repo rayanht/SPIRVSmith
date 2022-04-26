@@ -111,19 +111,31 @@ resource "google_bigquery_table" "spirv_shader_data_table" {
     "name": "platform_os",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "One of Linux or MacOS"
+    "description": "One of Linux, Darwin, or Windows"
   },
   {
     "name": "platform_hardware_type",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "One of Intel CPU/AMD CPU/Nvidia GPU/Radeon GPU"
+    "description": "One of CPU/GPU"
   },
   {
-    "name": "platform_hardware_info",
+    "name": "platform_hardware_vendor",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "Detailed hardware report (i.e. driver version, hardware model etc...)"
+    "description": "One of AMD/NVIDIA/INTEL"
+  },
+  {
+    "name": "platform_hardware_model",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Fully-qualified name of the hardware running the shader"
+  },
+    {
+    "name": "platform_hardware_driver_version",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "GPU driver version, if applicable"
   },
   {
     "name": "platform_backend",
