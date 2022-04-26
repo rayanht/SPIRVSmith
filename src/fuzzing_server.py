@@ -1,8 +1,6 @@
-import json
 import logging
 import os
 import subprocess
-from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 from threading import Thread
@@ -200,7 +198,8 @@ def broadcast_shader_data(generator_id: ULID, shader: Shader, monitor: Monitor):
                 "buffer_dump": None,
                 "platform_os": None,
                 "platform_hardware_type": None,
-                "platform_hardware_info": None,
+                "platform_hardware_vendor": None,
+                "platform_hardware_model": None,
                 "platform_backend": None,
             }
         ],
