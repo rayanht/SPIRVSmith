@@ -102,6 +102,12 @@ resource "google_bigquery_table" "spirv_shader_data_table" {
     "description": "Generator unique identifier."
   },
   {
+    "name": "n_buffers",
+    "type": "INT64",
+    "mode": "REQUIRED",
+    "description": "Number of Amber buffers to dump."
+  },
+  {
     "name": "buffer_dump",
     "type": "STRING",
     "mode": "NULLABLE",
