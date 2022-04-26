@@ -77,10 +77,9 @@ EOT
 }
 
 resource "google_bigquery_dataset" "spirv_dataset" {
-  dataset_id                  = "spirv"
-  friendly_name               = "Shaders metadata"
-  location                    = "US"
-  default_table_expiration_ms = 3600000
+  dataset_id    = "spirv"
+  friendly_name = "Shaders metadata"
+  location      = "US"
 }
 
 resource "google_bigquery_table" "spirv_shader_data_table" {
