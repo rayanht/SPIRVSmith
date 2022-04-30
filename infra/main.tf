@@ -102,6 +102,12 @@ resource "google_bigquery_table" "spirv_shader_data_table" {
     "description": "Generator unique identifier."
   },
   {
+    "name": "generator_version",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "SPIRVSmith version of the generator."
+  },
+  {
     "name": "n_buffers",
     "type": "INT64",
     "mode": "REQUIRED",

@@ -34,10 +34,10 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [package.extras]
+dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "zope.interface", "furo", "sphinx", "sphinx-notfound-page", "pre-commit", "cloudpickle"]
 docs = ["furo", "sphinx", "zope.interface", "sphinx-notfound-page"]
 tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "zope.interface", "cloudpickle"]
 tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "cloudpickle"]
-dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "zope.interface", "furo", "sphinx", "sphinx-notfound-page", "pre-commit", "cloudpickle"]
 
 [[package]]
 name = "autoflake"
@@ -63,8 +63,8 @@ cffi = ">=1.1"
 six = ">=1.4.1"
 
 [package.extras]
-typecheck = ["mypy"]
 tests = ["pytest (>=3.2.1,!=3.3.0)"]
+typecheck = ["mypy"]
 
 [[package]]
 name = "black"
@@ -83,8 +83,8 @@ tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
 colorama = ["colorama (>=0.4.3)"]
-jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 d = ["aiohttp (>=3.7.4)"]
+jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
@@ -100,8 +100,8 @@ msgpack = ">=0.5.2"
 requests = "*"
 
 [package.extras]
-redis = ["redis (>=2.10.5)"]
 filecache = ["lockfile (>=0.9)"]
+redis = ["redis (>=2.10.5)"]
 
 [[package]]
 name = "cachetools"
@@ -191,11 +191,11 @@ python-versions = ">=3.6"
 cffi = ">=1.12"
 
 [package.extras]
-pep8test = ["black", "flake8", "flake8-import-order", "pep8-naming"]
+docs = ["sphinx (>=1.6.5,!=1.8.0,!=3.1.0,!=3.1.1)", "sphinx-rtd-theme"]
 docstest = ["pyenchant (>=1.6.11)", "twine (>=1.12.0)", "sphinxcontrib-spelling (>=4.0.1)"]
+pep8test = ["black", "flake8", "flake8-import-order", "pep8-naming"]
 sdist = ["setuptools_rust (>=0.11.4)"]
 ssh = ["bcrypt (>=3.1.5)"]
-docs = ["sphinx (>=1.6.5,!=1.8.0,!=3.1.0,!=3.1.1)", "sphinx-rtd-theme"]
 test = ["pytest (>=6.2.0)", "pytest-cov", "pytest-subtests", "pytest-xdist", "pretend", "iso8601", "pytz", "hypothesis (>=1.11.4,!=3.79.2)"]
 
 [[package]]
@@ -210,8 +210,8 @@ python-versions = "*"
 python-json-logger = "*"
 
 [package.extras]
-test = ["pytest"]
 systemd = ["systemd-python (>=234)"]
+test = ["pytest"]
 
 [[package]]
 name = "datadog"
@@ -305,8 +305,30 @@ Jinja2 = ">=3.0"
 Werkzeug = ">=2.0"
 
 [package.extras]
-dotenv = ["python-dotenv"]
 async = ["asgiref (>=3.2)"]
+dotenv = ["python-dotenv"]
+
+[[package]]
+name = "gitdb"
+version = "4.0.9"
+description = "Git Object Database"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+smmap = ">=3.0.1,<6"
+
+[[package]]
+name = "gitpython"
+version = "3.1.27"
+description = "GitPython is a python library used to interact with Git repositories"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+gitdb = ">=4.0.1,<5"
 
 [[package]]
 name = "google-api-core"
@@ -359,8 +381,8 @@ rsa = {version = ">=3.1.4,<5", markers = "python_version >= \"3.6\""}
 six = ">=1.9.0"
 
 [package.extras]
-pyopenssl = ["pyopenssl (>=20.0.0)"]
 aiohttp = ["requests (>=2.20.0,<3.0.0dev)", "aiohttp (>=3.6.2,<4.0.0dev)"]
+pyopenssl = ["pyopenssl (>=20.0.0)"]
 reauth = ["pyu2f (>=0.1.5)"]
 
 [[package]]
@@ -398,12 +420,12 @@ python-dateutil = ">=2.7.2,<3.0dev"
 requests = ">=2.18.0,<3.0.0dev"
 
 [package.extras]
-tqdm = ["tqdm (>=4.7.4,<5.0.0dev)"]
 all = ["pandas (>=1.0.0)", "db-dtypes (>=0.3.0,<2.0.0dev)", "geopandas (>=0.9.0,<1.0dev)", "Shapely (>=1.6.0,<2.0dev)", "ipython (>=7.0.1,!=8.1.0)", "tqdm (>=4.7.4,<5.0.0dev)", "opentelemetry-api (>=1.1.0)", "opentelemetry-sdk (>=1.1.0)", "opentelemetry-instrumentation (>=0.20b0)"]
 geopandas = ["geopandas (>=0.9.0,<1.0dev)", "Shapely (>=1.6.0,<2.0dev)"]
-opentelemetry = ["opentelemetry-api (>=1.1.0)", "opentelemetry-sdk (>=1.1.0)", "opentelemetry-instrumentation (>=0.20b0)"]
 ipython = ["ipython (>=7.0.1,!=8.1.0)"]
+opentelemetry = ["opentelemetry-api (>=1.1.0)", "opentelemetry-sdk (>=1.1.0)", "opentelemetry-instrumentation (>=0.20b0)"]
 pandas = ["pandas (>=1.0.0)", "db-dtypes (>=0.3.0,<2.0.0dev)"]
+tqdm = ["tqdm (>=4.7.4,<5.0.0dev)"]
 
 [[package]]
 name = "google-cloud-bigquery-storage"
@@ -418,10 +440,10 @@ google-api-core = {version = ">=1.31.5,<2.0.0 || >2.3.0,<3.0.0dev", extras = ["g
 proto-plus = ">=1.18.0"
 
 [package.extras]
-tests = ["freezegun"]
-pandas = ["pandas (>=0.21.1)"]
 fastavro = ["fastavro (>=0.21.2)"]
+pandas = ["pandas (>=0.21.1)"]
 pyarrow = ["pyarrow (>=0.15.0)"]
+tests = ["freezegun"]
 
 [[package]]
 name = "google-cloud-core"
@@ -508,8 +530,8 @@ python-versions = ">= 3.6"
 google-crc32c = ">=1.0,<2.0dev"
 
 [package.extras]
-requests = ["requests (>=2.18.0,<3.0.0dev)"]
 aiohttp = ["aiohttp (>=3.6.2,<4.0.0dev)"]
+requests = ["requests (>=2.18.0,<3.0.0dev)"]
 
 [[package]]
 name = "googleapis-common-protos"
@@ -525,6 +547,14 @@ protobuf = ">=3.12.0"
 
 [package.extras]
 grpc = ["grpcio (>=1.0.0)"]
+
+[[package]]
+name = "gputil"
+version = "1.4.0"
+description = "GPUtil is a Python module for getting the GPU status from NVIDA GPUs using nvidia-smi."
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "grpc-google-iam-v1"
@@ -723,8 +753,8 @@ pynacl = ">=1.0.1"
 six = "*"
 
 [package.extras]
-ed25519 = ["pynacl (>=1.0.1)", "bcrypt (>=3.1.3)"]
 all = ["pyasn1 (>=0.1.7)", "pynacl (>=1.0.1)", "bcrypt (>=3.1.3)", "invoke (>=1.3)", "gssapi (>=1.4.1)", "pywin32 (>=2.1.8)"]
+ed25519 = ["pynacl (>=1.0.1)", "bcrypt (>=3.1.3)"]
 gssapi = ["pyasn1 (>=0.1.7)", "gssapi (>=1.4.1)", "pywin32 (>=2.1.8)"]
 invoke = ["invoke (>=1.3)"]
 
@@ -745,8 +775,8 @@ optional = false
 python-versions = ">=3.7"
 
 [package.extras]
-test = ["appdirs (==1.4.4)", "pytest (>=6)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)"]
 docs = ["Sphinx (>=4)", "furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx-autodoc-typehints (>=1.12)"]
+test = ["appdirs (==1.4.4)", "pytest (>=6)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)"]
 
 [[package]]
 name = "pluggy"
@@ -757,8 +787,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-testing = ["pytest", "pytest-benchmark"]
 dev = ["pre-commit", "tox"]
+testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pre-commit"
@@ -805,6 +835,14 @@ description = "library with cross-python path, ini-parsing, io, code, log facili
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+
+[[package]]
+name = "py-cpuinfo"
+version = "8.0.0"
+description = "Get CPU info with pure Python 2 & 3"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "pyarrow"
@@ -960,8 +998,8 @@ idna = {version = ">=2.5,<4", markers = "python_version >= \"3\""}
 urllib3 = ">=1.21.1,<1.27"
 
 [package.extras]
-use_chardet_on_py3 = ["chardet (>=3.0.2,<5)"]
 socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
+use_chardet_on_py3 = ["chardet (>=3.0.2,<5)"]
 
 [[package]]
 name = "rsa"
@@ -989,6 +1027,14 @@ description = "Python 2 and 3 compatibility utilities"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+
+[[package]]
+name = "smmap"
+version = "5.0.0"
+description = "A pure Python implementation of a sliding window memory map manager"
+category = "main"
+optional = false
+python-versions = ">=3.6"
 
 [[package]]
 name = "tenacity"
@@ -1103,7 +1149,7 @@ tests = ["coverage", "flake8", "wheel"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<3.11"
-content-hash = "0c10b771e4e79ee038ae1a2ac0be8684ea2ff3b8fa2ceacab257a68f8d510298"
+content-hash = "b6f385834c17891aeba61a9a13fecbb241bc5208101678bf16ff729686e7490b"
 
 [metadata.files]
 antlr4-python3-runtime = [
@@ -1395,6 +1441,14 @@ flask = [
     {file = "Flask-2.1.1-py3-none-any.whl", hash = "sha256:8a4cf32d904cf5621db9f0c9fbcd7efabf3003f22a04e4d0ce790c7137ec5264"},
     {file = "Flask-2.1.1.tar.gz", hash = "sha256:a8c9bd3e558ec99646d177a9739c41df1ded0629480b4c8d2975412f3c9519c8"},
 ]
+gitdb = [
+    {file = "gitdb-4.0.9-py3-none-any.whl", hash = "sha256:8033ad4e853066ba6ca92050b9df2f89301b8fc8bf7e9324d412a63f8bf1a8fd"},
+    {file = "gitdb-4.0.9.tar.gz", hash = "sha256:bac2fd45c0a1c9cf619e63a90d62bdc63892ef92387424b855792a6cabe789aa"},
+]
+gitpython = [
+    {file = "GitPython-3.1.27-py3-none-any.whl", hash = "sha256:5b68b000463593e05ff2b261acff0ff0972df8ab1b70d3cdbd41b546c8b8fc3d"},
+    {file = "GitPython-3.1.27.tar.gz", hash = "sha256:1c885ce809e8ba2d88a29befeb385fcea06338d3640712b59ca623c220bb5704"},
+]
 google-api-core = [
     {file = "google-api-core-2.7.2.tar.gz", hash = "sha256:65480309a7437f739e4476da037af02a3ec8263f1d1f89f72bbdc8f54fe402d2"},
     {file = "google_api_core-2.7.2-py3-none-any.whl", hash = "sha256:8fcbe52dc129fd83dca4e638a76f22b3a11579c493e643134e50e9870b233302"},
@@ -1487,6 +1541,9 @@ google-resumable-media = [
 googleapis-common-protos = [
     {file = "googleapis-common-protos-1.56.0.tar.gz", hash = "sha256:4007500795bcfc269d279f0f7d253ae18d6dc1ff5d5a73613ffe452038b1ec5f"},
     {file = "googleapis_common_protos-1.56.0-py2.py3-none-any.whl", hash = "sha256:60220c89b8bd5272159bed4929ecdc1243ae1f73437883a499a44a1cbc084086"},
+]
+gputil = [
+    {file = "GPUtil-1.4.0.tar.gz", hash = "sha256:099e52c65e512cdfa8c8763fca67f5a5c2afb63469602d5dcb4d296b3661efb9"},
 ]
 grpc-google-iam-v1 = [
     {file = "grpc-google-iam-v1-0.12.4.tar.gz", hash = "sha256:3f0ac2c940b9a855d7ce7e31fde28bddb0d9ac362d32d07c67148306931a0e30"},
@@ -1754,6 +1811,9 @@ py = [
     {file = "py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
     {file = "py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
 ]
+py-cpuinfo = [
+    {file = "py-cpuinfo-8.0.0.tar.gz", hash = "sha256:5f269be0e08e33fd959de96b34cd4aeeeacac014dd8305f70eb28d06de2345c5"},
+]
 pyarrow = [
     {file = "pyarrow-7.0.0-cp310-cp310-macosx_10_13_universal2.whl", hash = "sha256:0f15213f380539c9640cb2413dc677b55e70f04c9e98cfc2e1d8b36c770e1036"},
     {file = "pyarrow-7.0.0-cp310-cp310-macosx_10_13_x86_64.whl", hash = "sha256:29c4e3b3be0b94d07ff4921a5e410fc690a3a066a850a302fc504de5fc638495"},
@@ -1910,6 +1970,10 @@ shortuuid = [
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+smmap = [
+    {file = "smmap-5.0.0-py3-none-any.whl", hash = "sha256:2aba19d6a040e78d8b09de5c57e96207b09ed71d8e55ce0959eeee6c8e190d94"},
+    {file = "smmap-5.0.0.tar.gz", hash = "sha256:c840e62059cd3be204b0c9c9f74be2c09d5648eddd4580d9314c3ecde0b30936"},
 ]
 tenacity = [
     {file = "tenacity-8.0.1-py3-none-any.whl", hash = "sha256:f78f4ea81b0fabc06728c11dc2a8c01277bfc5181b321a4770471902e3eb844a"},
