@@ -196,6 +196,7 @@ def broadcast_shader_data(generator_id: ULID, shader: SPIRVShader, monitor: Moni
                 "shader_id": shader.id,
                 "n_buffers": len(shader.context.get_storage_buffers()),
                 "generator_id": str(generator_id),
+                "generator_version": shader.context.config.misc.version,
                 "buffer_dump": None,
                 "platform_os": None,
                 "platform_hardware_type": None,

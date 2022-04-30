@@ -1,10 +1,16 @@
 import logging
+import os
 from enum import Enum
 
 import daiquiri
+import git
 
-# Eventually should do this automatically with the package version
-LOG_VERSION: float = 0.5
+repo: git.Repo = git.Repo(os.getcwd())
+tags: list[git.TagReference] = sorted(
+    filter(None, repo.tags), key=lambda t: t.commit.committed_datetime
+)
+
+LOG_VERSION: str = tags[-1].name
 
 import socket
 
