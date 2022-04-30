@@ -5,8 +5,8 @@ cd amber
 ./tools/git-sync-deps
 mkdir -p out/Debug
 cd out/Debug
-cmake -GNinja ../..
-ninja
+cmake ../..
+make
 cp amber ../../../amber-bin
 cd ../../..
 rm -rf amber
