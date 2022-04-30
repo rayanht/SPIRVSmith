@@ -3,14 +3,10 @@ import os
 from enum import Enum
 
 import daiquiri
-import git
 
-repo: git.Repo = git.Repo(os.getcwd())
-tags: list[git.TagReference] = sorted(
-    filter(None, repo.tags), key=lambda t: t.commit.committed_datetime
-)
+from src.utils import get_spirvsmith_version
 
-LOG_VERSION: str = tags[-1].name
+LOG_VERSION: str = get_spirvsmith_version()
 
 import socket
 
