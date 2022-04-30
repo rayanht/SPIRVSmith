@@ -1,23 +1,11 @@
 import logging
-import os
 from enum import Enum
 
 import daiquiri
 
-from src.utils import get_spirvsmith_version
+from utils import get_spirvsmith_version
 
 LOG_VERSION: str = get_spirvsmith_version()
-
-import socket
-
-
-def is_gce_instance():
-    """Check if running in a GCE instance via DNS lookup to metadata server."""
-    try:
-        socket.getaddrinfo("metadata.google.internal", 80)
-    except socket.gaierror:
-        return False
-    return True
 
 
 class Event(Enum):
