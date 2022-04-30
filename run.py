@@ -6,12 +6,7 @@ import hydra
 from hydra.core.config_store import ConfigStore
 
 from src.fuzzing_server import ShaderGenerator
-
-repo: git.Repo = git.Repo(os.getcwd())
-tags: list[git.TagReference] = sorted(
-    filter(None, repo.tags), key=lambda t: t.commit.committed_datetime
-)
-latest_tag: str = tags[-1].name
+from src.utils import get_spirvsmith_version
 
 
 @dataclass
@@ -63,7 +58,7 @@ class FuzzingStrategyConfig:
 class MiscConfig:
     start_web_server: bool = False
     broadcast_generated_shaders: bool = True
-    version: str = latest_tag
+    version: str = get_spirvsmith_version()
 
 
 @dataclass
