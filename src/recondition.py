@@ -23,6 +23,7 @@ from src.operators.arithmetic.glsl import NClamp
 from src.operators.arithmetic.glsl import NMax
 from src.operators.arithmetic.glsl import NMin
 from src.operators.arithmetic.glsl import Pow
+from src.operators.arithmetic.glsl import SAbs
 from src.operators.arithmetic.glsl import SClamp
 from src.operators.arithmetic.glsl import SMax
 from src.operators.arithmetic.glsl import SMin
@@ -36,12 +37,15 @@ from src.operators.arithmetic.scalar_arithmetic import OpIAdd
 from src.operators.arithmetic.scalar_arithmetic import OpISub
 from src.operators.arithmetic.scalar_arithmetic import OpSMod
 from src.operators.arithmetic.scalar_arithmetic import OpUMod
+from src.operators.bitwise import OpShiftLeftLogical
+from src.operators.bitwise import OpShiftRightArithmetic
+from src.operators.bitwise import OpShiftRightLogical
 from src.operators.composite import OpVectorExtractDynamic
 from src.operators.composite import OpVectorInsertDynamic
-from src.predicates import IsBaseTypeSigned
 from src.predicates import IsOfFloatBaseType
 from src.predicates import IsVectorType
 from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeInt
 
 T = TypeVar("T")
 
@@ -251,6 +255,56 @@ class DegenerateClamp(DangerousPattern[DegenerateClampVulnerableOpCode]):
     @staticmethod
     def get_affected_opcodes() -> set[DegenerateClampVulnerableOpCode]:
         return {FClamp, UClamp, SClamp, NClamp}
+
+
+TooLargeShiftVulnerableOpCode = (
+    OpShiftLeftLogical | OpShiftRightLogical | OpShiftRightArithmetic
+)
+
+
+class TooLargeShift(DangerousPattern[TooLargeShiftVulnerableOpCode]):
+    @staticmethod
+    def recondition(
+        context: Context,
+        opcode: TooLargeShiftVulnerableOpCode,
+    ):
+        """Recondition shift(x, y)
+        y := |y| % sizeof(base_type(x))
+        """
+        base_type = opcode.operand2.get_base_type()
+        op_abs = None
+        if base_type.signed:
+            # TODO the Abs shouldn't be necessary but SPIRV-Cross generates undefined MSL otherwise.
+            # See https://github.com/KhronosGroup/SPIRV-Cross/issues/1933
+            op_abs = OpExtInst(
+                type=opcode.operand2.type,
+                extension_set=context.extension_sets["GLSL"],
+                instruction=SAbs,
+                operands=[opcode.operand2],
+            )
+            op_mod = OpSMod()
+        else:
+            op_mod = OpUMod()
+        op_mod.type = opcode.operand2.type
+        op_mod.operand1 = op_abs if op_abs else opcode.operand2
+        op_mod.operand2 = context.create_on_demand_numerical_constant(
+            base_type.__class__,
+            value=base_type.width,
+            width=base_type.width,
+            signed=base_type.signed,
+        )
+        if IsVectorType(opcode.operand1):
+            op_mod.operand2 = context.create_on_demand_vector_constant(
+                inner_constant=op_mod.operand2, size=len(opcode.operand1.type)
+            )
+        opcode.operand2 = op_mod
+        if op_abs:
+            return [op_abs, op_mod]
+        return [op_mod]
+
+    @staticmethod
+    def get_affected_opcodes() -> set[TooLargeShiftVulnerableOpCode]:
+        return {OpShiftLeftLogical, OpShiftRightLogical, OpShiftRightArithmetic}
 
 
 def recondition(context: Context, spirv_opcodes: list[OpCode]):

@@ -1,7 +1,5 @@
-import os
 from dataclasses import dataclass
 
-import git
 import hydra
 from hydra.core.config_store import ConfigStore
 
