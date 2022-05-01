@@ -1,3 +1,5 @@
+import argparse
+import os
 import platform
 import subprocess
 from functools import reduce
@@ -15,7 +17,7 @@ from src.monitor import Monitor
 AMBER_PATH = "bin/amber"
 
 VK_ICD_FILENAMES_SWIFTSHADER = (
-    "/Users/rayan/swiftshader/build/Darwin/vk_swiftshader_icd.json"
+    "/vol/bitbucket/rh4318/swiftshader/build/Linux/vk_swiftshader_icd.json"
 )
 VK_ICD_FILENAMES_MOLTENVK = (
     "/Users/rayan/VulkanSDK/1.3.204.1/macOS/share/vulkan/icd.d/MoltenVK_icd.json"
@@ -91,9 +93,9 @@ def insert_BQ_entry(
     query = f"""
         DELETE FROM
         `spirvsmith.spirv.shader_data`
-        WHERE shader_id = {shader_id} AND buffer_dump IS NULL
+        WHERE shader_id = "{shader_id}" AND buffer_dump IS NULL
     """
-    BQ_CLIENT.query(query)
+    assert BQ_CLIENT.query(query).result() is not None
 
 
 def run_amber(n_buffers: int, shader_id: str) -> str:
@@ -138,11 +140,10 @@ def run_amber(n_buffers: int, shader_id: str) -> str:
 
 
 if __name__ == "__main__":
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--force-cpu", action="store_true")
+    args = argparser.parse_args()
     platform_os = platform.system()
-    if platform_os == "Darwin":
-        backend = "MoltenVK"
-    elif platform_os == "Linux":
-        backend = "Vulkan"
     print(f"Detected platform OS -> {platform_os}")
     nvidia_gpus = GPUtil.getGPUs()
     cpu_info = get_cpu_info()
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     if nvidia_gpus:
         print(f"Detected NVIDIA GPUs         -> {nvidia_gpus}")
     print(f"Detected CPU         -> {cpu_name}")
-    if not nvidia_gpus:
+    if not nvidia_gpus or args.force_cpu:
         print("Amber will run on CPU")
         hardware_type = "CPU"
         hardware_vendor = cpu_info["vendor_id_raw"]
@@ -162,7 +163,16 @@ if __name__ == "__main__":
         hardware_vendor = "NVIDIA"
         hardware_model = nvidia_gpus[0].name
         hardware_driver_version = nvidia_gpus[0].driver
-
+    if platform_os == "Darwin":
+        backend = "MoltenVK"
+    elif platform_os == "Linux":
+        if not nvidia_gpus or args.force_cpu:
+            backend = "SwiftShader"
+            os.environ["VK_ICD_FILENAMES"] = VK_ICD_FILENAMES_SWIFTSHADER
+        else:
+            backend = "Vulkan"
+    print(f"Amber will use the {backend} backend")
+    input("Press any key to continue...")
     while True:
         query_job = BQ_CLIENT.query(
             get_pending_shaders_query(platform_os, hardware_vendor, backend)
