@@ -3,7 +3,7 @@ from enum import Enum
 
 import daiquiri
 
-from utils import get_spirvsmith_version
+from src.utils import get_spirvsmith_version
 
 LOG_VERSION: str = get_spirvsmith_version()
 
