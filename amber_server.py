@@ -13,6 +13,7 @@ from google.cloud import storage
 
 from src.monitor import Event
 from src.monitor import Monitor
+from src.utils import get_spirvsmith_version
 
 AMBER_PATH = "bin/amber"
 
@@ -39,12 +40,13 @@ def get_pending_shaders_query(
         FROM
         `spirvsmith.spirv.shader_data`
         WHERE
-        platform_os != "{platform_os}"
-        OR platform_os IS NULL
-        AND platform_hardware_type != "{platform_hardware_vendor}"
-        OR platform_hardware_type IS NULL
-        AND platform_backend != "{platform_backend}"
-        OR platform_backend IS NULL
+        (platform_os != "{platform_os}"
+        OR platform_os IS NULL)
+        AND (platform_hardware_type != "{platform_hardware_vendor}"
+        OR platform_hardware_type IS NULL)
+        AND (platform_backend != "{platform_backend}"
+        OR platform_backend IS NULL)
+        AND generator_version = "{get_spirvsmith_version()}"
     """
 
 
@@ -172,7 +174,7 @@ if __name__ == "__main__":
         else:
             backend = "Vulkan"
     print(f"Amber will use the {backend} backend")
-    input("Press any key to continue...")
+    input("Press enter to continue...")
     while True:
         query_job = BQ_CLIENT.query(
             get_pending_shaders_query(platform_os, hardware_vendor, backend)
