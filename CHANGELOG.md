@@ -2,6 +2,47 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.0.0 - 2022-05-01
+#### Bug Fixes
+- **(ci)** add quotes around image name in deploy job - (f968ead) - Rayan Hatout
+- **(cloud-build)** use GNU version of base64 in cloud starttup script - (d1393f7) - Rayan Hatout
+- **(docker)** add auto-accept flag in apt-get install for jq - (244da82) - Rayan Hatout
+- **(infra)** ensure that automatic versioning doesn't break in CI environments - (1f837b7) - Rayan Hatout
+- **(infra)** add missing comma in GCE deploy command - (6d0a39b) - Rayan Hatout
+- **(infra)** inject Google Cloud credentials when running the Docker image - (2339b55) - Rayan Hatout
+- **(infra)** update service account email for Google Compute Engine instance - (b63728f) - Rayan Hatout
+- **(infra)** allow Compute Engine to be stopped for updates - (54fb1f5) - Rayan Hatout
+- **(scripts)** use local Vulkan during Amber compilation - (42562d2) - Rayan Hatout
+#### Build system
+- **(docker)** add installation of jq in Dockerfile - (3a90b4a) - Rayan Hatout
+#### Continuous Integration
+- **(infra)** disable caching of Terraform plan - (db0d46a) - Rayan Hatout
+- **(infra)** silence Terraform output - (81187e6) - Rayan Hatout
+#### Features
+- **(all)** prepare SPIRVSmith to run indefinitely on Google Cloud - (a986273) - Rayan Hatout
+- **(fuzzer)** disable GLSL operations for which we can't guarantee determinism - (7799905) - Rayan Hatout
+- **(fuzzer)** implement reconditioning of GLSL instructions - (f807ad3) - Rayan Hatout
+- **(infra)** record SPIRVSmith version in DB of generated shaders - (3f5f8ec) - Rayan Hatout
+- **(infra)** update BigQuery schema to record the number of Amber buffers to dump - (350820e) - Rayan Hatout
+- **(infra)** update the database scheme - (de959b5) - Rayan Hatout
+- **(infra)** introduce DataDog tracing and make BigQuery tables permanent - (aae9f36) - Rayan Hatout
+- **(infra)** replace use of BigQuery by Firestore to store run configurations - (de567ae) - Rayan Hatout
+- **(infra)** sunset usage of PubSub and use BigQuery as a single source of truth to synchronise primary and secondary nodes - (3fb87d8) - Rayan Hatout
+- **(infra)** update service account for Compute Engine instance - (80a9934) - Rayan Hatout
+- **(infra)** update cloud script to dynamically enable DataDog logging - (841c6fb) - Rayan Hatout
+- **(infra)** replace custom network interface by default in Google Cloud configuration - (2dbbe3d) - Rayan Hatout
+- **(monitoring)** enable stdout logging in Compute Engine - (309087d) - Rayan Hatout
+- **(runner)** add the ability of forcing the runner to use the CPU - (815b8fe) - Rayan Hatout
+- **(runner)** make sure Amber runner doesn't ignore GPUs that are in use - (3a47e1c) - Rayan Hatout
+- **(runner)** implement shader fetching and DB updating in the Amber runner server - (d6f81ee) - Rayan Hatout
+- **(scripts)** replace use of Ninja by Make in dependency-fetching scripts - (06a769b) - Rayan Hatout
+#### Miscellaneous Chores
+- **(dependencies)** roll dependencies - (17db894) - Rayan Hatout
+- **(fuzzer)** prepend SPIRVSmith magic number at the beginning of generated files alongside additional debug info - (6be6f89) - Rayan Hatout
+- move Amber server to top-level - (5a618f8) - Rayan Hatout
+
+- - -
+
 ## v0.4.0 - 2022-04-19
 #### Documentation
 - update CITATION.cff for v0.4.0 - (a3dec92) - Rayan Hatout
