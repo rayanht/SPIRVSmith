@@ -144,7 +144,7 @@ if __name__ == "__main__":
     elif platform_os == "Linux":
         backend = "Vulkan"
     print(f"Detected platform OS -> {platform_os}")
-    nvidia_gpus = GPUtil.getAvailable()
+    nvidia_gpus = GPUtil.getGPUs()
     cpu_info = get_cpu_info()
     cpu_name = cpu_info["brand_raw"]
     if nvidia_gpus:
