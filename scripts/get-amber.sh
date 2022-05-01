@@ -5,7 +5,7 @@ cd amber
 ./tools/git-sync-deps
 mkdir -p out/Debug
 cd out/Debug
-cmake ../..
+cmake -DAMBER_USE_LOCAL_VULKAN=1 ../..
 make
 cp amber ../../../amber-bin
 cd ../../..
