@@ -193,6 +193,7 @@ def broadcast_shader_data(generator_id: ULID, shader: SPIRVShader, monitor: Moni
         INSERT INTO `spirvsmith.spirv.shader_data`
         VALUES (
             {shader.id},
+            1,
             {generator_id},
             {shader.context.config.misc.version},
             {len(shader.context.get_storage_buffers())},
