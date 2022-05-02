@@ -96,6 +96,12 @@ resource "google_bigquery_table" "spirv_shader_data_table" {
     "description": "Shader identifier. Not a primary key."
   },
   {
+    "name": "shader_rev",
+    "type": "INT64",
+    "mode": "REQUIRED",
+    "description": "Shader revision. A shader can have different revisions due to the reduce & recondition process."
+  }
+  {
     "name": "generator_id",
     "type": "STRING",
     "mode": "REQUIRED",

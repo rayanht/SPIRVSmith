@@ -70,6 +70,7 @@ def insert_BQ_entry(
     INSERT INTO `spirvsmith.spirv.shader_data`
     VALUES (
         {shader_id},
+        {original_entry.shader_rev},
         {original_entry.generator_id},
         {original_entry.generator_version},
         {original_entry.n_buffers},
