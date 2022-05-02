@@ -206,7 +206,6 @@ def broadcast_shader_data(generator_id: ULID, shader: SPIRVShader, monitor: Moni
             NULL
         )
     """
-    print(insert_query)
     BQ_client.query(insert_query).result()
 
 
