@@ -80,7 +80,7 @@ def insert_BQ_entry(
         "{hardware_vendor}",
         "{hardware_model}",
         "{hardware_driver_version}",
-        "{backend}",
+        "{backend}"
     )
     """
     delete_query = f"""
