@@ -66,38 +66,29 @@ def insert_BQ_entry(
     shader_id: str,
     buffer_dump: str,
 ) -> None:
-    errors = BQ_CLIENT.insert_rows_json(
-        "spirvsmith.spirv.shader_data",
-        [
-            {
-                "shader_id": shader_id,
-                "n_buffers": original_entry.n_buffers,
-                "generator_id": original_entry.generator_id,
-                "generator_version": original_entry.generator_version,
-                "buffer_dump": buffer_dump,
-                "platform_os": platform_os,
-                "platform_hardware_type": hardware_type,
-                "platform_hardware_vendor": hardware_vendor,
-                "platform_hardware_model": hardware_model,
-                "platform_hardware_driver_version": hardware_driver_version,
-                "platform_backend": backend,
-            }
-        ],
+    insert_query = f"""
+    INSERT INTO `spirvsmith.spirv.shader_data`
+    VALUES (
+        {shader_id},
+        {original_entry.generator_id},
+        {original_entry.generator_version},
+        {original_entry.n_buffers},
+        {buffer_dump},
+        {platform_os},
+        {hardware_type},
+        {hardware_vendor},
+        {hardware_model},
+        {hardware_driver_version},
+        {backend},
     )
-    if not errors == []:
-        MONITOR.error(
-            event=Event.BQ_SHADER_DATA_UPSERT_FAILURE,
-            extra={
-                "errors": errors,
-            },
-        )
-
-    query = f"""
+    """
+    delete_query = f"""
         DELETE FROM
         `spirvsmith.spirv.shader_data`
         WHERE shader_id = "{shader_id}" AND buffer_dump IS NULL
     """
-    assert BQ_CLIENT.query(query).result() is not None
+    BQ_CLIENT.query(insert_query).result()
+    BQ_CLIENT.query(delete_query).result()
 
 
 def run_amber(n_buffers: int, shader_id: str) -> str:
