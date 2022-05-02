@@ -189,37 +189,23 @@ def broadcast_shader_data(generator_id: ULID, shader: SPIRVShader, monitor: Moni
     )
     monitor.info(event=Event.GCS_UPLOAD_SUCCESS, extra={"shader_id": shader.id})
     BQ_client = get_BQ_client()
-    errors = BQ_client.insert_rows_json(
-        "spirvsmith.spirv.shader_data",
-        [
-            {
-                "shader_id": shader.id,
-                "n_buffers": len(shader.context.get_storage_buffers()),
-                "generator_id": str(generator_id),
-                "generator_version": shader.context.config.misc.version,
-                "buffer_dump": None,
-                "platform_os": None,
-                "platform_hardware_type": None,
-                "platform_hardware_vendor": None,
-                "platform_hardware_model": None,
-                "platform_backend": None,
-            }
-        ],
-    )
-    if errors == []:
-        monitor.info(
-            event=Event.BQ_SHADER_DATA_UPSERT_SUCCESS,
-            extra={"shader_id": shader.id, "generator_id": str(generator_id)},
+    insert_query = f"""
+        INSERT INTO `spirvsmith.spirv.shader_data`
+        VALUES (
+            {shader.id},
+            {generator_id},
+            {shader.context.config.misc.version},
+            {len(shader.context.get_storage_buffers())},
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
         )
-    else:
-        monitor.error(
-            event=Event.BQ_SHADER_DATA_UPSERT_FAILURE,
-            extra={
-                "errors": errors,
-                "shader_id": shader.id,
-                "generator_id": str(generator_id),
-            },
-        )
+    """
+    BQ_client.query(insert_query).result()
 
 
 @dataclass
