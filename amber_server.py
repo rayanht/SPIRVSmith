@@ -69,18 +69,18 @@ def insert_BQ_entry(
     insert_query = f"""
     INSERT INTO `spirvsmith.spirv.shader_data`
     VALUES (
-        {shader_id},
+        "{shader_id}",
         {original_entry.shader_rev},
-        {original_entry.generator_id},
-        {original_entry.generator_version},
+        "{original_entry.generator_id}",
+        "{original_entry.generator_version}",
         {original_entry.n_buffers},
-        {buffer_dump},
-        {platform_os},
-        {hardware_type},
-        {hardware_vendor},
-        {hardware_model},
-        {hardware_driver_version},
-        {backend},
+        "{buffer_dump}",
+        "{platform_os}",
+        "{hardware_type}",
+        "{hardware_vendor}",
+        "{hardware_model}",
+        "{hardware_driver_version}",
+        "{backend}",
     )
     """
     delete_query = f"""
