@@ -12,6 +12,7 @@ class BinariesConfig:
     ASSEMBLER_PATH: str = "bin/spirv-as"
     VALIDATOR_PATH: str = "bin/spirv-val"
     OPTIMISER_PATH: str = "bin/spirv-opt"
+    CROSS_PATH: str = "bin/spirv-cross"
     AMBER_PATH: str = "bin/amber"
 
 
@@ -50,6 +51,9 @@ class FuzzingStrategyConfig:
 
     # P(generating a statement at step t + 1 | a statement was generated at step t)
     p_statement: float = 0.995
+
+    # Number of optimiser fuzzing iterations
+    optimiser_fuzzing_iterations: int = 20
 
 
 @dataclass

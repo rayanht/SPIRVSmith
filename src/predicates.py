@@ -1,9 +1,6 @@
 from src import Untyped
 from src.enums import StorageClass
-from src.operators.memory.variable import OpVariable
-from src.types.abstract_types import ArithmeticType
 from src.types.concrete_types import OpTypeArray
-from src.types.concrete_types import OpTypeBool
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import OpTypeMatrix
@@ -22,7 +19,6 @@ IsOfType = lambda t: lambda x: isinstance(x.type, t)
 IsOfBaseType = lambda t: lambda x: isinstance(x.get_base_type(), t)
 
 IsTyped = lambda x: not isinstance(x, Untyped)
-IsVariable = lambda x: isinstance(x, OpVariable)
 
 IsSigned = lambda x: x.signed == 1
 

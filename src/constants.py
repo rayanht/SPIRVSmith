@@ -33,7 +33,7 @@ class CompositeConstant(Constant):
 class OpConstantTrue(ScalarConstant):
     type: Type = None
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    def fuzz(self, _: "Context") -> list[OpCode]:
         self.type = OpTypeBool()
         return [self.type, self]
 
@@ -41,7 +41,7 @@ class OpConstantTrue(ScalarConstant):
 class OpConstantFalse(ScalarConstant):
     type: Type = None
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    def fuzz(self, _: "Context") -> list[OpCode]:
         self.type = OpTypeBool()
         return [self.type, self]
 
