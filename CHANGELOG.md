@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.1.0 - 2022-05-03
+#### Bug Fixes
+- **(infra)** add missing comma in Terraform config - (8cb81f0) - Rayan Hatout
+- **(runner)** remove extraneous comma in DML query - (05584f8) - Rayan Hatout
+- **(runner)** group predicates correctly in DB query for new shaders to run - (01a0448) - Rayan Hatout
+#### Features
+- **(infra)** record the shader revision in DB - (b0df8c5) - Rayan Hatout
+
+- - -
+
 ## v1.0.0 - 2022-05-01
 #### Bug Fixes
 - **(ci)** add quotes around image name in deploy job - (f968ead) - Rayan Hatout
