@@ -119,6 +119,7 @@ def run_amber(amber_filename: str, n_buffers: int, shader_id: str) -> str:
                 "shader_id": shader_id,
             },
         )
+        print(process.stderr.decode("utf-8"))
         return None
 
     if process.returncode == 139:
@@ -130,6 +131,8 @@ def run_amber(amber_filename: str, n_buffers: int, shader_id: str) -> str:
                 "shader_id": shader_id,
             },
         )
+        print(process.stderr.decode("utf-8"))
+        print("**** SEGFAULT ****")
         return "SEGFAULT"
 
     MONITOR.info(event=Event.AMBER_SUCCESS, extra={"shader_id": shader_id})
