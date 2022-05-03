@@ -1,13 +1,16 @@
 from types import NoneType
 from typing import get_args
 from typing import Optional
+from typing import TYPE_CHECKING
 
 from src import Constant
 from src import OpCode
 from src import Signed
 from src import Statement
 from src.constants import OpConstantComposite
-from src.context import Context
+
+if TYPE_CHECKING:
+    from src.context import Context
 from src.extension import OpExtInst
 from src.types.concrete_types import OpTypeVector
 

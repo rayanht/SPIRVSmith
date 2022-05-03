@@ -33,7 +33,7 @@ randomization_parameters = {
 excluded_identifiers = [
     "id",
     "symbol_table",
-    # "context",
+    "context",
     "get_required_capabilities",
     "iteritems",
     "keys",

@@ -48,7 +48,6 @@ class Context:
     annotations: list[Annotation]
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
-    monitor: Monitor
     extension_sets: dict[str, "OpCode"]
 
     def __init__(
@@ -58,7 +57,6 @@ class Context:
         annotations: list[Annotation],
         execution_model: ExecutionModel,
         config: "SPIRVSmithConfig",
-        monitor: Monitor,
     ) -> None:
         self.id = uuid4()
         self.symbol_table = []
@@ -69,7 +67,6 @@ class Context:
         self.tvc = dict()
         self.extension_sets = dict()
         self.config = config
-        self.monitor = monitor
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -87,9 +84,8 @@ class Context:
         cls,
         execution_model: ExecutionModel,
         config: "SPIRVSmithConfig",
-        monitor: Monitor,
     ) -> "Context":
-        context = cls(None, None, [], execution_model, config, monitor)
+        context = cls(None, None, [], execution_model, config)
         void_type = OpTypeVoid()
         main_type = OpTypeFunction()
         main_type.return_type = void_type
@@ -108,7 +104,6 @@ class Context:
                 self.annotations,
                 self.execution_model,
                 self.config,
-                self.monitor,
             )
         else:
             context = Context(
@@ -117,7 +112,6 @@ class Context:
                 self.annotations,
                 self.execution_model,
                 self.config,
-                self.monitor,
             )
         context.tvc = self.tvc
         context.extension_sets = self.extension_sets
@@ -147,7 +141,7 @@ class Context:
         try:
             return random.SystemRandom().choice(variables)
         except IndexError:
-            self.monitor.warning(
+            Monitor().warning(
                 event=Event.NO_OPERAND_FOUND,
                 extra={
                     "opcode": inspect.stack()[1][0].f_locals["self"].__class__.__name__,
@@ -313,7 +307,7 @@ class Context:
         try:
             return random.SystemRandom().choice(list(statements) + list(constants))
         except IndexError:
-            self.monitor.warning(
+            Monitor().warning(
                 event=Event.NO_OPERAND_FOUND,
                 extra={
                     "opcode": inspect.stack()[1][0].f_locals["self"].__class__.__name__,

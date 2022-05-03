@@ -2,6 +2,7 @@ import argparse
 import os
 import platform
 import subprocess
+import tempfile
 from functools import reduce
 from itertools import repeat
 from operator import iconcat
@@ -11,8 +12,12 @@ from cpuinfo import get_cpu_info
 from google.cloud import bigquery
 from google.cloud import storage
 
+from run import *
 from src.monitor import Event
 from src.monitor import Monitor
+from src.shader_brokerage import download_shader_from_gcs
+from src.shader_utils import create_amber_file
+from src.shader_utils import SPIRVShader
 from src.utils import get_spirvsmith_version
 
 AMBER_PATH = "bin/amber"
@@ -48,12 +53,6 @@ def get_pending_shaders_query(
         OR platform_backend IS NULL)
         AND generator_version = "{get_spirvsmith_version()}"
     """
-
-
-def fetch_amber_file_from_GCS(shader_id: str) -> None:
-    print(f"Fetching shader {shader_id} from GCS...")
-    blob = BUCKET.blob(f"{shader_id}/out.amber")
-    blob.download_to_filename("tmp.amber")
 
 
 def insert_BQ_entry(
@@ -92,7 +91,7 @@ def insert_BQ_entry(
     BQ_CLIENT.query(delete_query).result()
 
 
-def run_amber(n_buffers: int, shader_id: str) -> str:
+def run_amber(amber_filename: str, n_buffers: int, shader_id: str) -> str:
     process: subprocess.CompletedProcess = subprocess.run(
         [
             AMBER_PATH,
@@ -107,12 +106,11 @@ def run_amber(n_buffers: int, shader_id: str) -> str:
                 zip(repeat("-B"), [f"pipeline:0:{i}" for i in range(n_buffers)]),
                 [],
             ),
-            "tmp.amber",
+            amber_filename,
         ],
         capture_output=True,
     )
     if process.stderr:
-        print(process.stderr.decode("utf-8"))
         MONITOR.error(
             event=Event.AMBER_FAILURE,
             extra={
@@ -122,6 +120,17 @@ def run_amber(n_buffers: int, shader_id: str) -> str:
             },
         )
         return None
+
+    if process.returncode == 139:
+        MONITOR.error(
+            event=Event.AMBER_SEGFAULT,
+            extra={
+                "stderr": process.stderr.decode("utf-8"),
+                "cli_args": str(process.args),
+                "shader_id": shader_id,
+            },
+        )
+        return "SEGFAULT"
 
     MONITOR.info(event=Event.AMBER_SUCCESS, extra={"shader_id": shader_id})
 
@@ -176,18 +185,23 @@ if __name__ == "__main__":
             f"Found {n_pending_shaders} pending shaders for {platform_os}/{hardware_vendor}/{backend}"
         )
         for row in query_job:
-            fetch_amber_file_from_GCS(row.shader_id)
-            buffer_dump: str = run_amber(
-                n_buffers=row.n_buffers, shader_id=row.shader_id
-            )
-            if buffer_dump:
-                insert_BQ_entry(
-                    row,
-                    platform_os,
-                    hardware_type,
-                    hardware_vendor,
-                    hardware_driver_version,
-                    backend,
-                    row.shader_id,
-                    buffer_dump,
+            shader: SPIRVShader = download_shader_from_gcs(row.shader_id)
+            with tempfile.NamedTemporaryFile(suffix=".amber") as amber_file:
+                create_amber_file(shader, amber_file.name)
+                buffer_dump: str = run_amber(
+                    amber_filename=amber_file.name,
+                    n_buffers=row.n_buffers,
+                    shader_id=row.shader_id,
                 )
+                if buffer_dump:
+                    insert_BQ_entry(
+                        row,
+                        platform_os,
+                        hardware_type,
+                        hardware_vendor,
+                        hardware_driver_version,
+                        backend,
+                        row.shader_id,
+                        buffer_dump,
+                    )
+                os.remove("out.txt")
