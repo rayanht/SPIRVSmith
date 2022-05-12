@@ -1,19 +1,20 @@
+import copy
 import logging
 import multiprocessing
 import os
+import random
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from dataclasses import field
 from threading import Thread
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 import firebase_admin
-import ulid
 from firebase_admin import credentials
 from firebase_admin import firestore
 from omegaconf import OmegaConf
-from ulid import ULID
 
 from src import FuzzDelegator
 from src import OpCode
@@ -40,6 +41,7 @@ from src.shader_utils import SPIRVShader
 from src.shader_utils import validate_spirv_file
 from src.types.concrete_types import OpTypeFunction
 from src.types.concrete_types import OpTypeVoid
+from src.utils import mutate_config
 
 if TYPE_CHECKING:
     from run import SPIRVSmithConfig
@@ -107,10 +109,22 @@ def id_generator(i=1):
         i += 1
 
 
+def register_generator_configuration(generator_id: str, config: "SPIRVSmithConfig"):
+    if config.misc.broadcast_generated_shaders:
+        cred = credentials.Certificate("infra/spirvsmith_gcp.json")
+        firebase_admin.initialize_app(cred)
+
+        firestore_client = firestore.client()
+        document_reference = firestore_client.collection("configurations").document(
+            str(generator_id)
+        )
+        document_reference.set(OmegaConf.to_container(config))
+
+
 @dataclass
 class ShaderGenerator:
     config: "SPIRVSmithConfig"
-    generator_id: ULID = field(default_factory=ulid.new)
+    generator_id: str = field(default_factory=lambda: str(uuid4()))
 
     def start(self):
         MP_pool = multiprocessing.Pool(4, init_MP_pool)
@@ -119,15 +133,7 @@ class ShaderGenerator:
             flask_thread = ServerThread(app)
             flask_thread.start()
 
-        if self.config.misc.broadcast_generated_shaders:
-            cred = credentials.Certificate("infra/spirvsmith_gcp.json")
-            firebase_admin.initialize_app(cred)
-
-            firestore_client = firestore.client()
-            document_reference = firestore_client.collection("configurations").document(
-                str(self.generator_id)
-            )
-            document_reference.set(OmegaConf.to_container(self.config))
+        register_generator_configuration(self.generator_id, self.config)
 
         try:
             os.mkdir("out")
@@ -158,6 +164,19 @@ class ShaderGenerator:
                             )
                 if paused:
                     Monitor(self.config).info(event=Event.PAUSED)
+
+            if random.SystemRandom().random() <= self.config.strategy.mutation_rate:
+                old_strategy = copy.deepcopy(self.config.strategy)
+                mutate_config(self.config)
+                self.generator_id = str(uuid4())
+                register_generator_configuration(self.generator_id, self.config)
+                Monitor(self.config).info(
+                    event=Event.GENERATOR_MUTATION,
+                    extra={
+                        "old_strategy": old_strategy,
+                        "new_strategy": self.config.strategy,
+                    },
+                )
 
     def gen_shader(self) -> SPIRVShader:
         # execution_model = random.SystemRandom().choice(list(ExecutionModel))

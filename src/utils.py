@@ -1,8 +1,30 @@
 import os
+import random
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import git
 
+if TYPE_CHECKING:
+    from run import SPIRVSmithConfig
+
 from src import OpCode
+
+
+@dataclass
+class ClampedInt:
+    value: int
+    lower_bound: int
+    upper_bound: int
+
+    def increment(self):
+        self.value = min(self.value + 1, self.upper_bound)
+
+    def decrement(self):
+        self.value = max(self.value - 1, self.lower_bound)
+
+    def get(self):
+        return self.value
 
 
 def get_spirvsmith_version() -> str:
@@ -42,3 +64,21 @@ def find_subclasses_dfs(subclasses: set[OpCode], cls: OpCode) -> None:
     for subclass in cls.__subclasses__():
         subclasses.add(subclass)
         find_subclasses_dfs(subclasses, subclass)
+
+
+def mutate_config(config: "SPIRVSmithConfig") -> None:
+    mutable_fields: list[str] = [
+        field
+        for field in config.strategy.keys()
+        if field
+        not in {
+            "mutations_config",
+            "enable_ext_glsl_std_450",
+            "p_statement",
+            "optimiser_fuzzing_iterations",
+        }
+    ]
+    mutation_target: str = random.SystemRandom().choice(mutable_fields)
+    config.strategy[mutation_target] = random.SystemRandom().randint(
+        *config.strategy.mutations_config[mutation_target]
+    )

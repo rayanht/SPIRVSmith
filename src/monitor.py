@@ -26,6 +26,7 @@ class Event(Enum):
     VALIDATOR_OPT_SUCCESS = "VALIDATOR_OPT_SUCCESS"
     VALIDATOR_OPT_FAILURE = "VALIDATOR_OPT_FAILURE"
     GCS_UPLOAD_SUCCESS = "GCS_UPLOAD_SUCCESS"
+    GENERATOR_MUTATION = "GENERATOR_MUTATION"
     BQ_GENERATOR_REGISTRATION_SUCCESS = "BQ_GENERATOR_REGISTRATION_SUCCESS"
     BQ_GENERATOR_REGISTRATION_FAILURE = "BQ_GENERATOR_REGISTRATION_FAILURE"
     BQ_SHADER_DATA_UPSERT_SUCCESS = "BQ_SHADER_DATA_UPSERT_SUCCESS"
@@ -49,7 +50,7 @@ class Monitor:
         if config and config.misc.upload_logs:
             outputs.append(daiquiri.output.Datadog())
         daiquiri.setup(
-            level=logging.WARNING,
+            level=logging.INFO,
             outputs=outputs,
         )
 

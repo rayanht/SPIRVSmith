@@ -1,6 +1,7 @@
 import hashlib
 import inspect
 import pickle
+import time
 from abc import ABC
 from dataclasses import field
 from dataclasses import fields
@@ -19,7 +20,10 @@ import random
 from src.enums import Capability
 from ulid import monotonic as ulid
 
-randomization_parameters = {
+OpCodeName = str
+ParameterName = str
+
+randomization_parameters: dict[OpCodeName, ParameterName] = {
     "MemoryOperator": "w_memory_operation",
     "LogicalOperator": "w_logical_operation",
     "ArithmeticOperator": "w_arithmetic_operation",
@@ -58,13 +62,12 @@ class OpCode(ABC):
         )
 
     def __hash__(self) -> int:
-        try:
-            attrs = tuple([hash(getattr(self, attr)) for attr in self.members()])
-        except TypeError:
-            print(self.hashing_members())
-            print([getattr(self, attr) for attr in self.members()])
         return int(
-            hashlib.sha224(pickle.dumps(attrs)).hexdigest(),
+            hashlib.sha224(
+                pickle.dumps(
+                    tuple([hash(getattr(self, attr)) for attr in self.members()])
+                )
+            ).hexdigest(),
             16,
         )
 
@@ -134,6 +137,7 @@ T = TypeVar("T", bound=OpCode)
 class FuzzResult(Generic[T]):
     opcode: T
     side_effects: list[OpCode] = field(default_factory=list)
+    is_opcode_pre_side_effects: bool = field(default_factory=lambda: False, init=False)
 
 
 # A FuzzDelegator is a transient object, we need to commit
@@ -173,17 +177,24 @@ class FuzzDelegator(OpCode):
 
     @classmethod
     def parametrize(cls, context: "Context") -> None:
-        subclasses_names = set(map(lambda cls: cls.__name__, cls.get_subclasses()))
+        subclasses_names: set[OpCodeName] = set(
+            map(lambda cls: cls.__name__, cls.get_subclasses())
+        )
         # Get parametrization from config for top-level delegators
         PARAMETRIZATIONS[cls.__name__] = {}
-        for sub in subclasses_names:
-            PARAMETRIZATIONS[cls.__name__][sub] = 1
-        if any([sub in subclasses_names for sub in randomization_parameters.keys()]):
-            for sub in subclasses_names:
-                if sub in randomization_parameters:
-                    PARAMETRIZATIONS[cls.__name__][sub] = getattr(
-                        context.config.strategy, randomization_parameters[sub]
-                    )
+        for subclass_name in subclasses_names:
+            PARAMETRIZATIONS[cls.__name__][subclass_name] = 1
+        if any(
+            [
+                subclass_name in subclasses_names
+                for subclass_name in randomization_parameters.keys()
+            ]
+        ):
+            for subclass_name in subclasses_names:
+                if subclass_name in randomization_parameters:
+                    PARAMETRIZATIONS[cls.__name__][
+                        subclass_name
+                    ] = context.config.strategy[randomization_parameters[subclass_name]]
         if cls.__name__ == "Statement":
             PARAMETRIZATIONS[cls.__name__]["OpExtInst"] = 0
 
