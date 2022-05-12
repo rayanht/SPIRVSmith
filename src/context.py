@@ -38,7 +38,6 @@ from src.types.concrete_types import OpTypeFunction
 from src.types.concrete_types import OpTypePointer
 from src.types.concrete_types import OpTypeStruct
 from src.types.concrete_types import OpTypeVector
-from src.types.concrete_types import OpTypeVoid
 
 if TYPE_CHECKING:
     from src import OpCode

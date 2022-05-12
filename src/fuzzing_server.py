@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from dataclasses import field
 from threading import Thread
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 import firebase_admin
@@ -196,7 +195,7 @@ class ShaderGenerator:
             new_tvc[tvc] = tvc.id
         context.tvc = new_tvc
         for opcode in program:
-            opcode.id = next(id_gen)
+            opcode.id = str(next(id_gen))
 
         interfaces: tuple[OpVariable, ...] = context.get_interfaces()
         entry_point = OpEntryPoint(

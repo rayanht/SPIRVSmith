@@ -1,6 +1,3 @@
-from dataclasses import field
-from typing import Sequence
-
 from src import FuzzLeafMixin
 from src import OpCode
 from src import VoidOp

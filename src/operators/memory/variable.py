@@ -13,7 +13,6 @@ from src.enums import StorageClass
 from src import (
     AbortFuzzing,
     FuzzResult,
-    OpCode,
     Type,
 )
 from src.types.concrete_types import (

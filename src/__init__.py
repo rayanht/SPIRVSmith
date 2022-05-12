@@ -18,7 +18,6 @@ from src.patched_dataclass import dataclass
 import random
 from src.enums import Capability
 from ulid import monotonic as ulid
-from ulid import ULID
 
 randomization_parameters = {
     "MemoryOperator": "w_memory_operation",

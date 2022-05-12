@@ -45,7 +45,6 @@ from src.operators.composite import OpVectorInsertDynamic
 from src.predicates import IsOfFloatBaseType
 from src.predicates import IsVectorType
 from src.types.concrete_types import OpTypeFloat
-from src.types.concrete_types import OpTypeInt
 
 T = TypeVar("T")
 

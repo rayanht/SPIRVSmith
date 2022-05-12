@@ -21,7 +21,6 @@ from src.monitor import Monitor
 from src.operators.memory.variable import OpVariable
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
-from src.utils import get_opcode_class_from_name
 
 
 @dataclass
