@@ -1,14 +1,20 @@
 import random
+from dataclasses import fields
 from typing import TYPE_CHECKING
 
-from src.operators.memory import MemoryOperator
+from typing_extensions import Self
 
+from src.operators.memory import MemoryOperator
+from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:
     from src.context import Context
 from src.enums import StorageClass
 from src import (
+    AbortFuzzing,
+    FuzzResult,
     OpCode,
+    Type,
 )
 from src.types.concrete_types import (
     OpTypeBool,
@@ -17,13 +23,20 @@ from src.types.concrete_types import (
 )
 
 
+@dataclass
 class OpVariable(MemoryOperator):
-    context: "Context" = None
-    type: OpTypePointer = None
-    storage_class: StorageClass = None
+    storage_class: StorageClass
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    def hashing_members(self):
+        return tuple(
+            [x.name for x in fields(self.__class__) if x.name not in {"id", "context"}]
+        )
 
+    def get_base_type(self) -> Type:
+        return self.type.get_base_type()
+
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         if context.function:
             storage_class = StorageClass.Function
         else:
@@ -32,10 +45,8 @@ class OpVariable(MemoryOperator):
                 if context.is_compute_shader()
                 else StorageClass.Input
             )
-        self.context = context
-        dynamic = False
         try:
-            self.type = random.SystemRandom().choice(
+            variable_type = random.SystemRandom().choice(
                 list(
                     filter(
                         lambda t: isinstance(t, OpTypePointer)
@@ -52,18 +63,15 @@ class OpVariable(MemoryOperator):
                 )
             )
         except IndexError:
-            dynamic = True
             if context.function:
-                return []
-            self.type = OpTypePointer()
-            self.type.storage_class = storage_class
+                raise AbortFuzzing
             target_storage_class = (
                 StorageClass.StorageBuffer
                 if context.is_compute_shader()
                 else StorageClass.Input
             )
             if storage_class == target_storage_class:
-                self.type.type = random.SystemRandom().choice(
+                pointer_inner_type = random.SystemRandom().choice(
                     list(
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct))
@@ -73,7 +81,7 @@ class OpVariable(MemoryOperator):
                     )
                 )
             else:
-                self.type.type = random.SystemRandom().choice(
+                pointer_inner_type = random.SystemRandom().choice(
                     list(
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct)),
@@ -81,7 +89,9 @@ class OpVariable(MemoryOperator):
                         )
                     )
                 )
-        self.storage_class = storage_class
-        if dynamic:
-            return [self.type, self]
-        return [self]
+            variable_type = OpTypePointer(
+                storage_class=storage_class, type=pointer_inner_type
+            )
+        return FuzzResult(
+            cls(type=variable_type, storage_class=storage_class), [variable_type]
+        )

@@ -39,6 +39,8 @@ from src.shader_brokerage import upload_shader_to_gcs
 from src.shader_utils import assemble_shader
 from src.shader_utils import SPIRVShader
 from src.shader_utils import validate_spirv_file
+from src.types.concrete_types import OpTypeFunction
+from src.types.concrete_types import OpTypeVoid
 
 if TYPE_CHECKING:
     from run import SPIRVSmithConfig
@@ -51,10 +53,6 @@ from flask import Flask
 app = Flask(__name__)
 
 logging.getLogger("werkzeug").disabled = True
-
-
-def get_BQ_client() -> bigquery.Client:
-    return bigquery.Client.from_service_account_json("infra/spirvsmith_gcp.json")
 
 
 terminate = False
@@ -144,11 +142,11 @@ class ShaderGenerator:
                 MP_pool.close()
                 MP_pool.join()
                 thread_pool_executor.shutdown()
-                Monitor().info(event=Event.TERMINATED)
+                Monitor(self.config).info(event=Event.TERMINATED)
                 break
             if not paused:
                 shader: SPIRVShader = self.gen_shader()
-
+                shader.export(f"out/{shader.id}.spasm")
                 with tempfile.NamedTemporaryFile() as tmp:
                     if assemble_shader(shader, tmp.name) and validate_spirv_file(
                         shader, tmp.name
@@ -160,7 +158,7 @@ class ShaderGenerator:
                                 insert_new_shader_into_BQ, shader, self.generator_id
                             )
                 if paused:
-                    Monitor().info(event=Event.PAUSED)
+                    Monitor(self.config).info(event=Event.PAUSED)
 
     def gen_shader(self) -> SPIRVShader:
         # execution_model = random.SystemRandom().choice(list(ExecutionModel))
@@ -169,31 +167,38 @@ class ShaderGenerator:
         # )
         execution_model = ExecutionModel.GLCompute
         context = Context.create_global_context(execution_model, self.config)
+        void_type = OpTypeVoid()
+        main_type = OpTypeFunction(return_type=void_type, parameter_types=())
+        context.main_type = main_type
+        context.tvc[void_type] = void_type.id
+        context.tvc[main_type] = main_type.id
+
         if self.config.strategy.enable_ext_glsl_std_450:
-            context.extension_sets["GLSL"] = OpExtInstImport(name="GLSL.std.450")
+            context.extension_sets["GLSL.std.450"] = OpExtInstImport(
+                name="GLSL.std.450"
+            )
         # Generate random types and constants to be used by the program
         context.gen_types()
         context.gen_constants()
         context.gen_global_variables()
 
         # Populate function bodies and recondition
-        program: list[OpCode] = context.gen_program()
-        program: list[OpCode] = recondition(context, program)
+        program: list[OpCode] = recondition(context, context.gen_program())
         FuzzDelegator.reset_parametrizations()
 
         # Remap IDs
         id_gen = id_generator()
         for ext in context.extension_sets.values():
-            ext.id = next(id_gen)
+            ext.id = str(next(id_gen))
         new_tvc = {}
         for tvc in context.tvc.keys():
-            tvc.id = next(id_gen)
+            tvc.id = str(next(id_gen))
             new_tvc[tvc] = tvc.id
         context.tvc = new_tvc
         for opcode in program:
             opcode.id = next(id_gen)
 
-        interfaces: Sequence[OpVariable] = context.get_interfaces()
+        interfaces: tuple[OpVariable, ...] = context.get_interfaces()
         entry_point = OpEntryPoint(
             execution_model=execution_model,
             function=context.main_fn,
@@ -211,9 +216,13 @@ class ShaderGenerator:
         # TODO extra operands
         if execution_model == ExecutionModel.GLCompute:
             execution_mode = ExecutionMode.LocalSize
+            extra_operands = (1, 1, 1)
         else:
             execution_mode = ExecutionMode.OriginUpperLeft
-        op_execution_mode = OpExecutionMode(entry_point.function, execution_mode)
+            extra_operands = ()
+        op_execution_mode = OpExecutionMode(
+            entry_point.function, execution_mode, extra_operands
+        )
         return SPIRVShader(
             capabilities,
             memory_model,

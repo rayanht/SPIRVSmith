@@ -8,8 +8,9 @@ from src.context import Context
 from src.enums import ExecutionModel
 from src.monitor import Monitor
 from src.operators.arithmetic.scalar_arithmetic import OpISub
-from src.types.abstract_types import ArithmeticType
+from src.predicates import IsArithmeticType
 from src.types.abstract_types import MiscType
+from src.types.abstract_types import ScalarType
 from src.types.concrete_types import OpTypeBool
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeFunction
@@ -17,13 +18,15 @@ from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import OpTypeVector
 
 N = 500
-monitor = Monitor()
+
 config = SPIRVSmithConfig()
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)
 
 config.misc.broadcast_generated_shaders = False
 config.misc.start_web_server = False
+config.misc.upload_logs = False
+monitor = Monitor(config)
 
 
 class TestContext(unittest.TestCase):
@@ -32,7 +35,7 @@ class TestContext(unittest.TestCase):
         config.limits = copy.deepcopy(init_limits)
         config.strategy = copy.deepcopy(init_strategy)
         self.context: Context = Context.create_global_context(
-            ExecutionModel.GLCompute, config, monitor
+            ExecutionModel.GLCompute, config
         )
 
     def test_context_registers_all_constants(self):
@@ -40,13 +43,7 @@ class TestContext(unittest.TestCase):
         self.context.create_on_demand_numerical_constant(OpTypeInt, value=1)
 
         self.assertEqual(
-            len(
-                list(
-                    self.context.get_constants(
-                        lambda sym: (isinstance(sym.type, ArithmeticType))
-                    )
-                )
-            ),
+            len(list(self.context.get_constants(IsArithmeticType))),
             2,
         )
 
@@ -59,13 +56,7 @@ class TestContext(unittest.TestCase):
         )
 
         self.assertTrue(
-            len(
-                list(
-                    self.context.get_constants(
-                        lambda sym: (isinstance(sym.type, ArithmeticType))
-                    )
-                )
-            ),
+            len(list(self.context.get_constants(IsArithmeticType))),
             1,
         )
         self.assertEqual(constant1, constant2)
@@ -77,66 +68,44 @@ class TestContext(unittest.TestCase):
         self.context.tvc[bool_type1] = bool_type1.id
         self.context.tvc[bool_type2] = bool_type2.id
 
-        self.assertEqual(len(self.context.tvc), 3)
+        self.assertEqual(len(self.context.tvc), 1)
 
     def test_context_same_types_should_be_conflated_int(self):
-        int_type1 = OpTypeInt()
-        int_type1.width = 32
-        int_type1.signed = 1
-
-        int_type2 = OpTypeInt()
-        int_type2.width = 32
-        int_type2.signed = 1
+        int_type1 = OpTypeInt(32, 1)
+        int_type2 = OpTypeInt(32, 1)
 
         self.context.tvc[int_type1] = int_type1.id
         self.context.tvc[int_type2] = int_type2.id
 
-        self.assertEqual(len(self.context.tvc), 3)
+        self.assertEqual(len(self.context.tvc), 1)
 
     def test_context_same_types_should_be_conflated_vector1(self):
-        int_type = OpTypeInt()
-        int_type.width = 32
-        int_type.signed = 1
+        int_type = OpTypeInt(32, 1)
 
         self.context.tvc[int_type] = int_type.id
 
-        vec_type1 = OpTypeVector()
-        vec_type1.size = 4
-        vec_type1.type = int_type
-
-        vec_type2 = OpTypeVector()
-        vec_type2.size = 4
-        vec_type2.type = int_type
+        vec_type1 = OpTypeVector(int_type, 4)
+        vec_type2 = OpTypeVector(int_type, 4)
 
         self.context.tvc[vec_type1] = vec_type1.id
         self.context.tvc[vec_type2] = vec_type2.id
 
-        self.assertEqual(len(self.context.tvc), 4)
+        self.assertEqual(len(self.context.tvc), 2)
 
     def test_context_same_types_should_be_conflated_vector2(self):
-        int_type1 = OpTypeInt()
-        int_type1.width = 32
-        int_type1.signed = 1
-
-        int_type2 = OpTypeInt()
-        int_type2.width = 32
-        int_type2.signed = 1
+        int_type1 = OpTypeInt(32, 1)
+        int_type2 = OpTypeInt(32, 1)
 
         self.context.tvc[int_type1] = int_type1.id
         self.context.tvc[int_type2] = int_type2.id
 
-        vec_type1 = OpTypeVector()
-        vec_type1.size = 4
-        vec_type1.type = int_type1
-
-        vec_type2 = OpTypeVector()
-        vec_type2.size = 4
-        vec_type2.type = int_type2
+        vec_type1 = OpTypeVector(int_type1, 4)
+        vec_type2 = OpTypeVector(int_type2, 4)
 
         self.context.tvc[vec_type1] = vec_type1.id
         self.context.tvc[vec_type2] = vec_type2.id
 
-        self.assertEqual(len(self.context.tvc), 4)
+        self.assertEqual(len(self.context.tvc), 2)
 
     def test_context_variables_in_different_scopes_should_not_be_conflated(self):
         pass
@@ -145,7 +114,7 @@ class TestContext(unittest.TestCase):
         constant1 = self.context.create_on_demand_numerical_constant(OpTypeInt, 0)
         constant2 = self.context.create_on_demand_numerical_constant(OpTypeInt, 1)
 
-        operator = OpISub().fuzz(self.context)[-1]
+        operator = OpISub.fuzz(self.context).opcode
 
         self.assertTrue(
             operator.operand1 == constant1 or operator.operand1 == constant2
@@ -157,7 +126,7 @@ class TestContext(unittest.TestCase):
 
         counter = {constant1: 0, constant2: 0}
         for _ in range(N):
-            operator = OpISub().fuzz(self.context)[-1]
+            operator = OpISub.fuzz(self.context).opcode
             counter[operator.operand1] += 1
             counter[operator.operand2] += 1
 
@@ -173,26 +142,19 @@ class TestContext(unittest.TestCase):
 
     def test_numerical_types_distributed_correctly(self):
         self.context.config.limits.n_types = N
-        self.context.config.strategy.w_scalar_type = 0
-        self.context.config.strategy.w_numerical_type = 1
         self.context.config.strategy.w_container_type = 0
-        self.context.config.strategy.w_arithmetic_type = 0
 
-        Type().parametrize(self.context)
-        Type.get_parametrization()[MiscType.__name__] = 0
+        Type.parametrize(self.context)
+        Type.set_zero_probability(MiscType, self.context)
+        ScalarType.set_zero_probability(OpTypeBool, self.context)
 
-        # All possible numerical types
-        type1: Type = OpTypeInt().fuzz(self.context)[-1]
-        type1.signed = 0
-
-        type2: Type = OpTypeInt().fuzz(self.context)[-1]
-        type2.signed = 1
-
-        type3: Type = OpTypeFloat().fuzz(self.context)[-1]
+        type1: Type = OpTypeInt(32, 0)
+        type2: Type = OpTypeInt(32, 1)
+        type3: Type = OpTypeFloat(32)
 
         counter = {type1: 0, type2: 0, type3: 0}
 
-        types = [Type().fuzz(self.context)[-1] for _ in range(N)]
+        types = [Type.fuzz(self.context).opcode for _ in range(N)]
 
         for type in types:
             counter[type] += 1
@@ -204,13 +166,11 @@ class TestContext(unittest.TestCase):
     def test_correct_number_of_function_types_created(self):
         self.context.config.limits.n_types = N
         self.context.config.strategy.w_scalar_type = 1
-        self.context.config.strategy.w_numerical_type = 1
         self.context.config.strategy.w_container_type = 1
-        self.context.config.strategy.w_arithmetic_type = 1
 
         self.context.config.limits.n_functions = 5
 
-        Type().parametrize(self.context)
+        Type.parametrize(self.context)
 
         self.context.gen_types()
 

@@ -6,10 +6,14 @@ if TYPE_CHECKING:
 from google.cloud import bigquery
 from google.cloud import storage
 
+import sys
 
-STORAGE_CLIENT = storage.Client.from_service_account_json("infra/spirvsmith_gcp.json")
-BQ_CLIENT = bigquery.Client.from_service_account_json("infra/spirvsmith_gcp.json")
-BUCKET = STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
+if "pytest" not in sys.modules:
+    STORAGE_CLIENT = storage.Client.from_service_account_json(
+        "infra/spirvsmith_gcp.json"
+    )
+    BQ_CLIENT = bigquery.Client.from_service_account_json("infra/spirvsmith_gcp.json")
+    BUCKET = STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
 
 
 def upload_shader_to_gcs(shader: "SPIRVShader") -> None:
@@ -20,7 +24,7 @@ def upload_shader_to_gcs(shader: "SPIRVShader") -> None:
 
 def download_shader_from_gcs(shader_id: str) -> "SPIRVShader":
     blob = BUCKET.blob(f"{shader_id}.pkl")
-    pickled_shader: str = blob.download_as_bytes()
+    pickled_shader: bytes = blob.download_as_bytes()
     return pickle.loads(pickled_shader)
 
 

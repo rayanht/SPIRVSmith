@@ -2,10 +2,11 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from src import OpCode
-from src.operators import Operand
-from src.operators.arithmetic import BinaryArithmeticOperator
+from typing_extensions import Self
 
+from src import FuzzResult
+from src.operators.arithmetic import BinaryArithmeticOperator
+from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -21,7 +22,6 @@ from src.predicates import (
 )
 
 from src.types.concrete_types import (
-    OpTypeFloat,
     OpTypeMatrix,
     OpTypeVector,
 )
@@ -31,100 +31,64 @@ from src.types.concrete_types import (
 # This is because trying to encompass their logic in the mixin would be way too complex:
 
 
+@dataclass
 class OpVectorTimesScalar(BinaryArithmeticOperator[None, None, None, None]):
-    type: OpTypeVector = None
-    operand1: Operand = None
-    operand2: Operand = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(IsScalarFloat)
-        if not operand2:
-            return []
-        self.type = operand1.type
-        self.operand1 = operand1
-        self.operand2 = operand2
-        return [self]
+        return FuzzResult(cls(type=operand1.type, operand1=operand1, operand2=operand2))
 
 
+@dataclass
 class OpMatrixTimesScalar(BinaryArithmeticOperator[None, None, None, None]):
-    type: OpTypeMatrix = None
-    operand1: Operand = None
-    operand2: Operand = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(And(IsMatrixType, IsOfFloatBaseType))
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(IsScalarFloat)
-        if not operand2:
-            return []
-        self.type = operand1.type
-        self.operand1 = operand1
-        self.operand2 = operand2
-        return [self]
+        return FuzzResult(cls(type=operand1.type, operand1=operand1, operand2=operand2))
 
 
+@dataclass
 class OpVectorTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
-    type: OpTypeVector = None
-    operand1: Operand = None
-    operand2: Operand = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         # We pick the matrix first here because we tend to have more vectors than matrices
         operand2 = context.get_random_operand(And(IsMatrixType, IsOfFloatBaseType))
-        if not operand2:
-            return []
         # The vector must have as many element as the matrix has rows
         operand1 = context.get_random_operand(
             And(IsVectorType, IsOfFloatBaseType, HasLength(len(operand2.type.type)))
         )
-        if not operand1:
-            return []
-        self.type = OpTypeVector()
-        self.type.type = operand1.get_base_type()
-        self.type.size = len(operand2.type)
-        context.add_to_tvc(self.type)
-        self.operand1 = operand1
-        self.operand2 = operand2
-        return [self]
+        result_type = OpTypeVector(
+            type=operand1.get_base_type(), size=len(operand2.type)
+        )
+        return FuzzResult(
+            cls(type=result_type, operand1=operand1, operand2=operand2), [result_type]
+        )
 
 
+@dataclass
 class OpMatrixTimesVector(BinaryArithmeticOperator[None, None, None, None]):
-    type: OpTypeVector = None
-    operand1: Operand = None
-    operand2: Operand = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(And(IsMatrixType, IsOfFloatBaseType))
-        if not operand1:
-            return []
         # The vector must have as many elements as the matrix has columns
         operand2 = context.get_random_operand(
             And(IsVectorType, IsOfFloatBaseType, HasLength(len(operand1.type)))
         )
-        if not operand2:
-            return []
-        self.type = OpTypeVector()
-        self.type.type = operand1.get_base_type()
-        self.type.size = len(operand1.type.type)
-        context.add_to_tvc(self.type)
-        self.operand1 = operand1
-        self.operand2 = operand2
-        return [self]
+        result_type = OpTypeVector(
+            type=operand1.get_base_type(), size=len(operand1.type.type)
+        )
+        return FuzzResult(
+            cls(type=result_type, operand1=operand1, operand2=operand2), [result_type]
+        )
 
 
+@dataclass
 class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
-    type: OpTypeMatrix = None
-    operand1: Operand = None
-    operand2: Operand = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(And(IsMatrixType, IsOfFloatBaseType))
-        if not operand1:
-            return []
         # operand2 must have the same number of columns that operand1 has
         # rows, tricky case if we got unlucky and picked for operand1
         # a matrix that could be multiplied by operand2 in the symmetric case
@@ -145,8 +109,6 @@ class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
                 or HaveSameTypeLength(x, operand1.type)
             )
         )
-        if not operand2:
-            return []
 
         # Handle the symmetric case
         #     len(operand1.type) != len(operand2.type.type)
@@ -157,45 +119,29 @@ class OpMatrixTimesMatrix(BinaryArithmeticOperator[None, None, None, None]):
 
         # The resulting matrix has the same number of rows as operand1
         # and same number of columns as operand2
-        self.type = OpTypeMatrix()
-        # Rows
-        self.type.type = operand1.type.type
-        # Columns
-        self.type.size = len(operand2.type)
-        context.add_to_tvc(self.type)
-        self.operand1 = operand1
-        self.operand2 = operand2
-        return [self]
+        result_type = OpTypeMatrix(type=operand1.type.type, size=len(operand2.type))
+        return FuzzResult(
+            cls(type=result_type, operand1=operand1, operand2=operand2), [result_type]
+        )
 
 
+@dataclass
 class OpOuterProduct(BinaryArithmeticOperator[None, None, None, None]):
-    type: OpTypeMatrix = None
-    operand1: Operand = None
-    operand2: Operand = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
-        self.type = OpTypeMatrix()
-        self.type.type = operand1.type
-        self.type.size = len(operand2.type)
-        context.add_to_tvc(self.type)
-        self.operand1 = operand1
-        self.operand2 = operand2
-        return [self]
+        result_type = OpTypeMatrix(type=operand1.type, size=len(operand2.type))
+        return FuzzResult(
+            cls(type=result_type, operand1=operand1, operand2=operand2), [result_type]
+        )
 
 
+@dataclass
 class OpDot(BinaryArithmeticOperator[None, None, None, None]):
-    type: OpTypeFloat = None
-    operand1: Operand = None
-    operand2: Operand = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(
             And(
                 IsVectorType,
@@ -203,7 +149,6 @@ class OpDot(BinaryArithmeticOperator[None, None, None, None]):
                 HasLength(len(operand1.type)),
             )
         )
-        self.type = operand1.get_base_type()
-        self.operand1 = operand1
-        self.operand2 = operand2
-        return [self]
+        return FuzzResult(
+            cls(type=operand1.get_base_type(), operand1=operand1, operand2=operand2)
+        )

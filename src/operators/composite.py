@@ -3,10 +3,12 @@ from math import ceil
 from math import log2
 from typing import TYPE_CHECKING
 
-from src import OpCode
+from typing_extensions import Self
+
+from src import FuzzResult
 from src import Statement
-from src import Type
 from src.operators import Operand
+from src.patched_dataclass import dataclass
 from src.predicates import And
 from src.predicates import HasBaseType
 from src.predicates import HasType
@@ -22,120 +24,111 @@ if TYPE_CHECKING:
     from src.context import Context
 
 
+@dataclass
 class CompositeOperator(Statement):
     ...
 
 
+@dataclass
 class OpVectorExtractDynamic(CompositeOperator):
-    type: Type = None
-    vector: Statement = None
-    index: Statement = None
+    vector: Operand
+    index: Operand
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         vector = context.get_random_operand(IsVectorType)
-        if vector is None:
-            return []
-
-        self.type = vector.get_base_type()
-        self.vector = vector
-        self.index = context.get_random_operand(IsScalarInteger)
-        return [self]
+        index = context.get_random_operand(IsScalarInteger)
+        return FuzzResult(cls(type=vector.get_base_type(), vector=vector, index=index))
 
 
+@dataclass
 class OpVectorInsertDynamic(CompositeOperator):
-    type: Type = None
-    vector: Statement = None
-    component: Statement = None
-    index: Statement = None
+    vector: Operand
+    component: Operand
+    index: Operand
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         vector = context.get_random_operand(IsVectorType)
-        if vector is None:
-            return []
         component = context.get_random_operand(HasType(vector.get_base_type()))
-        if component is None:
-            return []
-        self.type = vector.type
-        self.vector = vector
-        self.component = component
-        self.index = context.get_random_operand(IsScalarInteger)
-        return [self]
+        return FuzzResult(
+            cls(
+                type=vector.type,
+                vector=vector,
+                component=component,
+                index=context.get_random_operand(IsScalarInteger),
+            )
+        )
 
 
+@dataclass
 class OpVectorShuffle(CompositeOperator):
-    type: Type = None
-    vector1: Statement = None
-    vector2: Statement = None
-    components: tuple[int] = None
+    vector1: Operand
+    vector2: Operand
+    components: tuple[int, ...]
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         vector1 = context.get_random_operand(IsVectorType)
-        if vector1 is None:
-            return []
         vector2 = context.get_random_operand(
             And(IsVectorType, HasBaseType(vector1.get_base_type()))
         )
-        if vector2 is None:
-            return []
 
-        self.type = OpTypeVector()
-        self.type.type = vector1.get_base_type()
-        self.type.size = min(
-            4, 2 ** (ceil(log2(len(vector1.type) + len(vector2.type))))
+        inner_type = OpTypeVector(
+            type=vector1.get_base_type(),
+            size=min(4, 2 ** (ceil(log2(len(vector1.type) + len(vector2.type))))),
         )
-        context.add_to_tvc(self.type)
-        self.vector1 = vector1
-        self.vector2 = vector2
-        self.components = tuple(
+        context.add_to_tvc(inner_type)
+        components = tuple(
             [
-                random.SystemRandom().randint(0, self.type.size - 1)
-                for _ in range(self.type.size)
+                random.SystemRandom().randint(0, len(inner_type) - 1)
+                for _ in range(len(inner_type))
             ]
         )
-        return [self]
+        return FuzzResult(
+            cls(
+                type=inner_type, vector1=vector1, vector2=vector2, components=components
+            )
+        )
 
 
 # class OpCompositeConstruct:
 #     ...
 
 
+@dataclass
 class OpCompositeExtract(CompositeOperator):
-    type: Type = None
-    composite: Operand = None
-    indexes: tuple[int] = None
+    composite: Operand
+    indexes: tuple[int, ...]
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        composite = context.get_random_operand(IsCompositeType)
-        if composite is None:
-            return []
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        composite: Operand = context.get_random_operand(IsCompositeType)
         if IsMatrixType(composite):
             indexes = (
                 random.SystemRandom().randint(0, len(composite.type) - 1),
                 random.SystemRandom().randint(0, len(composite.type.type) - 1),
             )
-            self.type = composite.get_base_type()
+            inner_type = composite.get_base_type()
         else:
             indexes = (random.SystemRandom().randint(0, len(composite.type) - 1),)
-            self.type = (
+            inner_type = (
                 composite.type.types[indexes[0]]
                 if IsStructType(composite)
                 else composite.get_base_type()
             )
-        self.composite = composite
-        self.indexes = indexes
-        return [self]
+        return FuzzResult(cls(type=inner_type, composite=composite, indexes=indexes))
 
 
+@dataclass
 class OpCompositeInsert(CompositeOperator):
-    type: Type = None
-    object: Statement = None
-    composite: Statement = None
-    indexes: tuple[int] = None
+    object: Operand
+    composite: Operand
+    indexes: tuple[int, ...]
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         composite = context.get_random_operand(IsCompositeType)
-        if composite is None:
-            return []
         if IsMatrixType(composite):
             indexes = (
                 random.SystemRandom().randint(0, len(composite.type) - 1),
@@ -152,42 +145,39 @@ class OpCompositeInsert(CompositeOperator):
                 else composite.get_base_type()
             )
             target_object = context.get_random_operand(HasType(target_type))
-        if not target_object:
-            return []
-        self.type = composite.type
-        self.object = target_object
-        self.composite = composite
-        self.indexes = indexes
-        return [self]
+        return FuzzResult(
+            cls(
+                type=composite.type,
+                object=target_object,
+                composite=composite,
+                indexes=indexes,
+            )
+        )
 
 
+@dataclass
 class OpCopyObject(CompositeOperator):
-    type: Type = None
-    object: Statement = None
+    object: Operand
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         target_object = context.get_random_operand(lambda _: True)
-        if target_object is None:
-            return []
-        self.type = target_object.type
-        self.object = target_object
-        return [self]
+        return FuzzResult(cls(type=target_object.type, object=target_object))
 
 
+@dataclass
 class OpTranspose(CompositeOperator):
-    type: Type = None
-    object: Statement = None
+    object: Operand
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         target_object = context.get_random_operand(IsMatrixType)
-        if target_object is None:
-            return []
-        self.type = OpTypeMatrix()
-        self.type.type = OpTypeVector()
-        self.type.type.type = target_object.get_base_type()
-        self.type.type.size = len(target_object.type)
-        self.type.size = len(target_object.type.type)
-        context.add_to_tvc(self.type.type)
-        context.add_to_tvc(self.type)
-        self.object = target_object
-        return [self]
+        inner_type = OpTypeMatrix(
+            type=OpTypeVector(
+                type=target_object.get_base_type(), size=len(target_object.type)
+            ),
+            size=len(target_object.type.type),
+        )
+        context.add_to_tvc(inner_type.type)
+        context.add_to_tvc(inner_type)
+        return FuzzResult(cls(type=inner_type, object=target_object))

@@ -33,7 +33,7 @@ class FuzzingStrategyConfig:
     w_memory_operation: int = 4
     w_logical_operation: int = 4
     w_arithmetic_operation: int = 4
-    w_control_flow_operation: int = 1
+    w_control_flow_operation: int = 0
     w_function_operation: int = 1
     w_bitwise_operation: int = 4
     w_conversion_operation: int = 4
@@ -41,9 +41,7 @@ class FuzzingStrategyConfig:
 
     ## Types weights
     w_scalar_type: int = 1
-    w_numerical_type: int = 1
     w_container_type: int = 1
-    w_arithmetic_type: int = 1
 
     ## Constants weights
     w_composite_constant: int = 1
@@ -59,7 +57,8 @@ class FuzzingStrategyConfig:
 @dataclass
 class MiscConfig:
     start_web_server: bool = False
-    broadcast_generated_shaders: bool = True
+    broadcast_generated_shaders: bool = False
+    upload_logs: bool = False
     version: str = get_spirvsmith_version()
 
 

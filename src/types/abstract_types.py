@@ -1,30 +1,34 @@
+from typing import Generic
+from typing import TypeVar
+
 from src import Type
+from src.patched_dataclass import dataclass
 
 
+@dataclass
 class ScalarType(Type):
     ...
 
 
-class NumericalType(Type):
-    ...
-
-
+@dataclass
 class ContainerType(Type):
     ...
 
 
-class ArithmeticType(Type):
-    ...
-
-
 # TODO I fucking hate this type, look into reworking the whole type system
+@dataclass
 class MiscType(Type):
     ...
 
 
-class UniformContainerType(ContainerType):
-    ...
+T = TypeVar("T", bound=Type)
 
 
+@dataclass
+class UniformContainerType(Generic[T], ContainerType):
+    type: T
+
+
+@dataclass
 class MixedContainerType(ContainerType):
     ...

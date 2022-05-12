@@ -1,7 +1,12 @@
 import logging
 from enum import Enum
+from typing import Optional
+from typing import TYPE_CHECKING
 
 import daiquiri
+
+if TYPE_CHECKING:
+    from run import SPIRVSmithConfig
 
 from src.utils import get_spirvsmith_version
 
@@ -33,17 +38,18 @@ class Event(Enum):
 
 
 class Monitor:
-    def __init__(self) -> None:
+    def __init__(self, config: Optional["SPIRVSmithConfig"] = None) -> None:
         outputs = [
             daiquiri.output.Stream(
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt=("[%(levelname)s] [%(asctime)s] %(message)s")
                 )
-            ),
-            daiquiri.output.Datadog(),
+            )
         ]
+        if config and config.misc.upload_logs:
+            outputs.append(daiquiri.output.Datadog())
         daiquiri.setup(
-            level=logging.INFO,
+            level=logging.WARNING,
             outputs=outputs,
         )
 

@@ -1,7 +1,11 @@
 import random
 from typing import TYPE_CHECKING
 
+from typing_extensions import Self
+
+from src import AbortFuzzing
 from src import Constant
+from src import FuzzResult
 from src import OpCode
 from src.predicates import HasType
 from src.predicates import IsMatrixType
@@ -9,99 +13,118 @@ from src.predicates import IsMatrixType
 if TYPE_CHECKING:
     from src.context import Context
 from src.types.abstract_types import (
-    NumericalType,
     Type,
 )
 from src.types.concrete_types import (
     OpTypeArray,
     OpTypeBool,
+    OpTypeFloat,
     OpTypeInt,
     OpTypeMatrix,
     OpTypeVector,
 )
-from utils.patched_dataclass import dataclass
+from src.patched_dataclass import dataclass
 
 
+@dataclass
 class ScalarConstant(Constant):
     ...
 
 
+@dataclass
 class CompositeConstant(Constant):
     ...
 
 
+@dataclass
 class OpConstantTrue(ScalarConstant):
-    type: Type = None
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        ScalarConstant.set_zero_probability(cls, context)
+        return FuzzResult(cls(type=OpTypeBool()), [OpTypeBool()])
 
-    def fuzz(self, _: "Context") -> list[OpCode]:
-        self.type = OpTypeBool()
-        return [self.type, self]
 
-
+@dataclass
 class OpConstantFalse(ScalarConstant):
-    type: Type = None
-
-    def fuzz(self, _: "Context") -> list[OpCode]:
-        self.type = OpTypeBool()
-        return [self.type, self]
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        ScalarConstant.set_zero_probability(cls, context)
+        return FuzzResult(cls(type=OpTypeBool()), [OpTypeBool()])
 
 
 @dataclass
 class OpConstant(ScalarConstant):
-    type: Type = None
-    value: int | float = None
+    value: int | float
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-
-        self.type = NumericalType().fuzz(context)[-1]
-
-        if isinstance(self.type, OpTypeInt):
-            if self.type.signed:
-                self.value = random.SystemRandom().randint(-100, 100)
-            else:
-                self.value = random.SystemRandom().randint(0, 100)
-        else:
-            self.value = random.SystemRandom().uniform(0, 100)
-
-        return [self.type, self]
-
-
-class OpConstantComposite(CompositeConstant):
-    type: Type = None
-    constituents: tuple[OpCode] = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        composite_type = (
-            random.SystemRandom()
-            .choice([OpTypeArray, OpTypeVector, OpTypeMatrix])()
-            .fuzz(context)
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        fuzzed_type: OpTypeInt | OpTypeFloat = (
+            random.SystemRandom().choice([OpTypeInt, OpTypeFloat]).fuzz(context).opcode
         )
-        self.type: OpTypeArray | OpTypeVector | OpTypeMatrix = composite_type[-1]
-        self.constituents = []
-        if IsMatrixType(self):
-            column_type = self.type.type
-            for _ in range(len(self.type)):
-                column_values = OpConstantComposite()
-                column_values.type = column_type
-                constituents = column_values.fuzz_constituents(context)
-                if not constituents:
-                    return []
-                column_values.constituents = tuple(constituents)
-                self.constituents.append(column_values)
-        else:
-            self.constituents = self.fuzz_constituents(context)
-            if not self.constituents:
-                return []
-        self.constituents = tuple(self.constituents)
-        return [*composite_type, *self.constituents, self]
 
-    def fuzz_constituents(self, context: "Context") -> list[OpCode]:
-        base_type: Type = self.type.get_base_type()
-        self.constituents = []
-        for _ in range(len(self.type)):
+        if isinstance(fuzzed_type, OpTypeInt):
+            if fuzzed_type.signed:
+                return FuzzResult(
+                    cls(
+                        type=fuzzed_type, value=random.SystemRandom().randint(-100, 100)
+                    ),
+                    [fuzzed_type],
+                )
+            return FuzzResult(
+                cls(type=fuzzed_type, value=random.SystemRandom().randint(0, 100)),
+                [fuzzed_type],
+            )
+        return FuzzResult(
+            cls(type=fuzzed_type, value=random.SystemRandom().uniform(0, 100)),
+            [fuzzed_type],
+        )
+
+
+@dataclass
+class OpConstantComposite(CompositeConstant):
+    constituents: tuple[OpCode, ...]
+
+    @staticmethod
+    def fuzz_constituents(base_type: Type, n: int, context: "Context") -> list[OpCode]:
+        constituents: list[OpCode] = []
+        for _ in range(n):
             constituent: Constant = context.get_random_operand(HasType(base_type))
             if constituent:
-                self.constituents.append(constituent)
+                constituents.append(constituent)
             else:
-                return None
-        return self.constituents
+                raise AbortFuzzing
+        return constituents
+
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        fuzzed_inner_type: FuzzResult[Self] = (
+            random.SystemRandom()
+            .choice([OpTypeArray, OpTypeVector, OpTypeMatrix])
+            .fuzz(context)
+        )
+        constituents = []
+        match fuzzed_inner_type.opcode:
+            case OpTypeMatrix():
+                column_type: OpTypeVector = fuzzed_inner_type.opcode.type
+                for _ in range(len(fuzzed_inner_type.opcode)):
+                    column_values = OpConstantComposite(
+                        type=column_type,
+                        constituents=tuple(
+                            cls.fuzz_constituents(
+                                column_type.get_base_type(),
+                                len(column_type),
+                                context,
+                            )
+                        ),
+                    )
+                    constituents.append(column_values)
+            case OpTypeArray() | OpTypeVector():
+                constituents = cls.fuzz_constituents(
+                    fuzzed_inner_type.opcode.get_base_type(),
+                    len(fuzzed_inner_type.opcode),
+                    context,
+                )
+        return FuzzResult(
+            cls(type=fuzzed_inner_type.opcode, constituents=tuple(constituents)),
+            [*fuzzed_inner_type.side_effects, fuzzed_inner_type.opcode, *constituents],
+        )

@@ -1,12 +1,18 @@
 import inspect
 import random
+from dataclasses import dataclass
+from dataclasses import field
+from types import NoneType
 from typing import Callable
 from typing import Iterable
 from typing import Optional
 from typing import TYPE_CHECKING
-from uuid import UUID
-from uuid import uuid4
 
+import ulid
+from typing_extensions import Self
+
+from src import AbortFuzzing
+from src import FuzzResult
 from src import Statement
 from src import Untyped
 from src.annotations import Annotation
@@ -23,6 +29,7 @@ from src.enums import StorageClass
 from src.function import OpFunction
 from src.monitor import Event
 from src.monitor import Monitor
+from src.operators import Operand
 from src.predicates import (
     HaveSameTypeLength,
 )
@@ -35,49 +42,22 @@ from src.types.concrete_types import OpTypeVoid
 
 if TYPE_CHECKING:
     from src import OpCode
+    from src.extension import OpExtInstImport
     from run import SPIRVSmithConfig
 from src.operators.memory.memory_access import OpVariable
 
 
+@dataclass
 class Context:
-    id: UUID
-    symbol_table: list["OpCode"]
+    id: str = field(default_factory=lambda: ulid.new().str, init=False)
     function: Optional["OpFunction"]
     parent_context: Optional["Context"]
-    tvc: dict["OpCode", str]
-    annotations: list[Annotation]
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
-    extension_sets: dict[str, "OpCode"]
-
-    def __init__(
-        self,
-        function: Optional["OpFunction"],
-        parent_context: Optional["Context"],
-        annotations: list[Annotation],
-        execution_model: ExecutionModel,
-        config: "SPIRVSmithConfig",
-    ) -> None:
-        self.id = uuid4()
-        self.symbol_table = []
-        self.function = function
-        self.annotations = annotations
-        self.parent_context = parent_context
-        self.execution_model = execution_model
-        self.tvc = dict()
-        self.extension_sets = dict()
-        self.config = config
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.id == other.id
-        return False
-
-    def __hash__(self) -> int:
-        return hash(self.id)
-
-    def __str__(self) -> str:
-        return f"<Context id={self.id} fn={self.function}>"
+    symbol_table: list["OpCode"] = field(default_factory=list)
+    tvc: dict["OpCode", str] = field(default_factory=dict)
+    annotations: dict[Annotation, NoneType] = field(default_factory=dict)
+    extension_sets: dict[str, "OpExtInstImport"] = field(default_factory=dict)
 
     @classmethod
     def create_global_context(
@@ -85,39 +65,20 @@ class Context:
         execution_model: ExecutionModel,
         config: "SPIRVSmithConfig",
     ) -> "Context":
-        context = cls(None, None, [], execution_model, config)
-        void_type = OpTypeVoid()
-        main_type = OpTypeFunction()
-        main_type.return_type = void_type
-        main_type.parameter_types = ()
-        cls.main_type = main_type
-        context.tvc[void_type] = void_type.id
-        context.tvc[main_type] = main_type.id
-        context.config = config
-        return context
+        return cls(None, None, execution_model, config)
 
-    def make_child_context(self, function: OpTypeFunction = None):
-        if function:
-            context = Context(
-                function,
-                self,
-                self.annotations,
-                self.execution_model,
-                self.config,
-            )
-        else:
-            context = Context(
-                self.function,
-                self,
-                self.annotations,
-                self.execution_model,
-                self.config,
-            )
-        context.tvc = self.tvc
-        context.extension_sets = self.extension_sets
-        return context
+    def make_child_context(self, function: Optional[OpFunction] = None) -> Self:
+        return Context(
+            function if function else self.function,
+            self,
+            self.execution_model,
+            self.config,
+            tvc=self.tvc,
+            annotations=self.annotations,
+            extension_sets=self.extension_sets,
+        )
 
-    def add_to_tvc(self, opcode: "OpCode"):
+    def add_to_tvc(self, opcode: "OpCode") -> None:
         if not opcode in self.tvc:
             self.tvc[opcode] = opcode.id
 
@@ -141,7 +102,7 @@ class Context:
         try:
             return random.SystemRandom().choice(variables)
         except IndexError:
-            Monitor().warning(
+            Monitor(self.config).info(
                 event=Event.NO_OPERAND_FOUND,
                 extra={
                     "opcode": inspect.stack()[1][0].f_locals["self"].__class__.__name__,
@@ -182,15 +143,17 @@ class Context:
     def gen_types(self):
         for _ in range(self.config.limits.n_types - 1):
             try:
-                opcodes: list["OpCode"] = Type().fuzz(self)
-            except RecursionError:
+                fuzzed_type: FuzzResult = Type.fuzz(self)
+            except (RecursionError, AbortFuzzing):
                 continue
-            for opcode in opcodes:
-                self.add_to_tvc(opcode)
+            for side_effect in fuzzed_type.side_effects:
+                self.add_to_tvc(side_effect)
+            self.add_to_tvc(fuzzed_type.opcode)
         # We should ALWAYS have at least 1 struct type
-        struct_type: list["OpCode"] = OpTypeStruct().fuzz(self)
-        for side_effect in struct_type:
+        struct_type: FuzzResult = OpTypeStruct.fuzz(self)
+        for side_effect in struct_type.side_effects:
             self.add_to_tvc(side_effect)
+        self.add_to_tvc(struct_type.opcode)
 
     def gen_constants(self):
         n_constants = self.config.limits.n_constants
@@ -204,20 +167,20 @@ class Context:
         )
         for _ in range(n_scalars):
             try:
-                opcodes: list["OpCode"] = ScalarConstant().fuzz(self)
+                fuzzed_constant: FuzzResult = ScalarConstant.fuzz(self)
             except RecursionError:
                 continue
-            for opcode in opcodes:
-                if opcode not in self.tvc:
-                    self.tvc[opcode] = opcode.id
+            for side_effect in fuzzed_constant.side_effects:
+                self.add_to_tvc(side_effect)
+            self.add_to_tvc(fuzzed_constant.opcode)
         for _ in range(n_constants - n_scalars):
             try:
-                opcodes: list["OpCode"] = CompositeConstant().fuzz(self)
+                fuzzed_constant: FuzzResult = CompositeConstant.fuzz(self)
             except RecursionError:
                 continue
-            for opcode in opcodes:
-                if opcode not in self.tvc:
-                    self.tvc[opcode] = opcode.id
+            for side_effect in fuzzed_constant.side_effects:
+                self.add_to_tvc(side_effect)
+            self.add_to_tvc(fuzzed_constant.opcode)
 
     def gen_global_variables(self):
         n = len(self.tvc)
@@ -260,13 +223,13 @@ class Context:
         functions: list[OpFunction] = []
 
         for function_type in function_types:
-            function = OpFunction()
-            function.return_type = function_type.return_type
-            function.function_type = function_type
+            self.current_function_type = function_type
+            fuzzed_function: FuzzResult = OpFunction.fuzz(self)
             if function_type == self.main_type:
-                self.main_fn = function
-            functions.append(function)
-            function_bodies += function.fuzz(self)
+                self.main_fn = fuzzed_function.opcode
+            functions.append(fuzzed_function.opcode)
+            function_bodies.append(fuzzed_function.opcode)
+            function_bodies += fuzzed_function.side_effects
         return function_bodies
 
     def get_constants(
@@ -283,7 +246,7 @@ class Context:
         self,
         predicate: Callable[[Statement], bool],
         constraint: Optional[Statement | Constant] = None,
-    ) -> Optional[Statement | Constant]:
+    ) -> Operand:
         statements: list[Statement] = self.get_typed_statements(predicate)
         constants: list[Constant] = self.get_constants(predicate)
         if constraint:
@@ -300,32 +263,28 @@ class Context:
                 statements = filter(type_length_predicate, statements)
                 constants = filter(type_length_predicate, constants)
 
-        statements: list[Statement] = sorted(
-            statements, key=lambda sym: sym.id, reverse=True
-        )
         # TODO parametrize using a geometric distribution
         try:
             return random.SystemRandom().choice(list(statements) + list(constants))
         except IndexError:
-            Monitor().warning(
+            Monitor(self.config).info(
                 event=Event.NO_OPERAND_FOUND,
                 extra={
-                    "opcode": inspect.stack()[1][0].f_locals["self"].__class__.__name__,
+                    "opcode": inspect.stack()[1][0].f_locals["cls"].__name__,
                     "constraint": str(constraint),
                     "constants": self.get_constants(),
                     "statements": self.get_typed_statements(),
                 },
             )
-            return None
+            raise AbortFuzzing
 
     def get_function_types(self) -> list[OpTypeFunction]:
         return list(filter(lambda t: isinstance(t, OpTypeFunction), self.tvc.keys()))
 
-    def get_interfaces(self) -> list[OpVariable]:
-        return list(
+    def get_interfaces(self) -> tuple[OpVariable, ...]:
+        return tuple(
             filter(
                 lambda s: isinstance(s, OpVariable)
-                and not s.context.function
                 and (
                     s.storage_class == StorageClass.Input
                     or s.storage_class == StorageClass.Output
@@ -338,7 +297,6 @@ class Context:
         return list(
             filter(
                 lambda s: isinstance(s, OpVariable)
-                and not s.context.function
                 and (s.storage_class == StorageClass.StorageBuffer),
                 self.tvc,
             )
@@ -352,21 +310,17 @@ class Context:
 
     def create_on_demand_numerical_constant(
         self,
-        target_type: Type,
+        target_type: type[Type],
         value: int = 0,
         width: int = 32,
         signed: Optional[int] = 0,
     ) -> OpConstant:
-        type = target_type()
-        type.width = width
-        if hasattr(type, "signed"):
-            type.signed = signed
-        constant = OpConstant()
-        constant.type = type
-        constant.value = value
-        if constant in self.tvc:
-            return constant
-        self.add_to_tvc(type)
+        constant_type = target_type.fuzz(self).opcode
+        constant_type.width = width
+        if hasattr(constant_type, "signed"):
+            constant_type.signed = signed
+        constant = OpConstant(type=constant_type, value=value)
+        self.add_to_tvc(constant_type)
         self.add_to_tvc(constant)
         return constant
 
@@ -375,15 +329,10 @@ class Context:
         storage_class: StorageClass,
         type: Optional[Type] = None,
     ):
-        variable: OpVariable = OpVariable()
-        variable.context = self
-
-        pointer_type = OpTypePointer()
-        pointer_type.storage_class = storage_class
         if type:
-            pointer_type.type = type
+            pointer_inner_type = type
         else:
-            pointer_type.type = random.SystemRandom().choice(
+            pointer_inner_type = random.SystemRandom().choice(
                 list(
                     filter(
                         lambda tvc: isinstance(tvc, OpTypeStruct),
@@ -391,8 +340,12 @@ class Context:
                     )
                 )
             )
-        variable.type = pointer_type
-        variable.storage_class = storage_class
+        pointer_type = OpTypePointer(
+            storage_class=storage_class, type=pointer_inner_type
+        )
+        variable: OpVariable = OpVariable(
+            type=pointer_type, storage_class=storage_class
+        )
         self.add_to_tvc(pointer_type)
         if storage_class != StorageClass.Function:
             self.add_to_tvc(variable)
@@ -401,16 +354,18 @@ class Context:
     def create_on_demand_vector_constant(
         self, inner_constant: OpConstant, size: int = 4
     ) -> OpConstantComposite:
-        vector_type = OpTypeVector()
-        vector_type.type = inner_constant.type
-        vector_type.size = size
-        self.add_to_tvc(vector_type)
+        vector_type = OpTypeVector(inner_constant.type, size)
+        vector_const = OpConstantComposite(vector_type, tuple([inner_constant] * size))
 
-        vector_const = OpConstantComposite()
-        vector_const.type = vector_type
-        vector_const.constituents = tuple([inner_constant for _ in range(size)])
+        self.add_to_tvc(vector_type)
         self.add_to_tvc(vector_const)
         return vector_const
 
+    def get_global_context(self) -> Self:
+        current_context = self
+        while current_context.parent_context:
+            current_context = self.parent_context
+        return current_context
+
     def add_annotation(self, annotation: Annotation):
-        self.annotations.append(annotation)
+        self.get_global_context().annotations[annotation] = None

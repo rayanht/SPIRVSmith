@@ -3,9 +3,7 @@ import unittest
 
 from run import SPIRVSmithConfig
 from src import FuzzDelegator
-from src import Type
 from src.constants import OpConstant
-from src.constants import OpConstantComposite
 from src.context import Context
 from src.enums import ExecutionModel
 from src.monitor import Monitor
@@ -15,33 +13,17 @@ from src.operators.arithmetic.linear_algebra import OpOuterProduct
 from src.operators.arithmetic.linear_algebra import OpVectorTimesMatrix
 from src.operators.arithmetic.linear_algebra import OpVectorTimesScalar
 from src.types.concrete_types import OpTypeFloat
-from src.types.concrete_types import OpTypeVector
+from tests import create_vector_const
 
 N = 1000
-monitor = Monitor()
 config = SPIRVSmithConfig()
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)
 
 config.misc.broadcast_generated_shaders = False
 config.misc.start_web_server = False
-
-
-def create_vector_const(context: Context, inner_type: Type, size: int = 4):
-    const: OpConstant = context.create_on_demand_numerical_constant(
-        inner_type, value=42, width=32
-    )
-
-    vector_type = OpTypeVector()
-    vector_type.type = const.type
-    vector_type.size = size
-    context.add_to_tvc(vector_type)
-
-    vector_const = OpConstantComposite()
-    vector_const.type = vector_type
-    vector_const.constituents = tuple([const for _ in range(size)])
-    context.add_to_tvc(vector_const)
-    return vector_const
+config.misc.upload_logs = False
+monitor = Monitor(config)
 
 
 class TestArithmetic(unittest.TestCase):
@@ -50,15 +32,15 @@ class TestArithmetic(unittest.TestCase):
         config.limits = copy.deepcopy(init_limits)
         config.strategy = copy.deepcopy(init_strategy)
         self.context: Context = Context.create_global_context(
-            ExecutionModel.GLCompute, config, monitor
+            ExecutionModel.GLCompute, config
         )
 
     def test_vector_times_scalar_preserves_type(self):
         const: OpConstant = create_vector_const(self.context, OpTypeFloat)
 
-        vector_times_scalar: OpVectorTimesScalar = OpVectorTimesScalar().fuzz(
+        vector_times_scalar: OpVectorTimesScalar = OpVectorTimesScalar.fuzz(
             self.context
-        )[-1]
+        ).opcode
 
         self.assertEqual(vector_times_scalar.type, const.type)
 
@@ -66,7 +48,7 @@ class TestArithmetic(unittest.TestCase):
         create_vector_const(self.context, OpTypeFloat, size=4)
         create_vector_const(self.context, OpTypeFloat, size=2)
 
-        outer_product: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
+        outer_product: OpOuterProduct = OpOuterProduct.fuzz(self.context).opcode
 
         # columns
         self.assertEqual(len(outer_product.type), len(outer_product.operand2.type))
@@ -78,13 +60,13 @@ class TestArithmetic(unittest.TestCase):
         create_vector_const(self.context, OpTypeFloat, size=2)
 
         # Here we get either: mat2x2, mat2x4, mat4x2, mat4x4
-        outer_product: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
+        outer_product: OpOuterProduct = OpOuterProduct.fuzz(self.context).opcode
         self.context.symbol_table.append(outer_product)
 
         # This should always find operands
-        vector_times_matrix: OpVectorTimesMatrix = OpVectorTimesMatrix().fuzz(
+        vector_times_matrix: OpVectorTimesMatrix = OpVectorTimesMatrix.fuzz(
             self.context
-        )[-1]
+        ).opcode
 
         # The resulting vector must have as many elements as the matrix has columns
         self.assertEqual(len(vector_times_matrix.type), len(outer_product.type))
@@ -94,13 +76,13 @@ class TestArithmetic(unittest.TestCase):
         create_vector_const(self.context, OpTypeFloat, size=2)
 
         # Here we get either: mat2x2, mat2x4, mat4x2, mat4x4
-        outer_product: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
+        outer_product: OpOuterProduct = OpOuterProduct.fuzz(self.context).opcode
         self.context.symbol_table.append(outer_product)
 
         # This should always find operands
-        matrix_times_vector: OpMatrixTimesVector = OpMatrixTimesVector().fuzz(
+        matrix_times_vector: OpMatrixTimesVector = OpMatrixTimesVector.fuzz(
             self.context
-        )[-1]
+        ).opcode
 
         # The resulting vector must have as many elements as the matrix has rows
         self.assertEqual(len(matrix_times_vector.type), len(outer_product.type.type))
@@ -110,20 +92,20 @@ class TestArithmetic(unittest.TestCase):
         create_vector_const(self.context, OpTypeFloat, size=2)
 
         # Here we get either: mat2x2, mat2x4, mat4x2, mat4x4
-        outer_product1: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
+        outer_product1: OpOuterProduct = OpOuterProduct.fuzz(self.context).opcode
         self.context.symbol_table.append(outer_product1)
 
         # We do this to avoid having two outer products that
-        # eeturn a mat2x4/mat4x2 which will fail the test
+        # return a mat2x4/mat4x2 which will fail the test
         outer_product2 = copy.deepcopy(outer_product1)
-        while outer_product2 == outer_product1:
-            outer_product2: OpOuterProduct = OpOuterProduct().fuzz(self.context)[-1]
+        while outer_product2.type == outer_product1.type:
+            outer_product2: OpOuterProduct = OpOuterProduct.fuzz(self.context).opcode
         self.context.symbol_table.append(outer_product2)
 
         # This should always find operands
-        matrix_times_matrix: OpMatrixTimesMatrix = OpMatrixTimesMatrix().fuzz(
+        matrix_times_matrix: OpMatrixTimesMatrix = OpMatrixTimesMatrix.fuzz(
             self.context
-        )[-1]
+        ).opcode
 
         # The left matrix should have as many columns as the right matrix has rows
         self.assertEqual(
