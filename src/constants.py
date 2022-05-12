@@ -8,7 +8,6 @@ from src import Constant
 from src import FuzzResult
 from src import OpCode
 from src.predicates import HasType
-from src.predicates import IsMatrixType
 
 if TYPE_CHECKING:
     from src.context import Context

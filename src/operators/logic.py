@@ -8,7 +8,6 @@ from typing import TypeVar
 from src import Signed
 from src import Statement
 from src import Unsigned
-from src.constants import Constant
 from src.operators import BinaryOperatorFuzzMixin
 from src.operators import Operand
 from src.operators import UnaryOperatorFuzzMixin

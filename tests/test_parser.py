@@ -1,6 +1,5 @@
 import copy
 import unittest
-from dataclasses import fields
 from tempfile import NamedTemporaryFile
 
 from run import SPIRVSmithConfig
@@ -45,10 +44,6 @@ class TestParser(unittest.TestCase):
         with NamedTemporaryFile(suffix=".spasm") as tmp:
             shader.export(tmp.name)
             parsed_shader: SPIRVShader = parse_spirv_assembly_file(tmp.name)
-            # print(shader.opcodes)
-            # print(list(map(hash, shader.opcodes)))
-            # print(parsed_shader.opcodes)
-            # print(list(map(hash, parsed_shader.opcodes)))
             self.assertListEqual(shader.opcodes, parsed_shader.opcodes)
 
     def test_parser_fully_reconstructs_annotatons(self):

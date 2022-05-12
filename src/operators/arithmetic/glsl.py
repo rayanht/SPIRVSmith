@@ -3,11 +3,8 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self
 
 from src import FuzzResult
-from src import OpCode
 from src import Signed
 from src import Unsigned
-from src.annotations import OpDecorate
-from src.enums import Decoration
 from src.extension import OpExtInst
 from src.operators import BinaryOperatorFuzzMixin
 from src.operators import GLSLExtensionOperator
