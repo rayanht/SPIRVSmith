@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
 from random import SystemRandom
-
-from shortuuid import uuid
+from uuid import uuid4
 
 from src import OpCode
 from src.context import Context
@@ -33,7 +32,7 @@ class SPIRVShader:
     execution_mode: OpExecutionMode
     opcodes: list[OpCode]
     context: Context
-    id: str = field(default_factory=uuid)
+    id: str = field(default_factory=lambda: str(uuid4()))
 
     def export(self, filename: str) -> None:
         # Generate assembly

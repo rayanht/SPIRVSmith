@@ -122,13 +122,13 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
         op_branch = OpBranchConditional(
             condition=condition, true_label=true_label, false_label=false_label
         )
+        op_selection = cls(
+            type=EmptyType(),
+            exit_label=exit_label,
+            selection_control=selection_control,
+        )
         return FuzzResult(
-            cls(
-                type=EmptyType(),
-                exit_label=exit_label,
-                selection_control=selection_control,
-            ),
-            [op_branch, *if_block, *else_block, exit_label],
+            op_selection, [op_branch, *if_block, *else_block, exit_label], True
         )
 
 
@@ -213,6 +213,8 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCod
         nested_block = False
         if isinstance(fuzzed_opcode.opcode, OpSelectionMerge):
             nested_block = True
+        if fuzzed_opcode.is_opcode_pre_side_effects:
+            instructions.append(fuzzed_opcode.opcode)
         for side_effect in fuzzed_opcode.side_effects:
             match side_effect:
                 case Type() | Constant():
@@ -224,7 +226,10 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCod
             continue
         if isinstance(fuzzed_opcode.opcode, Statement) and not nested_block:
             block_context.symbol_table.append(fuzzed_opcode.opcode)
-        if not isinstance(fuzzed_opcode.opcode, (OpVariable, OpReturn)):
+        if (
+            not isinstance(fuzzed_opcode.opcode, (OpVariable, OpReturn))
+            and not fuzzed_opcode.is_opcode_pre_side_effects
+        ):
             instructions.append(fuzzed_opcode.opcode)
         if isinstance(fuzzed_opcode.opcode, OpVariable):
             variables.append(fuzzed_opcode.opcode)
