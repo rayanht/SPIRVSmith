@@ -3,7 +3,6 @@ import unittest
 
 from run import SPIRVSmithConfig
 from src import FuzzDelegator
-from src import Type
 from src.constants import OpConstant
 from src.constants import OpConstantComposite
 from src.context import Context
@@ -13,44 +12,27 @@ from src.predicates import HaveSameBaseType
 from src.predicates import HaveSameType
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
-from src.types.concrete_types import OpTypeVector
+from tests import create_vector_const
 
 N = 1000
-monitor = Monitor()
+
 config = SPIRVSmithConfig()
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)
 
 config.misc.broadcast_generated_shaders = False
 config.misc.start_web_server = False
+config.misc.upload_logs = False
+monitor = Monitor(config)
 
 
-def create_vector_const(
-    context: Context, inner_type: Type, size: int = 4, value: int = 42
-):
-    const: OpConstant = context.create_on_demand_numerical_constant(
-        inner_type, value=value, width=32
-    )
-
-    vector_type = OpTypeVector()
-    vector_type.type = const.type
-    vector_type.size = size
-    context.add_to_tvc(vector_type)
-
-    vector_const = OpConstantComposite()
-    vector_const.type = vector_type
-    vector_const.constituents = tuple([const for _ in range(size)])
-    context.add_to_tvc(vector_const)
-    return vector_const
-
-
-class TestArithmetic(unittest.TestCase):
+class TestTypes(unittest.TestCase):
     def setUp(self):
         FuzzDelegator.reset_parametrizations()
         config.limits = copy.deepcopy(init_limits)
         config.strategy = copy.deepcopy(init_strategy)
         self.context: Context = Context.create_global_context(
-            ExecutionModel.GLCompute, config, monitor
+            ExecutionModel.GLCompute, config
         )
 
     def test_ints_same_width_and_signedness_are_equal(self):

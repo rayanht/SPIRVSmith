@@ -9,7 +9,9 @@ from shortuuid import uuid
 
 from src import OpCode
 from src.context import Context
-from src.enums import StorageClass
+from src.enums import (
+    StorageClass,
+)
 from src.misc import OpCapability
 from src.misc import OpEntryPoint
 from src.misc import OpExecutionMode
@@ -19,6 +21,7 @@ from src.monitor import Monitor
 from src.operators.memory.variable import OpVariable
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
+from src.utils import get_opcode_class_from_name
 
 
 @dataclass
@@ -43,24 +46,13 @@ class SPIRVShader:
             f.write("; Schema:    0\n")
             for capability in self.capabilities:
                 f.write(capability.to_spasm(self.context))
-                f.write("\n")
             for ext in self.context.extension_sets.values():
                 f.write(ext.to_spasm(self.context))
-                f.write("\n")
             f.write(self.memory_model.to_spasm(self.context))
-            f.write("\n")
             f.write(self.entry_point.to_spasm(self.context))
-            f.write("\n")
-            # TODO
-            # f.write(self.execution_mode.to_spasm(self.context))
-            # f.write("\n")
-            f.write(
-                f"OpExecutionMode %{self.execution_mode.function.id} {self.execution_mode.execution_mode} 1 1 1"
-            )
-            f.write("\n")
-            for annotation in self.context.annotations:
+            f.write(self.execution_mode.to_spasm(self.context))
+            for annotation in self.context.get_global_context().annotations.keys():
                 f.write(annotation.to_spasm(self.context))
-                f.write("\n")
             for tvc, _ in self.context.tvc.items():
                 if (
                     isinstance(tvc, OpVariable)
@@ -68,10 +60,8 @@ class SPIRVShader:
                 ):
                     continue
                 f.write(tvc.to_spasm(self.context))
-                f.write("\n")
             for opcode in self.opcodes:
                 f.write(opcode.to_spasm(self.context))
-                f.write("\n")
 
 
 # class CrossLanguage(Enum):
@@ -118,7 +108,7 @@ def assemble_shader(shader: SPIRVShader, filename: str, silent: bool = False) ->
             capture_output=True,
         )
         if process.returncode != 0 and not silent:
-            Monitor().error(
+            Monitor(shader.context.config).error(
                 event=Event.ASSEMBLER_FAILURE,
                 extra={
                     "stderr": process.stderr.decode("utf-8"),
@@ -127,7 +117,7 @@ def assemble_shader(shader: SPIRVShader, filename: str, silent: bool = False) ->
                 },
             )
         elif not silent:
-            Monitor().info(
+            Monitor(shader.context.config).info(
                 event=Event.ASSEMBLER_SUCCESS, extra={"shader_id": shader.id}
             )
 
@@ -150,7 +140,7 @@ def validate_spirv_file(
         capture_output=True,
     )
     if process.returncode != 0 and not silent:
-        Monitor().error(
+        Monitor(shader.context.config).error(
             event=Event.VALIDATOR_OPT_FAILURE if opt else Event.VALIDATOR_FAILURE,
             extra={
                 "stderr": process.stderr.decode("utf-8"),
@@ -159,7 +149,7 @@ def validate_spirv_file(
             },
         )
     elif not silent:
-        Monitor().info(
+        Monitor(shader.context.config).info(
             event=Event.VALIDATOR_OPT_SUCCESS if opt else Event.VALIDATOR_SUCCESS,
             extra={"shader_id": shader.id},
         )
@@ -179,7 +169,7 @@ def optimise_spirv_file(shader: SPIRVShader, filename: str) -> bool:
         capture_output=True,
     )
     if process.returncode != 0:
-        Monitor().error(
+        Monitor(shader.context.config).error(
             event=Event.OPTIMIZER_FAILURE,
             extra={
                 "stderr": process.stderr.decode("utf-8"),
@@ -188,7 +178,9 @@ def optimise_spirv_file(shader: SPIRVShader, filename: str) -> bool:
             },
         )
     else:
-        Monitor().info(event=Event.OPTIMIZER_SUCCESS, extra={"shader_id": shader.id})
+        Monitor(shader.context.config).info(
+            event=Event.OPTIMIZER_SUCCESS, extra={"shader_id": shader.id}
+        )
 
     return process.returncode == 0
 
@@ -267,7 +259,7 @@ def create_amber_file(shader: SPIRVShader, filename: str) -> None:
                         )
                     )
                 case _:
-                    Monitor().error(
+                    Monitor(shader.context.config).error(
                         event=Event.INVALID_TYPE_AMBER_BUFFER,
                         extra={
                             "shader_id": shader.id,

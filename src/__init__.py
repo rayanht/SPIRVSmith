@@ -3,11 +3,18 @@ import inspect
 import pickle
 from abc import ABC
 from dataclasses import field
+from dataclasses import fields
+from enum import Enum
+from typing import Generic
 from typing import TYPE_CHECKING
+from typing import TypeVar
+
+from typing_extensions import Self
+
 
 if TYPE_CHECKING:
     from src.context import Context
-from utils.patched_dataclass import dataclass
+from src.patched_dataclass import dataclass
 import random
 from src.enums import Capability
 from ulid import monotonic as ulid
@@ -24,107 +31,84 @@ randomization_parameters = {
     "CompositeOperator": "w_composite_operation",
     "ScalarType": "w_scalar_type",
     "ContainerType": "w_container_type",
-    "ArithmeticType": "w_arithmetic_type",
-    "NumericalType": "w_numerical_type",
     "CompositeConstant": "w_composite_constant",
     "ScalarConstant": "w_scalar_constant",
 }
-
-excluded_identifiers = [
-    "id",
-    "symbol_table",
-    "context",
-    "get_required_capabilities",
-    "iteritems",
-    "keys",
-    "resolve_attribute_spasm",
-    "to_spasm",
-    "fuzz",
-    "get_base_type",
-]
 
 
 class ReparametrizationError(Exception):
     ...
 
 
-def members(inst):
-    return tuple(
-        [
-            x
-            for x in inst.__dict__
-            # if type(y) != FunctionType
-            if x not in excluded_identifiers and not x.startswith("_")
-        ]
-    )
-
-
-class VoidOp:
-    pass
+class AbortFuzzing(Exception):
+    ...
 
 
 @dataclass
 class OpCode(ABC):
-    id: ULID = field(default_factory=ulid.new)
+    id: str = field(default_factory=lambda: ulid.new().str, init=False)
 
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return [getattr(self, attr) for attr in members(self)] == [
-                getattr(other, attr) for attr in members(other)
-            ]
-        else:
-            return False
+    def members(self) -> tuple[str, ...]:
+        return tuple(
+            [x.name for x in fields(self.__class__) if x.name not in {"id", "context"}]
+        )
 
-    def debug_hash(self):
-        print(members(self))
-        print(tuple([hash(getattr(self, attr)) for attr in members(self)]))
-        print("=========")
-        return self.__hash__()
+    def __eq__(self, other) -> bool:
+        return (other.__class__.__name__ == self.__class__.__name__) and (
+            hash(self) == hash(other)
+        )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        try:
+            attrs = tuple([hash(getattr(self, attr)) for attr in self.members()])
+        except TypeError:
+            print(self.hashing_members())
+            print([getattr(self, attr) for attr in self.members()])
         return int(
-            hashlib.sha224(
-                pickle.dumps(
-                    tuple([hash(getattr(self, attr)) for attr in members(self)])
-                )
-            ).hexdigest(),
+            hashlib.sha224(pickle.dumps(attrs)).hexdigest(),
             16,
         )
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in members(self)])})"
+        return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in self.members()])})"
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in members(self)])})"
+        return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in self.members()])})"
 
     @staticmethod
     def get_required_capabilities() -> list[Capability]:
         return []
 
-    @staticmethod
-    def fuzz(_: "Context") -> list["OpCode"]:
-        return []
+    @classmethod
+    def fuzz(cls, _: "Context") -> "FuzzResult":
+        pass
 
-    def resolve_attribute_spasm(self, attr, context) -> str:
-        if self.__class__.__name__ == "OpDecorate":
-            pass
-        if attr.__class__.__name__ == "Context" or attr is None:
+    def resolve_attribute_spasm(self, attr, context: "Context") -> str:
+        if (
+            attr.__class__.__name__ == "Context"
+            or attr is None
+            or attr.__class__.__name__ == "EmptyType"
+        ):
             return ""
         elif inspect.isclass(attr) and issubclass(attr, OpCode):
             attr_spasm = f" {attr.__name__}"
         elif isinstance(attr, OpCode):
             if isinstance(attr, (Type, Constant)):
+                # print("======")
+                # print(self, attr)
                 attr_spasm = f" %{context.tvc[attr]}"
             else:
                 attr_spasm = f" %{attr.id}"
-        elif isinstance(attr, str):
+        elif isinstance(attr, str) and not isinstance(attr, Enum):
             attr_spasm = f' "{attr}"'
         else:
             attr_spasm = f" {str(attr)}"
         return attr_spasm
 
     def to_spasm(self, context: "Context") -> str:
-        attrs = members(self)
+        attrs = self.members()
+        if self.__class__.__name__ == "OpStore":
+            pass
         if isinstance(self, VoidOp):
             spasm = f"{self.__class__.__name__}"
         else:
@@ -136,7 +120,21 @@ class OpCode(ABC):
                     spasm += self.resolve_attribute_spasm(_attr, context)
             else:
                 spasm += self.resolve_attribute_spasm(attr, context)
+        spasm += "\n"
         return spasm
+
+
+class VoidOp(OpCode):
+    ...
+
+
+T = TypeVar("T", bound=OpCode)
+
+
+@dataclass
+class FuzzResult(Generic[T]):
+    opcode: T
+    side_effects: list[OpCode] = field(default_factory=list)
 
 
 # A FuzzDelegator is a transient object, we need to commit
@@ -145,8 +143,9 @@ PARAMETRIZATIONS: dict[str, dict[str, int]] = {}
 
 
 class FuzzDelegator(OpCode):
-    def get_subclasses(self):
-        return self.__class__.__subclasses__()
+    @classmethod
+    def get_subclasses(cls) -> set["FuzzDelegator"]:
+        return set(cls.__subclasses__())
 
     @classmethod
     def is_parametrized(cls):
@@ -162,7 +161,9 @@ class FuzzDelegator(OpCode):
         PARAMETRIZATIONS = {}
 
     @classmethod
-    def set_zero_probability(cls, target_cls) -> None:
+    def set_zero_probability(cls, target_cls, context: "Context") -> None:
+        if not cls.is_parametrized():
+            cls.parametrize(context=context)
         # There is a tricky case here when an OpCode can be reached
         # from multiple delegators.
         #
@@ -171,63 +172,81 @@ class FuzzDelegator(OpCode):
         # the path have been parametrized yet
         PARAMETRIZATIONS[cls.__name__][target_cls.__name__] = 0
 
-    def parametrize(self, context: "Context") -> None:
-        subclasses_names = set(map(lambda cls: cls.__name__, self.get_subclasses()))
+    @classmethod
+    def parametrize(cls, context: "Context") -> None:
+        subclasses_names = set(map(lambda cls: cls.__name__, cls.get_subclasses()))
         # Get parametrization from config for top-level delegators
-        PARAMETRIZATIONS[self.__class__.__name__] = {}
+        PARAMETRIZATIONS[cls.__name__] = {}
         for sub in subclasses_names:
-            PARAMETRIZATIONS[self.__class__.__name__][sub] = 1
+            PARAMETRIZATIONS[cls.__name__][sub] = 1
         if any([sub in subclasses_names for sub in randomization_parameters.keys()]):
             for sub in subclasses_names:
                 if sub in randomization_parameters:
-                    PARAMETRIZATIONS[self.__class__.__name__][sub] = getattr(
+                    PARAMETRIZATIONS[cls.__name__][sub] = getattr(
                         context.config.strategy, randomization_parameters[sub]
                     )
-        if self.__class__.__name__ == "Statement":
-            PARAMETRIZATIONS[self.__class__.__name__]["OpExtInst"] = 0
+        if cls.__name__ == "Statement":
+            PARAMETRIZATIONS[cls.__name__]["OpExtInst"] = 0
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        if not self.__class__.is_parametrized():
-            self.parametrize(context=context)
-        subclasses = self.get_subclasses()
-        weights = [
-            PARAMETRIZATIONS[self.__class__.__name__][sub.__name__]
-            for sub in subclasses
-        ]
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        # TODO this is terrible, there must be a better way
+        import src.operators.arithmetic.scalar_arithmetic
+        import src.operators.arithmetic.linear_algebra
+        import src.operators.logic
+        import src.operators.bitwise
+        import src.operators.conversions
+        import src.operators.composite
+
+        if context.config.strategy.enable_ext_glsl_std_450:
+            import src.operators.arithmetic.glsl
+        if not cls.is_parametrized():
+            cls.parametrize(context=context)
+        subclasses: list["FuzzDelegator"] = list(cls.get_subclasses())
+        weights = [PARAMETRIZATIONS[cls.__name__][sub.__name__] for sub in subclasses]
+        if sum(weights) == 0 or len(weights) == 0:
+            print(cls, subclasses, weights)
         try:
-            return [
-                *random.SystemRandom()
-                .choices(subclasses, weights=weights, k=1)[0]()
+            return (
+                random.SystemRandom()
+                .choices(subclasses, weights=weights, k=1)[0]
                 .fuzz(context)
-            ]
+            )
         except ReparametrizationError:
-            return [
-                *random.SystemRandom()
-                .choices(subclasses, weights=weights, k=1)[0]()
+            return (
+                random.SystemRandom()
+                .choices(subclasses, weights=weights, k=1)[0]
                 .fuzz(context)
-            ]
+            )
 
 
-class FuzzLeaf(OpCode):
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        return [self]
-
-
+@dataclass
 class Type(FuzzDelegator):
     @staticmethod
-    def get_base_type():
+    def get_base_type() -> Self:
         ...
 
 
+@dataclass
+class FuzzLeafMixin:
+    @classmethod
+    def fuzz(cls, _: "Context") -> FuzzResult[Self]:
+        return FuzzResult(cls())
+
+
+@dataclass
 class Constant(FuzzDelegator):
     type: Type
 
-    def get_base_type(self):
+    def get_base_type(self) -> Type:
         return self.type.get_base_type()
 
 
+@dataclass
 class Statement(FuzzDelegator):
-    def get_base_type(self):
+    type: Type
+
+    def get_base_type(self) -> Type:
         return self.type.get_base_type()
 
 

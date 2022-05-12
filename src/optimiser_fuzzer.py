@@ -1,3 +1,4 @@
+import signal
 import subprocess
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -77,17 +78,19 @@ def _fuzz_optimiser(shader: "SPIRVShader", filename: str):
         capture_output=True,
     )
     if process.returncode != 0:
-        Monitor().error(
+        Monitor(shader.context.config).error(
             event=Event.OPTIMIZER_FAILURE,
             extra={
                 "stderr": process.stderr.decode("utf-8"),
+                "stdout": process.stdout.decode("utf-8"),
+                "is_segfault": process.returncode == -signal.SIGSEGV,
                 "cli_args": str(process.args),
                 "shader_id": shader.id,
                 "spirv-opt_flags": spirv_opt_flags,
             },
         )
     else:
-        Monitor().info(
+        Monitor(shader.context.config).info(
             event=Event.OPTIMIZER_SUCCESS,
             extra={"shader_id": shader.id, "spirv-opt_flags": spirv_opt_flags},
         )

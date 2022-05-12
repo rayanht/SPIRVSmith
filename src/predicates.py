@@ -35,6 +35,7 @@ IsMatrixType = IsOfType(OpTypeMatrix)
 IsStructType = IsOfType(OpTypeStruct)
 IsPointerType = IsOfType(OpTypePointer)
 IsCompositeType = IsOfType((OpTypeMatrix, OpTypeVector, OpTypeStruct, OpTypeArray))
+IsArithmeticType = IsOfType((OpTypeFloat, OpTypeInt, OpTypeVector))
 
 IsScalarInteger = IsOfType(OpTypeInt)
 IsScalarFloat = IsOfType(OpTypeFloat)

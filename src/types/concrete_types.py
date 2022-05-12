@@ -1,67 +1,84 @@
 import random
+from dataclasses import field
+from typing import NoReturn
 from typing import TYPE_CHECKING
 
-from src import FuzzLeaf
+from typing_extensions import Self
+
+from src import AbortFuzzing
+from src import FuzzLeafMixin
+from src import FuzzResult
 from src import OpCode
 from src import ReparametrizationError
 from src.enums import Capability
 from src.enums import StorageClass
+from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:
     from src.context import Context
 from src.types.abstract_types import (
-    ArithmeticType,
     ContainerType,
     MiscType,
     MixedContainerType,
-    NumericalType,
     ScalarType,
     Type,
     UniformContainerType,
 )
 
 
-class OpTypeVoid(FuzzLeaf, MiscType):
+@dataclass
+class EmptyType(MiscType):
+    @classmethod
+    def fuzz(cls, context: "Context") -> NoReturn:
+        MiscType.set_zero_probability(cls, context)
+        raise AbortFuzzing
+
+
+@dataclass
+class OpTypeVoid(FuzzLeafMixin, MiscType):
     ...
 
 
-class OpTypeBool(FuzzLeaf, ScalarType):
+@dataclass
+class OpTypeBool(FuzzLeafMixin, ScalarType):
     def get_base_type(self):
         return self
 
 
-class OpTypeInt(ScalarType, NumericalType, ArithmeticType):
-    width: int = None
-    signed: int = None
+@dataclass
+class OpTypeInt(ScalarType):
+    width: int
+    signed: int
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        self.width = 2**5  # TODO other widths with capabilities
-        self.signed = int(bool(random.getrandbits(1)))
-        return [self]
-
-    def get_base_type(self):
-        return self
-
-
-class OpTypeFloat(ScalarType, NumericalType, ArithmeticType):
-    width: int = None
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        self.width = 2**5  # TODO other widths with capabilities
-        return [self]
+    @classmethod
+    def fuzz(cls, _: "Context") -> FuzzResult[Self]:
+        return FuzzResult(cls(width=2**5, signed=int(bool(random.getrandbits(1)))))
 
     def get_base_type(self):
         return self
 
 
-class OpTypeVector(UniformContainerType, ArithmeticType):
-    type: Type = None
-    size: int = None
+@dataclass
+class OpTypeFloat(ScalarType):
+    width: int
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        self.type = ScalarType().fuzz(context)[0]
-        self.size = random.SystemRandom().choice([2, 3, 4])
-        return [self.type, self]
+    @classmethod
+    def fuzz(cls, _: "Context") -> FuzzResult[Self]:
+        return FuzzResult(cls(width=2**5), [])
+
+    def get_base_type(self):
+        return self
+
+
+@dataclass
+class OpTypeVector(UniformContainerType[ScalarType]):
+    size: int
+
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        fuzzed_inner_type: ScalarType = ScalarType.fuzz(context).opcode
+        size: int = random.SystemRandom().choice([2, 3, 4])
+        return FuzzResult(cls(type=fuzzed_inner_type, size=size), [fuzzed_inner_type])
 
     def __len__(self):
         return self.size
@@ -70,29 +87,32 @@ class OpTypeVector(UniformContainerType, ArithmeticType):
         return self.type.get_base_type()
 
 
-class OpTypeMatrix(UniformContainerType):
-    type: OpTypeVector = None
-    size: int = None
+@dataclass
+class OpTypeMatrix(UniformContainerType[OpTypeVector]):
+    size: int
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        matrix_type = OpTypeVector().fuzz(context)[-1]
-        matrix_type.type = OpTypeFloat().fuzz(context)[0]
-        self.type = matrix_type
-        self.size = random.SystemRandom().choice([2, 3, 4])  # 8, 16])
-        return [matrix_type.type, matrix_type, self]
+    @classmethod
+    def fuzz(cls, _: "Context") -> FuzzResult[Self]:
+        n_columns: int = random.SystemRandom().choice([2, 3, 4])
+        n_rows: int = random.SystemRandom().choice([2, 3, 4])
+        float_type: OpTypeFloat = OpTypeFloat(width=32)
+        vector_type: OpTypeVector = OpTypeVector(type=float_type, size=n_rows)
+        return FuzzResult(
+            cls(type=vector_type, size=n_columns), [float_type, vector_type]
+        )
 
     def __len__(self):
         return self.size
 
-    def get_required_capabilities(self) -> list[Capability]:
+    @staticmethod
+    def get_required_capabilities() -> list[Capability]:
         return [Capability.Matrix]
 
-    def get_base_type(self):
+    def get_base_type(self) -> ScalarType:
         return self.type.get_base_type()
 
 
 # class OpTypeImage(UniformContainerType):
-#     type: Type = None
 #     dim: Dim = None
 #     depth: int = None
 #     arrayed: int = None
@@ -120,18 +140,20 @@ class OpTypeMatrix(UniformContainerType):
 #         return [self.type, self]
 
 
-class OpTypeArray(UniformContainerType):
-    type: Type = None
-    length: OpCode = None
+@dataclass
+class OpTypeArray(UniformContainerType[ScalarType]):
+    length: OpCode
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-
-        self.type = ScalarType().fuzz(context)[0]
-
-        self.length = context.create_on_demand_numerical_constant(
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        fuzzed_inner_type: ScalarType = ScalarType.fuzz(context).opcode
+        length = context.create_on_demand_numerical_constant(
             OpTypeInt, value=random.SystemRandom().randint(1, 32), width=32, signed=0
         )
-        return [self.type, self.length.type, self.length, self]
+        return FuzzResult(
+            cls(type=fuzzed_inner_type, length=length),
+            [fuzzed_inner_type],
+        )
 
     def __len__(self):
         return self.length.value
@@ -141,68 +163,69 @@ class OpTypeArray(UniformContainerType):
 
 
 # class OpTypeRuntimeArray(UniformContainerType):
-#     type: Type = None
 
 #     def fuzz(self, context: "Context") -> list[OpCode]:
 #         self.type = ScalarType().fuzz(context)[0]
 #         return [self.type, self]
 
 
+@dataclass
 class OpTypeStruct(MixedContainerType):
-    types: tuple[Type] = None
+    types: tuple[Type, ...]
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        self.types = []
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        struct_types = []
         side_effect_types = []
         for _ in range(random.SystemRandom().randint(2, 5)):
             # TODO relax parameter type constraint
-            parameter_type = (
-                random.SystemRandom().choice([NumericalType])().fuzz(context)
+            fuzzed_parameter_type: FuzzResult = (
+                random.SystemRandom().choice([OpTypeFloat, OpTypeInt]).fuzz(context)
             )
-            if parameter_type == []:
-                continue
-            self.types.append(parameter_type[-1])
-            side_effect_types += parameter_type
-        self.types = tuple(self.types)
-        return [*side_effect_types, *self.types, self]
+            struct_types.append(fuzzed_parameter_type.opcode)
+            side_effect_types += fuzzed_parameter_type.side_effects
+            side_effect_types.append(fuzzed_parameter_type.opcode)
+        return FuzzResult(cls(types=tuple(struct_types)), side_effect_types)
 
     def __len__(self):
         return len(self.types)
 
 
-class OpTypePointer(UniformContainerType):
-    storage_class: StorageClass = None
-    type: Type = None
+@dataclass
+class OpTypePointer(MixedContainerType):
+    storage_class: StorageClass
+    type: Type
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        self.storage_class = StorageClass.StorageBuffer
-        fuzzed_type = (
-            random.SystemRandom().choice([ScalarType, ContainerType])().fuzz(context)
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        fuzzed_type: FuzzResult = (
+            random.SystemRandom().choice([ScalarType, ContainerType]).fuzz(context)
         )
-        self.type = fuzzed_type[-1]
-        return [*fuzzed_type, self]
+        return FuzzResult(
+            cls(type=fuzzed_type.opcode, storage_class=StorageClass.StorageBuffer),
+            fuzzed_type.side_effects + [fuzzed_type.opcode],
+        )
 
 
+@dataclass
 class OpTypeFunction(MiscType):
-    return_type: Type = None
-    parameter_types: tuple[Type] = None
+    return_type: Type
+    parameter_types: tuple[Type, ...] = field(default_factory=tuple)
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         if len(context.get_function_types()) >= context.config.limits.n_functions:
-            MiscType.set_zero_probability(self.__class__)
+            MiscType.set_zero_probability(cls, context)
             raise ReparametrizationError
         # return_type = random.SystemRandom().choice([ScalarType, ContainerType])().fuzz(context)
-        return_type = [OpTypeVoid()]
-        self.return_type = return_type[-1]
-        self.parameter_types = []
-        all_types = return_type
+        return_type = OpTypeVoid()
+        parameter_types = []
         for _ in range(random.SystemRandom().randint(4, 7)):
             parameter_type = (
-                random.SystemRandom()
-                .choice([ScalarType, ContainerType])()
-                .fuzz(context)
+                random.SystemRandom().choice([ScalarType, ContainerType]).fuzz(context)
             )
-            self.parameter_types.append(parameter_type[-1])
-            all_types += parameter_type
-        self.parameter_types = tuple(self.parameter_types)
-        return [*all_types, self]
+            parameter_types.append(parameter_type.opcode)
+        return FuzzResult(
+            cls(return_type=return_type, parameter_types=tuple(parameter_types)),
+            parameter_types,
+        )

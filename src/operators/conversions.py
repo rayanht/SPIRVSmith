@@ -1,4 +1,5 @@
 from typing import Callable
+from typing import ClassVar
 from typing import Generic
 from typing import Optional
 from typing import TypeVar
@@ -6,16 +7,13 @@ from typing import TypeVar
 from src import Signed
 from src import Statement
 from src import Unsigned
-from src.constants import Constant
+from src.operators import Operand
 from src.operators import UnaryOperatorFuzzMixin
+from src.patched_dataclass import dataclass
 from src.predicates import HasValidBaseTypeAndSign
-from src.predicates import IsOfType
-from src.types.abstract_types import ArithmeticType
+from src.predicates import IsArithmeticType
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
-from src.types.concrete_types import Type
-
-Operand = Statement | Constant
 
 S = TypeVar("S")
 D = TypeVar("D")
@@ -23,21 +21,23 @@ SC = TypeVar("SC")
 DC = TypeVar("DC")
 
 
+@dataclass
 class ConversionOperator(Statement, Generic[S, D, SC, DC]):
-    OPERAND_SELECTION_PREDICATE: Callable[
-        [Statement], bool
-    ] = lambda _, target_type, signed: lambda op: IsOfType(ArithmeticType)(
+    OPERAND_SELECTION_PREDICATE: ClassVar[
+        Callable[[Operand], bool]
+    ] = lambda target_type, signed: lambda op: IsArithmeticType(
         op
     ) and HasValidBaseTypeAndSign(
         op, target_type, signed
     )
 
 
+@dataclass
 class UnaryConversionOperator(ConversionOperator[S, D, Optional[SC], Optional[DC]]):
-    type: Type = None
-    operand1: Operand = None
+    operand1: Operand
 
 
+@dataclass
 class OpConvertFToU(
     UnaryOperatorFuzzMixin,
     UnaryConversionOperator[OpTypeFloat, OpTypeInt, None, Unsigned],
@@ -45,6 +45,7 @@ class OpConvertFToU(
     ...
 
 
+@dataclass
 class OpConvertFToS(
     UnaryOperatorFuzzMixin,
     UnaryConversionOperator[OpTypeFloat, OpTypeInt, None, Signed],
@@ -52,6 +53,7 @@ class OpConvertFToS(
     ...
 
 
+@dataclass
 class OpConvertSToF(
     UnaryOperatorFuzzMixin,
     UnaryConversionOperator[OpTypeInt, OpTypeFloat, Signed, None],
@@ -59,6 +61,7 @@ class OpConvertSToF(
     ...
 
 
+@dataclass
 class OpConvertUToF(
     UnaryOperatorFuzzMixin,
     UnaryConversionOperator[OpTypeInt, OpTypeFloat, Unsigned, None],

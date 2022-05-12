@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING
 
+from typing_extensions import Self
+
+from src import FuzzResult
 from src import OpCode
 from src import Signed
 from src import Unsigned
@@ -11,6 +14,7 @@ from src.operators import GLSLExtensionOperator
 from src.operators import UnaryOperatorFuzzMixin
 from src.operators.arithmetic import BinaryArithmeticOperator
 from src.operators.arithmetic import UnaryArithmeticOperator
+from src.patched_dataclass import dataclass
 from src.predicates import And
 from src.predicates import HasLength
 from src.predicates import HasType
@@ -36,6 +40,7 @@ if TYPE_CHECKING:
 #     ...
 
 
+@dataclass
 class RoundEven(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -44,6 +49,7 @@ class RoundEven(
     ...
 
 
+@dataclass
 class Trunc(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -52,6 +58,7 @@ class Trunc(
     ...
 
 
+@dataclass
 class FAbs(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -60,6 +67,7 @@ class FAbs(
     ...
 
 
+@dataclass
 class SAbs(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeInt, None, Signed, None],
@@ -68,6 +76,7 @@ class SAbs(
     ...
 
 
+@dataclass
 class FSign(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -76,6 +85,7 @@ class FSign(
     ...
 
 
+@dataclass
 class SSign(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeInt, None, Signed, None],
@@ -84,6 +94,7 @@ class SSign(
     ...
 
 
+@dataclass
 class Floor(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -92,6 +103,7 @@ class Floor(
     ...
 
 
+@dataclass
 class Ceil(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -100,6 +112,7 @@ class Ceil(
     ...
 
 
+@dataclass
 class Fract(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -108,6 +121,7 @@ class Fract(
     ...
 
 
+@dataclass
 class Degrees(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -116,6 +130,7 @@ class Degrees(
     ...
 
 
+@dataclass
 class Sin(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -124,6 +139,7 @@ class Sin(
     ...
 
 
+@dataclass
 class Cos(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -132,6 +148,7 @@ class Cos(
     ...
 
 
+@dataclass
 class Tan(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -140,6 +157,7 @@ class Tan(
     ...
 
 
+@dataclass
 class Asin(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -148,6 +166,7 @@ class Asin(
     ...
 
 
+@dataclass
 class Acos(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -156,6 +175,7 @@ class Acos(
     ...
 
 
+@dataclass
 class Atan(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -164,6 +184,7 @@ class Atan(
     ...
 
 
+@dataclass
 class Sinh(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -172,6 +193,7 @@ class Sinh(
     ...
 
 
+@dataclass
 class Cosh(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -180,6 +202,7 @@ class Cosh(
     ...
 
 
+@dataclass
 class Tanh(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -188,6 +211,7 @@ class Tanh(
     ...
 
 
+@dataclass
 class Asinh(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -196,6 +220,7 @@ class Asinh(
     ...
 
 
+@dataclass
 class Acosh(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -204,6 +229,7 @@ class Acosh(
     ...
 
 
+@dataclass
 class Atanh(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -212,6 +238,7 @@ class Atanh(
     ...
 
 
+@dataclass
 class Atan2(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -220,6 +247,7 @@ class Atan2(
     ...
 
 
+@dataclass
 class Pow(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -228,6 +256,7 @@ class Pow(
     ...
 
 
+@dataclass
 class Exp(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -236,6 +265,7 @@ class Exp(
     ...
 
 
+@dataclass
 class Log(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -244,6 +274,7 @@ class Log(
     ...
 
 
+@dataclass
 class Exp2(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -252,6 +283,7 @@ class Exp2(
     ...
 
 
+@dataclass
 class Log2(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -260,6 +292,7 @@ class Log2(
     ...
 
 
+@dataclass
 class Sqrt(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -268,6 +301,7 @@ class Sqrt(
     ...
 
 
+@dataclass
 class InverseSqrt(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -276,24 +310,25 @@ class InverseSqrt(
     ...
 
 
+@dataclass
 class Determinant(
     UnaryArithmeticOperator[None, None, None, None], GLSLExtensionOperator
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand = context.get_random_operand(
             lambda x: IsMatrixType(x) and len(x.type) == len(x.type.type)
         )
-        if not operand:
-            return []
         result_type = operand.get_base_type()
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=result_type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand,),
-            )
-        ]
+            ),
+            [result_type],
+        )
 
 
 # class MatrixInverse(
@@ -306,36 +341,36 @@ class Determinant(
 #         return [
 #             OpExtInst(
 #                 type=operand.type,
-#                 extension_set=context.extension_sets["GLSL"],
+#                 extension_set=context.extension_sets["GLSL.std.450"],
 #                 instruction=self.__class__,
 #                 operands=(operand,),
 #             )
 #         ]
 
 
+@dataclass
 class ModfStruct(
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand = context.get_random_operand(
             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
-        if not operand:
-            return []
-        result_type = OpTypeStruct()
-        result_type.types = (operand.type, operand.type)
-        context.add_to_tvc(result_type)
-        return [
+        result_type = OpTypeStruct(types=(operand.type, operand.type))
+        return FuzzResult(
             OpExtInst(
                 type=result_type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand,),
-            )
-        ]
+            ),
+            [result_type],
+        )
 
 
+@dataclass
 class FMin(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -344,6 +379,7 @@ class FMin(
     ...
 
 
+@dataclass
 class UMin(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeInt, None, Unsigned, None],
@@ -352,6 +388,7 @@ class UMin(
     ...
 
 
+@dataclass
 class SMin(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeInt, None, Signed, None],
@@ -360,6 +397,7 @@ class SMin(
     ...
 
 
+@dataclass
 class FMax(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -368,6 +406,7 @@ class FMax(
     ...
 
 
+@dataclass
 class UMax(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeInt, None, Unsigned, None],
@@ -376,6 +415,7 @@ class UMax(
     ...
 
 
+@dataclass
 class SMax(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeInt, None, Signed, None],
@@ -385,94 +425,95 @@ class SMax(
 
 
 # TODO: we need a ternary arithmetic operator classification, workaround for now
+@dataclass
 class FClamp(
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(
             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(HasType(operand1.type))
         operand3 = context.get_random_operand(HasType(operand1.type))
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand1, operand2, operand3),
             )
-        ]
+        )
 
 
+@dataclass
 class UClamp(
     BinaryArithmeticOperator[OpTypeInt, None, Unsigned, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(
             Or(And(IsVectorType, IsOfUnsignedIntegerBaseType), IsScalarSignedInteger)
         )
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(HasType(operand1.type))
         operand3 = context.get_random_operand(HasType(operand1.type))
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand1, operand2, operand3),
             )
-        ]
+        )
 
 
+@dataclass
 class SClamp(
     BinaryArithmeticOperator[OpTypeInt, None, Signed, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(
             Or(And(IsVectorType, IsOfSignedIntegerBaseType), IsScalarSignedInteger)
         )
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(HasType(operand1.type))
         operand3 = context.get_random_operand(HasType(operand1.type))
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand1, operand2, operand3),
             )
-        ]
+        )
 
 
+@dataclass
 class FMix(
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(
             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(HasType(operand1.type))
         operand3 = context.get_random_operand(HasType(operand1.type))
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand1, operand2, operand3),
             )
-        ]
+        )
 
 
+@dataclass
 class Step(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -489,77 +530,70 @@ class Step(
 #         operand1 = context.get_random_operand(
 #             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
 #         )
-#         if not operand1:
-#             return []
 #         operand2 = context.get_random_operand(HasType(operand1.type))
 #         operand3 = context.get_random_operand(HasType(operand1.type))
 #         return [
 #             OpExtInst(
 #                 type=operand1.type,
-#                 extension_set=context.extension_sets["GLSL"],
+#                 extension_set=context.extension_sets["GLSL.std.450"],
 #                 instruction=self.__class__,
 #                 operands=(operand1, operand2, operand3),
 #             )
 #         ]
 
 
-class Fma(
-    BinaryArithmeticOperator[OpTypeFloat, None, None, None],
-    GLSLExtensionOperator,
-):
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        operand1 = context.get_random_operand(
-            Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
-        )
-        if not operand1:
-            return []
-        operand2 = context.get_random_operand(HasType(operand1.type))
-        operand3 = context.get_random_operand(HasType(operand1.type))
-        ext_inst = OpExtInst(
-            type=operand1.type,
-            extension_set=context.extension_sets["GLSL"],
-            instruction=self.__class__,
-            operands=(operand1, operand2, operand3),
-        )
-        # Required for determinism
-        context.add_annotation(
-            OpDecorate(target=ext_inst, decoration=Decoration.NoContraction)
-        )
-        return [ext_inst]
+# @dataclass
+# class Fma(
+#     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
+#     GLSLExtensionOperator,
+# ):
+#     @classmethod
+#     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+#         operand1 = context.get_random_operand(
+#             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
+#         )
+#         operand2 = context.get_random_operand(HasType(operand1.type))
+#         operand3 = context.get_random_operand(HasType(operand1.type))
+#         ext_inst = OpExtInst(
+#             type=operand1.type,
+#             extension_set=context.extension_sets["GLSL.std.450"],
+#             instruction=cls,
+#             operands=(operand1, operand2, operand3),
+#         )
+#         # Required for determinism
+#         context.add_annotation(
+#             OpDecorate(target=ext_inst, decoration=Decoration.NoContraction)
+#         )
+#         return FuzzResult(ext_inst)
 
 
+@dataclass
 class FrexpStruct(
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand = context.get_random_operand(
             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
-        if not operand:
-            return []
-        struct_type = OpTypeStruct()
         inner_type1 = operand.type
-        int_type = OpTypeInt()
-        int_type.width = 32
-        int_type.signed = 1
         if IsVectorType(operand):
-            inner_type2 = OpTypeVector()
-            inner_type2.type = int_type
-            inner_type2.size = len(inner_type1)
+            inner_type2 = OpTypeVector(OpTypeInt(32, 1), len(inner_type1))
         else:
-            inner_type2 = int_type
+            inner_type2 = OpTypeInt(32, 1)
+        struct_type = OpTypeStruct((inner_type1, inner_type2))
         context.add_to_tvc(inner_type2)
-        struct_type.types = (inner_type1, inner_type2)
         context.add_to_tvc(struct_type)
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=struct_type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand,),
-            )
-        ]
+            ),
+            [struct_type],
+        )
 
 
 # # # # # # # # # # # # # # # #
@@ -570,71 +604,74 @@ class FrexpStruct(
 # # # # # # # # # # # # # # # #
 
 
+@dataclass
 class Length(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
-        if not operand:
-            return []
-        result_type = OpTypeFloat().fuzz(context)[-1]
-        return [
+        result_type = OpTypeFloat(32)
+        return FuzzResult(
             OpExtInst(
                 type=result_type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand,),
-            )
-        ]
+            ),
+            [result_type],
+        )
 
 
+@dataclass
 class Distance(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(And(IsVectorType, IsOfFloatBaseType))
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(HasType(operand1.type))
-        result_type = OpTypeFloat().fuzz(context)[-1]
-        return [
+        result_type = OpTypeFloat(32)
+        return FuzzResult(
             OpExtInst(
                 type=result_type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(
                     operand1,
                     operand2,
                 ),
-            )
-        ]
+            ),
+            [result_type],
+        )
 
 
+@dataclass
 class Cross(
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(
             And(IsVectorType, IsOfFloatBaseType, HasLength(3))
         )
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(HasType(operand1.type))
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand1, operand2),
             )
-        ]
+        )
 
 
+@dataclass
 class Normalize(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -643,26 +680,29 @@ class Normalize(
     ...
 
 
+@dataclass
 class FaceForward(
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(
             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
         operand2 = context.get_random_operand(HasType(operand1.type))
         operand3 = context.get_random_operand(HasType(operand1.type))
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand1, operand2, operand3),
             )
-        ]
+        )
 
 
+@dataclass
 class Reflect(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -676,6 +716,7 @@ class Reflect(
 #     ...
 
 
+@dataclass
 class FindILsb(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeInt, None, None, None],
@@ -684,6 +725,7 @@ class FindILsb(
     ...
 
 
+@dataclass
 class FindSMsb(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeInt, None, Signed, None],
@@ -692,6 +734,7 @@ class FindSMsb(
     ...
 
 
+@dataclass
 class FindUMsb(
     UnaryOperatorFuzzMixin,
     UnaryArithmeticOperator[OpTypeInt, None, Unsigned, None],
@@ -725,6 +768,7 @@ class FindUMsb(
 #     ...
 
 
+@dataclass
 class NMin(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -733,6 +777,7 @@ class NMin(
     ...
 
 
+@dataclass
 class NMax(
     BinaryOperatorFuzzMixin,
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
@@ -741,23 +786,23 @@ class NMax(
     ...
 
 
+@dataclass
 class NClamp(
     BinaryArithmeticOperator[OpTypeFloat, None, None, None],
     GLSLExtensionOperator,
 ):
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         operand1 = context.get_random_operand(
             Or(And(IsVectorType, IsOfFloatBaseType), IsScalarFloat)
         )
-        if not operand1:
-            return []
         operand2 = context.get_random_operand(HasType(operand1.type))
         operand3 = context.get_random_operand(HasType(operand1.type))
-        return [
+        return FuzzResult(
             OpExtInst(
                 type=operand1.type,
-                extension_set=context.extension_sets["GLSL"],
-                instruction=self.__class__,
+                extension_set=context.extension_sets["GLSL.std.450"],
+                instruction=cls,
                 operands=(operand1, operand2, operand3),
             )
-        ]
+        )

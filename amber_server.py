@@ -1,7 +1,9 @@
 import argparse
 import os
 import platform
+import signal
 import subprocess
+import sys
 import tempfile
 from functools import reduce
 from itertools import repeat
@@ -31,9 +33,13 @@ VK_ICD_FILENAMES_MOLTENVK = (
 
 MONITOR = Monitor()
 
-STORAGE_CLIENT = storage.Client.from_service_account_json("infra/spirvsmith_gcp.json")
-BQ_CLIENT = bigquery.Client.from_service_account_json("infra/spirvsmith_gcp.json")
-BUCKET = STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
+
+if "pytest" not in sys.modules:
+    STORAGE_CLIENT = storage.Client.from_service_account_json(
+        "infra/spirvsmith_gcp.json"
+    )
+    BQ_CLIENT = bigquery.Client.from_service_account_json("infra/spirvsmith_gcp.json")
+    BUCKET = STORAGE_CLIENT.get_bucket("spirv_shaders_bucket")
 
 
 def get_pending_shaders_query(
@@ -122,7 +128,7 @@ def run_amber(amber_filename: str, n_buffers: int, shader_id: str) -> str:
         print(process.stderr.decode("utf-8"))
         return None
 
-    if process.returncode == 139:
+    if process.returncode == -signal.SIGSEGV:
         MONITOR.error(
             event=Event.AMBER_SEGFAULT,
             extra={

@@ -1,8 +1,13 @@
 import random
+from ast import Constant
 from typing import Optional
 from typing import TYPE_CHECKING
 
-from src import FuzzLeaf
+from typing_extensions import Self
+
+from src import AbortFuzzing
+from src import FuzzLeafMixin
+from src import FuzzResult
 from src import OpCode
 from src import Untyped
 from src import VoidOp
@@ -12,86 +17,97 @@ from src.enums import SelectionControlMask
 if TYPE_CHECKING:
     from src.context import Context
 from src.operators.memory.memory_access import OpVariable, Statement
-from src.types.concrete_types import OpTypeBool, OpTypeFunction, Type
-from utils.patched_dataclass import dataclass
+from src.types.concrete_types import (
+    EmptyType,
+    OpTypeBool,
+    OpTypeFunction,
+    OpTypeVoid,
+    Type,
+)
+from src.patched_dataclass import dataclass
 
 
+@dataclass
 class FunctionOperator(Statement):
     ...
 
 
+@dataclass
 class OpFunction(OpCode):
-    context: "Context" = None
-    return_type: Type = None
-    function_control_mask: FunctionControlMask = None
-    function_type: OpTypeFunction = None
+    return_type: Type
+    function_control_mask: FunctionControlMask
+    function_type: OpTypeFunction
 
-    def __init__(
-        self,
-        return_type: Type = None,
-        function_type: OpTypeFunction = None,
-    ) -> None:
-        self.return_type: Type = return_type
-        self.function_control_mask: FunctionControlMask = random.SystemRandom().choice(
-            list(FunctionControlMask)
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        op_function: Self = cls(
+            context.current_function_type.return_type,
+            random.SystemRandom().choice(list(FunctionControlMask)),
+            context.current_function_type,
         )
-        self.function_type: OpTypeFunction = function_type
-        super().__init__()
-
-    def fuzz(self, context: "Context") -> list[OpCode]:
-        self.context = context.make_child_context(self)
-        instructions: list[Statement] = fuzz_block(self.context, None)
-        return [
-            self,
-            *instructions,
-            *OpReturn().fuzz(self.context),
-            *OpFunctionEnd().fuzz(self.context),
-        ]
+        child_context = context.make_child_context(op_function)
+        instructions: list[Statement] = fuzz_block(child_context, None)
+        return FuzzResult(
+            op_function,
+            [
+                *instructions,
+                OpReturn.fuzz(child_context).opcode,
+                OpFunctionEnd.fuzz(child_context).opcode,
+            ],
+        )
 
 
 @dataclass
-class OpFunctionParameter(FuzzLeaf):
-    type: Type = None
+class OpFunctionParameter(FuzzLeafMixin):
+    type: Type
 
 
-class OpFunctionEnd(FuzzLeaf, VoidOp):
-    pass
+@dataclass
+class OpFunctionEnd(FuzzLeafMixin, VoidOp):
+    ...
 
 
-class OpReturn(FunctionOperator, OpCode, Untyped, VoidOp):
+@dataclass
+class OpReturn(FunctionOperator, Untyped, VoidOp):
     # operand: Statement = None
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         target_type = context.function.function_type.return_type
         # self.operand = None
-        return [self]
+        return FuzzResult(cls(type=EmptyType()))
 
 
+@dataclass
 class OpFunctionCall(OpCode):
-    return_type: Type = None
-    function: OpFunction = None
-    arguments: list[OpCode] = None
+    return_type: Type
+    function: OpFunction
+    arguments: list[OpCode]
 
 
-class OpLabel(FuzzLeaf, Untyped):
-    pass
+@dataclass
+class OpLabel(FuzzLeafMixin, Untyped, OpCode):
+    ...
 
 
+@dataclass
 class ControlFlowOperator(Statement):
     ...
 
 
+@dataclass
 class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
-    exit_label: OpLabel = None
-    selection_control: SelectionControlMask = None
+    exit_label: OpLabel
+    selection_control: SelectionControlMask
 
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         if context.get_depth() > context.config.limits.max_depth:
-            return []
-        self.exit_label = OpLabel().fuzz(context)[0]
-        self.selection_control = SelectionControlMask.NONE
-        if_block = fuzz_block(context, self.exit_label)
-        else_block = fuzz_block(context, self.exit_label)
+            raise AbortFuzzing
+        exit_label = OpLabel.fuzz(context).opcode
+        selection_control = SelectionControlMask.NONE
+        if_block = fuzz_block(context, exit_label)
+        else_block = fuzz_block(context, exit_label)
         true_label = if_block[0]
         false_label = else_block[0]
         try:
@@ -102,11 +118,18 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
                 )
             )
         except IndexError:
-            return []
+            raise AbortFuzzing
         op_branch = OpBranchConditional(
             condition=condition, true_label=true_label, false_label=false_label
         )
-        return [self, op_branch, *if_block, *else_block, self.exit_label]
+        return FuzzResult(
+            cls(
+                type=EmptyType(),
+                exit_label=exit_label,
+                selection_control=selection_control,
+            ),
+            [op_branch, *if_block, *else_block, exit_label],
+        )
 
 
 # class OpLoopMerge(ControlFlowOperator, Untyped, VoidOp):
@@ -155,55 +178,56 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 
 
 @dataclass
-class OpBranchConditional(FuzzLeaf, Untyped, VoidOp):
-    condition: Statement = None
-    true_label: OpLabel = None
-    false_label: OpLabel = None
+class OpBranchConditional(FuzzLeafMixin, Untyped, VoidOp):
+    condition: Statement
+    true_label: OpLabel
+    false_label: OpLabel
 
 
 @dataclass
-class OpBranch(FuzzLeaf, Untyped, VoidOp):
-    label: OpLabel = None
+class OpBranch(FuzzLeafMixin, Untyped, VoidOp):
+    label: OpLabel
 
 
 def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCode]:
-    block_label: OpLabel = OpLabel().fuzz(context)[0]
+    block_label: OpLabel = OpLabel.fuzz(context).opcode
     instructions: list[OpCode] = []
     variables: list[OpVariable] = []
     block_context = context.make_child_context()
     # TODO this is terrible, there must be a better way
-    import src.operators.arithmetic.scalar_arithmetic
-    import src.operators.arithmetic.linear_algebra
-    import src.operators.logic
-    import src.operators.bitwise
-    import src.operators.conversions
-    import src.operators.composite
+    # import src.operators.arithmetic.scalar_arithmetic
+    # import src.operators.arithmetic.linear_algebra
+    # import src.operators.logic
+    # import src.operators.bitwise
+    # import src.operators.conversions
+    # import src.operators.composite
 
-    if context.config.strategy.enable_ext_glsl_std_450:
-        import src.operators.arithmetic.glsl
+    # if context.config.strategy.enable_ext_glsl_std_450:
+    #     import src.operators.arithmetic.glsl
 
     while random.SystemRandom().random() < context.config.strategy.p_statement:
-        opcodes: list[OpCode] = Statement().fuzz(block_context)
+        try:
+            fuzzed_opcode: FuzzResult = Statement.fuzz(block_context)
+        except AbortFuzzing:
+            continue
         nested_block = False
-        for statement in opcodes:
-            if isinstance(statement, OpSelectionMerge):
-                nested_block = True
-                break
-            if isinstance(statement, Statement) and not nested_block:
-                block_context.symbol_table.append(statement)
-            if not isinstance(statement, (OpVariable, OpReturn)):
-                instructions.append(statement)
-            if isinstance(statement, OpVariable):
-                variables.append(statement)
-        if nested_block:
-            nested_block_variables = filter(
-                lambda s: isinstance(s, OpVariable), opcodes
-            )
-            nested_block_instructions = filter(
-                lambda s: not isinstance(s, OpVariable), opcodes
-            )
-            variables += nested_block_variables
-            instructions += nested_block_instructions
+        if isinstance(fuzzed_opcode.opcode, OpSelectionMerge):
+            nested_block = True
+        for side_effect in fuzzed_opcode.side_effects:
+            match side_effect:
+                case Type() | Constant():
+                    context.add_to_tvc(side_effect)
+                case OpVariable():
+                    variables.append(side_effect)
+                case _:
+                    instructions.append(side_effect)
+            continue
+        if isinstance(fuzzed_opcode.opcode, Statement) and not nested_block:
+            block_context.symbol_table.append(fuzzed_opcode.opcode)
+        if not isinstance(fuzzed_opcode.opcode, (OpVariable, OpReturn)):
+            instructions.append(fuzzed_opcode.opcode)
+        if isinstance(fuzzed_opcode.opcode, OpVariable):
+            variables.append(fuzzed_opcode.opcode)
     if exit_label:
         instructions.append(OpBranch(label=exit_label))
     return tuple([block_label, *variables, *instructions])

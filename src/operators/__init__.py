@@ -1,10 +1,11 @@
 from types import NoneType
 from typing import get_args
-from typing import Optional
 from typing import TYPE_CHECKING
 
+from typing_extensions import Self
+
 from src import Constant
-from src import OpCode
+from src import FuzzResult
 from src import Signed
 from src import Statement
 from src.constants import OpConstantComposite
@@ -22,26 +23,25 @@ class GLSLExtensionOperator:
 
 
 class UnaryOperatorFuzzMixin:
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         (
             source_type,
             destination_type,
             source_constraint,
             destination_constraint,
-        ) = get_args(self.__class__.__orig_bases__[1])
-        source_signed = None
+        ) = get_args(cls.__orig_bases__[1])
+        source_signed: bool = None
         if not issubclass(source_constraint, NoneType):
-            source_signed = issubclass(source_constraint, Signed)
+            source_signed: bool = issubclass(source_constraint, Signed)
         destination_signed = None
         if not issubclass(destination_constraint, NoneType):
             destination_signed = issubclass(destination_constraint, Signed)
-        operand: Optional[Operand] = context.get_random_operand(
-            self.OPERAND_SELECTION_PREDICATE(source_type, source_signed)
+        operand: Operand = context.get_random_operand(
+            cls.OPERAND_SELECTION_PREDICATE(source_type, source_signed)
         )
-        if operand is None:
-            return []
         if not issubclass(destination_type, NoneType):
-            inner_type = destination_type().fuzz(context)[-1]
+            inner_type = destination_type.fuzz(context).opcode
             if destination_signed is not None:
                 inner_type.signed = int(destination_signed)
             context.add_to_tvc(inner_type)
@@ -50,60 +50,46 @@ class UnaryOperatorFuzzMixin:
             if hasattr(operand, "width"):
                 inner_type.width = operand.get_base_type().width
             if isinstance(operand.type, (OpConstantComposite, OpTypeVector)):
-                self.type = OpTypeVector().fuzz(context)[-1]
-                self.type.type = inner_type
-                self.type.size = len(operand.type)
-                context.add_to_tvc(self.type)
-            else:
-                self.type = inner_type
+                inner_type = OpTypeVector(type=inner_type, size=len(operand.type))
+                context.add_to_tvc(inner_type)
         else:
-            self.type = operand.type
-        self.operand1 = operand
-        if isinstance(self, GLSLExtensionOperator):
-            return [
+            inner_type = operand.type
+        if issubclass(cls, GLSLExtensionOperator):
+            return FuzzResult(
                 OpExtInst(
-                    type=self.type,
-                    extension_set=context.extension_sets["GLSL"],
-                    instruction=self.__class__,
-                    operands=tuple([self.operand1]),
+                    type=inner_type,
+                    extension_set=context.extension_sets["GLSL.std.450"],
+                    instruction=cls,
+                    operands=(operand,),
                 )
-            ]
-        return [self]
-
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.operand1})"
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.operand1})"
+            )
+        return FuzzResult(cls(type=inner_type, operand1=operand), [inner_type])
 
 
 class BinaryOperatorFuzzMixin:
-    def fuzz(self, context: "Context") -> list[OpCode]:
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         (
             source_type,
             destination_type,
             source_constraint,
             destination_constraint,
-        ) = get_args(self.__class__.__orig_bases__[1])
+        ) = get_args(cls.__orig_bases__[1])
         source_signed = None
         if not issubclass(source_constraint, NoneType):
             source_signed = issubclass(source_constraint, Signed)
         destination_signed = None
         if not issubclass(destination_constraint, NoneType):
             destination_signed = issubclass(destination_constraint, Signed)
-        operand1: Optional[Operand] = context.get_random_operand(
-            self.OPERAND_SELECTION_PREDICATE(source_type, source_signed)
+        operand1: Operand = context.get_random_operand(
+            cls.OPERAND_SELECTION_PREDICATE(source_type, source_signed)
         )
-        if operand1 is None:
-            return []
-        operand2: Optional[Operand] = context.get_random_operand(
-            self.OPERAND_SELECTION_PREDICATE(source_type, source_signed),
+        operand2: Operand = context.get_random_operand(
+            cls.OPERAND_SELECTION_PREDICATE(source_type, source_signed),
             constraint=operand1,
         )
-        if operand2 is None:
-            return []
         if not issubclass(destination_type, NoneType):
-            inner_type = destination_type().fuzz(context)[-1]
+            inner_type = destination_type.fuzz(context).opcode
             if destination_signed is not None:
                 inner_type.signed = int(destination_signed)
             context.add_to_tvc(inner_type)
@@ -112,29 +98,19 @@ class BinaryOperatorFuzzMixin:
             if hasattr(operand1, "width"):
                 inner_type.width = operand1.get_base_type().width
             if isinstance(operand1.type, (OpConstantComposite, OpTypeVector)):
-                self.type = OpTypeVector().fuzz(context)[-1]
-                self.type.type = inner_type
-                self.type.size = len(operand1.type)
-                context.add_to_tvc(self.type)
-            else:
-                self.type = inner_type
+                inner_type = OpTypeVector(type=inner_type, size=len(operand1.type))
+                context.add_to_tvc(inner_type)
         else:
-            self.type = operand1.type
-        self.operand1 = operand1
-        self.operand2 = operand2
-        if isinstance(self, GLSLExtensionOperator):
-            return [
+            inner_type = operand1.type
+        if issubclass(cls, GLSLExtensionOperator):
+            return FuzzResult(
                 OpExtInst(
-                    type=self.type,
-                    extension_set=context.extension_sets["GLSL"],
-                    instruction=self.__class__,
-                    operands=tuple([self.operand1, self.operand2]),
+                    type=inner_type,
+                    extension_set=context.extension_sets["GLSL.std.450"],
+                    instruction=cls,
+                    operands=(operand1, operand2),
                 )
-            ]
-        return [self]
-
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.operand1})({self.operand2})"
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.operand1})({self.operand2})"
+            )
+        return FuzzResult(
+            cls(type=inner_type, operand1=operand1, operand2=operand2), [inner_type]
+        )
