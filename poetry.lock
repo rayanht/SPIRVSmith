@@ -257,6 +257,17 @@ tenacity = ">=5"
 opentracing = ["opentracing (>=2.0.0)"]
 
 [[package]]
+name = "dill"
+version = "0.3.4"
+description = "serialize all of python"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*"
+
+[package.extras]
+graph = ["objgraph (>=1.7.2)"]
+
+[[package]]
 name = "distlib"
 version = "0.3.4"
 description = "Distribution utilities"
@@ -1221,7 +1232,7 @@ tests = ["coverage", "flake8", "wheel"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<3.11"
-content-hash = "4ed4cb3c08dfc4bd3b587e0370c0107a48ad3f73098d944c0c26cf0668a115ad"
+content-hash = "340e1a1b54b66577dea002214b89e7d3e1f2fd3b8a4c643a87fe624cd7cf8b70"
 
 [metadata.files]
 antlr4-python3-runtime = [
@@ -1496,6 +1507,10 @@ ddtrace = [
     {file = "ddtrace-1.0.1-cp39-cp39-win32.whl", hash = "sha256:8929ddec1690d5898550e94bb10f9dfece7e3d8b43e7c7718fbb932509d008df"},
     {file = "ddtrace-1.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:296cbafd0738d9b504e0b8889848afb74d642b985a71d86ad6bdaf765201b339"},
     {file = "ddtrace-1.0.1.tar.gz", hash = "sha256:5e632db6d1e55086a52fc504baee3a31af685efb0d977e42aff013e00d4f8004"},
+]
+dill = [
+    {file = "dill-0.3.4-py2.py3-none-any.whl", hash = "sha256:7e40e4a70304fd9ceab3535d36e58791d9c4a776b38ec7f7ec9afc8d3dca4d4f"},
+    {file = "dill-0.3.4.zip", hash = "sha256:9f9734205146b2b353ab3fec9af0070237b6ddae78452af83d2fca84d739e675"},
 ]
 distlib = [
     {file = "distlib-0.3.4-py2.py3-none-any.whl", hash = "sha256:6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b"},

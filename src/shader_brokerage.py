@@ -1,5 +1,6 @@
-import pickle
 from typing import TYPE_CHECKING
+
+import dill
 
 from src.execution_platform import ExecutionPlatform
 from src.utils import get_spirvsmith_version
@@ -21,7 +22,7 @@ if "pytest" not in sys.modules:
 
 
 def GCS_upload_shader(shader: "SPIRVShader") -> None:
-    pickled_shader: bytes = pickle.dumps(shader, protocol=pickle.HIGHEST_PROTOCOL)
+    pickled_shader: bytes = dill.dumps(shader, protocol=dill.HIGHEST_PROTOCOL)
     blob = BUCKET.blob(f"{shader.id}.pkl")
     blob.upload_from_string(pickled_shader)
 
@@ -29,7 +30,7 @@ def GCS_upload_shader(shader: "SPIRVShader") -> None:
 def GCS_download_shader(shader_id: str) -> "SPIRVShader":
     blob = BUCKET.blob(f"{shader_id}.pkl")
     pickled_shader: bytes = blob.download_as_bytes()
-    return pickle.loads(pickled_shader)
+    return dill.loads(pickled_shader)
 
 
 def BQ_insert_new_shader(
@@ -39,7 +40,7 @@ def BQ_insert_new_shader(
         INSERT INTO `spirvsmith.spirv.shader_data`
         VALUES (
             "{shader.id}",
-            {"1" if high_priority else "0"},
+            {1 if high_priority else 0},
             "{generator_id}",
             "{shader.context.config.misc.version}",
             {len(shader.context.get_storage_buffers())},
@@ -50,7 +51,7 @@ def BQ_insert_new_shader(
             NULL,
             NULL,
             NULL,
-            AUTO()
+            CURRENT_TIMESTAMP()
         )
     """
     BQ_CLIENT.query(insert_query).result()
@@ -77,7 +78,7 @@ def BQ_update_shader_with_buffer_dumps(
         "{execution_platform.get_active_hardware().hardware_model}",
         "{execution_platform.get_active_hardware().driver_version}",
         "{execution_platform.vulkan_backend.value}",
-        "AUTO",
+        CURRENT_TIMESTAMP(),
     )
     """
     delete_query = f"""
