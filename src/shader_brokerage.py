@@ -108,8 +108,8 @@ def BQ_fetch_shaders_pending_execution(
         AND platform_hardware_type = "{execution_platform.get_active_hardware().hardware_type.value}"
         AND platform_backend = "{execution_platform.vulkan_backend.value}"
         AND buffer_dump IS NULL)
-        AND generator_version = "{get_spirvsmith_version()}
-        ORDER BY execution_priority DESC, insertion_time ASC"
+        AND generator_version = "{get_spirvsmith_version()}"
+        ORDER BY execution_priority DESC, insertion_time ASC
     """
     query_job: QueryJob = BQ_CLIENT.query(fetch_query)
     return query_job.result()
