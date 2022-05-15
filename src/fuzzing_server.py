@@ -33,12 +33,9 @@ from src.monitor import Event
 from src.monitor import Monitor
 from src.operators.memory.memory_access import OpVariable
 from src.optimiser_fuzzer import fuzz_optimiser
-from src.recondition import recondition
-from src.shader_brokerage import insert_new_shader_into_BQ
-from src.shader_brokerage import upload_shader_to_gcs
-from src.shader_utils import assemble_shader
+from src.shader_brokerage import BQ_insert_new_shader
+from src.shader_brokerage import GCS_upload_shader
 from src.shader_utils import SPIRVShader
-from src.shader_utils import validate_spirv_file
 from src.types.concrete_types import OpTypeFunction
 from src.types.concrete_types import OpTypeVoid
 from src.utils import mutate_config
@@ -46,7 +43,6 @@ from src.utils import mutate_config
 if TYPE_CHECKING:
     from run import SPIRVSmithConfig
 
-from google.cloud import bigquery
 
 import signal
 from flask import Flask
@@ -103,12 +99,6 @@ def start_fuzzer():
     return ("", 204)
 
 
-def id_generator(i=1):
-    while True:
-        yield i
-        i += 1
-
-
 def register_generator_configuration(generator_id: str, config: "SPIRVSmithConfig"):
     if config.misc.broadcast_generated_shaders:
         cred = credentials.Certificate("infra/spirvsmith_gcp.json")
@@ -151,17 +141,14 @@ class ShaderGenerator:
                 break
             if not paused:
                 shader: SPIRVShader = self.gen_shader()
-                shader.export(f"out/{shader.id}.spasm")
-                with tempfile.NamedTemporaryFile() as tmp:
-                    if assemble_shader(shader, tmp.name) and validate_spirv_file(
-                        shader, tmp.name
-                    ):
-                        MP_pool.apply_async(func=fuzz_optimiser, args=(shader,))
-                        if self.config.misc.broadcast_generated_shaders:
-                            thread_pool_executor.submit(upload_shader_to_gcs, shader)
-                            thread_pool_executor.submit(
-                                insert_new_shader_into_BQ, shader, self.generator_id
-                            )
+                shader.generate_assembly_file(f"out/{shader.id}.spasm")
+                if shader.validate():
+                    MP_pool.apply_async(func=fuzz_optimiser, args=(shader,))
+                    if self.config.misc.broadcast_generated_shaders:
+                        thread_pool_executor.submit(GCS_upload_shader, shader)
+                        thread_pool_executor.submit(
+                            BQ_insert_new_shader, shader, self.generator_id
+                        )
                 if paused:
                     Monitor(self.config).info(event=Event.PAUSED)
 
@@ -184,9 +171,11 @@ class ShaderGenerator:
         #     [ExecutionModel.GLCompute, ExecutionModel.Kernel]
         # )
         execution_model = ExecutionModel.GLCompute
-        context = Context.create_global_context(execution_model, self.config)
-        void_type = OpTypeVoid()
-        main_type = OpTypeFunction(return_type=void_type, parameter_types=())
+        context: Context = Context.create_global_context(execution_model, self.config)
+        void_type: OpTypeVoid = OpTypeVoid()
+        main_type: OpTypeFunction = OpTypeFunction(
+            return_type=void_type, parameter_types=()
+        )
         context.main_type = main_type
         context.tvc[void_type] = void_type.id
         context.tvc[main_type] = main_type.id
@@ -200,21 +189,8 @@ class ShaderGenerator:
         context.gen_constants()
         context.gen_global_variables()
 
-        # Populate function bodies and recondition
-        program: list[OpCode] = recondition(context, context.gen_program())
-        FuzzDelegator.reset_parametrizations()
-
-        # Remap IDs
-        id_gen = id_generator()
-        for ext in context.extension_sets.values():
-            ext.id = str(next(id_gen))
-        new_tvc = {}
-        for tvc in context.tvc.keys():
-            tvc.id = str(next(id_gen))
-            new_tvc[tvc] = tvc.id
-        context.tvc = new_tvc
-        for opcode in program:
-            opcode.id = str(next(id_gen))
+        # Populate function bodies
+        opcodes: list[OpCode] = context.gen_opcodes()
 
         interfaces: tuple[OpVariable, ...] = context.get_interfaces()
         entry_point = OpEntryPoint(
@@ -223,29 +199,34 @@ class ShaderGenerator:
             name="main",
             interfaces=interfaces,
         )
-        capabilities = [
+        capabilities: list[OpCapability] = [
             OpCapability(capability=Capability.Shader),
             OpCapability(capability=Capability.Matrix),
-            # OpCapability(capability=Capability.Vector16),
         ]
-        memory_model = OpMemoryModel(
+        memory_model: OpMemoryModel = OpMemoryModel(
             addressing_model=AddressingModel.Logical, memory_model=MemoryModel.GLSL450
         )
-        # TODO extra operands
+
         if execution_model == ExecutionModel.GLCompute:
-            execution_mode = ExecutionMode.LocalSize
-            extra_operands = (1, 1, 1)
+            op_execution_mode: OpExecutionMode = OpExecutionMode(
+                entry_point.function, ExecutionMode.LocalSize, (1, 1, 1)
+            )
         else:
-            execution_mode = ExecutionMode.OriginUpperLeft
-            extra_operands = ()
-        op_execution_mode = OpExecutionMode(
-            entry_point.function, execution_mode, extra_operands
-        )
-        return SPIRVShader(
+            op_execution_mode: OpExecutionMode = OpExecutionMode(
+                entry_point.function, ExecutionMode.OriginUpperLeft
+            )
+
+        shader: SPIRVShader = SPIRVShader(
             capabilities,
             memory_model,
             entry_point,
             op_execution_mode,
-            program,
+            opcodes,
             context,
         )
+
+        shader: SPIRVShader = shader.recondition().normalise_ids()
+
+        FuzzDelegator.reset_parametrizations()
+
+        return shader

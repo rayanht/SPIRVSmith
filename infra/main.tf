@@ -96,10 +96,10 @@ resource "google_bigquery_table" "spirv_shader_data_table" {
     "description": "Shader identifier. Not a primary key."
   },
   {
-    "name": "shader_rev",
+    "name": "execution_priority",
     "type": "INT64",
     "mode": "REQUIRED",
-    "description": "Shader revision. A shader can have different revisions due to the reduce & recondition process."
+    "description": "Shaders with a higher priority will be executed first."
   },
   {
     "name": "generator_id",
@@ -160,7 +160,13 @@ resource "google_bigquery_table" "spirv_shader_data_table" {
     "type": "STRING",
     "mode": "NULLABLE",
     "description": "e.g. Vulkan or SwiftShader"
-  }
+  },
+  {
+    "name": "insertion_time",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED",
+    "description": "Time of insertion into the database. Used to enforce FIFO execution."
+  },
 ]
 EOF
 

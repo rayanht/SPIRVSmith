@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.fuzzing_server import SPIRVShader
 from src.monitor import Event, Monitor
-from src.shader_utils import assemble_shader, validate_spirv_file
+from src.shader_utils import validate_spv_file
 
 SPIRV_OPTIMISER_FLAGS = [
     "--amd-ext-to-khr",
@@ -54,12 +54,13 @@ SPIRV_OPTIMISER_FLAGS = [
 
 
 def fuzz_optimiser(shader: "SPIRVShader"):
-    with tempfile.NamedTemporaryFile(suffix=".spv") as tmp:
-        assemble_shader(shader, tmp.name, silent=True)
-        validate_spirv_file(shader, tmp.name, silent=True)
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            for _ in range(shader.context.config.strategy.optimiser_fuzzing_iterations):
-                executor.submit(_fuzz_optimiser, shader, tmp.name)
+    with tempfile.NamedTemporaryFile(suffix=".spv") as spv_file:
+        if shader.assemble(spv_file.name, silent=True) and shader.validate(silent=True):
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                for _ in range(
+                    shader.context.config.strategy.optimiser_fuzzing_iterations
+                ):
+                    executor.submit(_fuzz_optimiser, shader, spv_file.name)
 
 
 def _fuzz_optimiser(shader: "SPIRVShader", filename: str):
@@ -84,7 +85,7 @@ def _fuzz_optimiser(shader: "SPIRVShader", filename: str):
                 "stderr": process.stderr.decode("utf-8"),
                 "stdout": process.stdout.decode("utf-8"),
                 "is_segfault": process.returncode == -signal.SIGSEGV,
-                "cli_args": str(process.args),
+                "run_args": " ".join(process.args),
                 "shader_id": shader.id,
                 "spirv-opt_flags": spirv_opt_flags,
             },

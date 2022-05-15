@@ -285,7 +285,7 @@ class TooLargeShift(DangerousPattern[TooLargeShiftVulnerableOpCode]):
         return {OpShiftLeftLogical, OpShiftRightLogical, OpShiftRightArithmetic}
 
 
-def recondition(context: Context, spirv_opcodes: list[OpCode]):
+def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):
     dangerous_patterns = DangerousPattern.__subclasses__()
     i = 0
     j = len(spirv_opcodes)

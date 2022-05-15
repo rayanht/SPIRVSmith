@@ -1,3 +1,5 @@
+from dataclasses import field
+
 from src import FuzzLeafMixin
 from src import OpCode
 from src import VoidOp
@@ -52,7 +54,7 @@ class OpMemoryModel(FuzzLeafMixin, VoidOp):
 class OpExecutionMode(FuzzLeafMixin, VoidOp):
     function: OpFunction
     execution_mode: ExecutionMode
-    extra_operands: tuple[int, ...]
+    extra_operands: tuple[int, ...] = field(default_factory=tuple)
 
 
 @dataclass

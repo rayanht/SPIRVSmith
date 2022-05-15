@@ -1,6 +1,8 @@
 import copy
 import unittest
 
+from omegaconf import OmegaConf
+
 from run import SPIRVSmithConfig
 from src import FuzzDelegator
 from src.constants import OpConstantComposite
@@ -9,12 +11,12 @@ from src.enums import ExecutionModel
 from src.monitor import Monitor
 from src.operators.arithmetic.scalar_arithmetic import OpSMod
 from src.operators.composite import OpVectorExtractDynamic
-from src.recondition import recondition
+from src.recondition import recondition_opcodes
 from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import OpTypeVector
 
 
-config = SPIRVSmithConfig()
+config = OmegaConf.structured(SPIRVSmithConfig())
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)
 
@@ -54,7 +56,7 @@ class TestRecondition(unittest.TestCase):
 
         opcodes = [int_type, vec_type, index, vec_constant, vec_access]
 
-        reconditioned = recondition(self.context, opcodes)
+        reconditioned = recondition_opcodes(self.context, opcodes)
 
         # We should have an extra OpSMod
         self.assertEqual(len(reconditioned), 6)
@@ -85,7 +87,7 @@ class TestRecondition(unittest.TestCase):
 
         opcodes = [int_type, vec_type, index, vec_constant, vec_access1, vec_access2]
 
-        reconditioned = recondition(self.context, opcodes)
+        reconditioned = recondition_opcodes(self.context, opcodes)
 
         self.assertEqual(len(reconditioned), 8)
         self.assertTrue(isinstance(reconditioned[4], OpSMod))

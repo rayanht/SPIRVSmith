@@ -12,6 +12,14 @@ from src import OpCode
 
 
 @dataclass
+class SubprocessResult:
+    exit_code: int
+    stdout: str
+    stderr: str
+    executed_command: str
+
+
+@dataclass
 class ClampedInt:
     value: int
     lower_bound: int
@@ -73,6 +81,7 @@ def mutate_config(config: "SPIRVSmithConfig") -> None:
         if field
         not in {
             "mutations_config",
+            "mutation_rate",
             "enable_ext_glsl_std_450",
             "p_statement",
             "optimiser_fuzzing_iterations",

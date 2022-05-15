@@ -21,7 +21,6 @@ from src.types.concrete_types import (
     EmptyType,
     OpTypeBool,
     OpTypeFunction,
-    OpTypeVoid,
     Type,
 )
 from src.patched_dataclass import dataclass

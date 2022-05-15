@@ -1,6 +1,8 @@
 import copy
 import unittest
 
+from omegaconf import OmegaConf
+
 from run import SPIRVSmithConfig
 from src import FuzzDelegator
 from src.context import Context
@@ -10,7 +12,7 @@ from src.monitor import Monitor
 from src.operators.memory.memory_access import OpLoad
 
 
-config = SPIRVSmithConfig()
+config = OmegaConf.structured(SPIRVSmithConfig())
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)
 

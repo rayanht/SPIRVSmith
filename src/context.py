@@ -216,7 +216,7 @@ class Context:
                     offset += t.width
             n = len(self.tvc)
 
-    def gen_program(self) -> list["OpCode"]:
+    def gen_opcodes(self) -> list["OpCode"]:
         function_types: list[OpTypeFunction] = self.get_function_types()
         function_bodies: list["OpCode"] = []
         functions: list[OpFunction] = []
@@ -266,10 +266,16 @@ class Context:
         try:
             return random.SystemRandom().choice(list(statements) + list(constants))
         except IndexError:
+            try:
+                opcode_name: str = inspect.stack()[1][0].f_locals["cls"].__name__
+            except KeyError:
+                opcode_name: str = (
+                    inspect.stack()[1][0].f_locals["self"].__class__.__name__
+                )
             Monitor(self.config).info(
                 event=Event.NO_OPERAND_FOUND,
                 extra={
-                    "opcode": inspect.stack()[1][0].f_locals["cls"].__name__,
+                    "opcode": opcode_name,
                     "constraint": str(constraint),
                     "constants": self.get_constants(),
                     "statements": self.get_typed_statements(),

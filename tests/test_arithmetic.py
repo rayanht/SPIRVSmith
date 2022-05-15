@@ -1,6 +1,8 @@
 import copy
 import unittest
 
+from omegaconf import OmegaConf
+
 from run import SPIRVSmithConfig
 from src import FuzzDelegator
 from src.constants import OpConstant
@@ -16,7 +18,7 @@ from src.types.concrete_types import OpTypeFloat
 from tests import create_vector_const
 
 N = 1000
-config = SPIRVSmithConfig()
+config = OmegaConf.structured(SPIRVSmithConfig())
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)
 

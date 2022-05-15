@@ -67,7 +67,7 @@ def resolve_operands(
         typed_operands = (typed_operands,)
     if opcode_class.__name__ == "OpReturn":
         typed_operands = (EmptyType(),)
-    if opcode_class.__name__ == "OpStore":
+    if opcode_class.__name__ in {"OpStore", "OpSelectionMerge"}:
         typed_operands = (EmptyType(), *typed_operands)
     elif opcode_class.__name__ == "OpConstantComposite":
         typed_operands = (typed_operands[0], typed_operands[1:])
@@ -100,6 +100,7 @@ def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
     )
     current_context = global_context
     deferred_lines: list[list[str]] = []
+    deferred_indices: list[tuple[int, list[str]]] = []
     opcode_lookup_table: dict[str, OpCode] = {}
     opcodes: list[OpCode] = []
     current_opcode: Optional[OpCode] = None
@@ -118,6 +119,12 @@ def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
                 *_,
             ]:
                 deferred_lines.append(line)
+            case ["OpSelectionMerge" | "OpBranch" | "OpBranchConditional", *operands]:
+                opcode_class: type[OpCode] = get_opcode_class_from_name(line[0])
+                opcodes.append(opcode_class)
+                deferred_indices.append((len(opcodes) - 1, operands))
+                current_opcode = None
+                continue
             case [opcode_id, "=", opcode_name, *operands]:
                 opcode_class: type[OpCode] = get_opcode_class_from_name(opcode_name)
                 resolved_operands: tuple[OpCode] = resolve_operands(
@@ -159,6 +166,11 @@ def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
             entry_point: OpEntryPoint = opcode
         elif opcode_name == "OpExecutionMode":
             execution_mode: OpExecutionMode = opcode
+    for idx, operands in deferred_indices:
+        resolved_operands: tuple[OpCode] = resolve_operands(
+            opcodes[idx], operands, opcode_lookup_table
+        )
+        opcodes[idx] = opcodes[idx](*resolved_operands)
     return SPIRVShader(
         capabilities=capabilities,
         memory_model=memory_model,
