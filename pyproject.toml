@@ -29,6 +29,7 @@ GitPython = "^3.1.27"
 pyadl = "^0.1"
 pandas = "^1.4.2"
 db-dtypes = "^1.0.1"
+dill = "^0.3.4"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3", allow-prereleases = true}

@@ -384,7 +384,7 @@ def create_amber_file(shader: SPIRVShader, filename: str) -> None:
         fw.write("#!amber\n")
         fw.write(f"SHADER compute {'shader'} SPIRV-ASM TARGET_ENV spv1.3\n")
         with tempfile.NamedTemporaryFile(suffix=".spasm") as fr:
-            shader.generate_assembly_file(filename=fr.name)
+            shader.generate_assembly_file(fr.name)
             lines = fr.readlines()
             for line in lines:
                 fw.write(line.decode("utf-8"))

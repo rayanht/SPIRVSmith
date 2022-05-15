@@ -148,8 +148,8 @@ class ShaderGenerator:
                         thread_pool_executor.submit(
                             BQ_insert_new_shader, shader, self.generator_id
                         )
-                if paused:
-                    Monitor(self.config).info(event=Event.PAUSED)
+            if paused:
+                Monitor(self.config).info(event=Event.PAUSED)
 
             if random.SystemRandom().random() <= self.config.strategy.mutation_rate:
                 old_strategy = copy.deepcopy(self.config.strategy)

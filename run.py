@@ -96,7 +96,7 @@ class FuzzingStrategyConfig:
     )
 
     # P(generating a statement at step t + 1 | a statement was generated at step t)
-    p_statement: float = 0.997
+    p_statement: float = 0.995
 
     # Number of optimiser fuzzing iterations
     optimiser_fuzzing_iterations: int = 20

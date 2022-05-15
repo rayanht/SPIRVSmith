@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.fuzzing_server import SPIRVShader
 from src.monitor import Event, Monitor
-from src.shader_utils import validate_spv_file
 
 SPIRV_OPTIMISER_FLAGS = [
     "--amd-ext-to-khr",

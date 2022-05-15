@@ -1,7 +1,5 @@
 import hashlib
 import inspect
-import pickle
-import time
 from abc import ABC
 from dataclasses import field
 from dataclasses import fields
@@ -10,6 +8,7 @@ from typing import Generic
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
+import dill
 from typing_extensions import Self
 
 
@@ -64,7 +63,7 @@ class OpCode(ABC):
     def __hash__(self) -> int:
         return int(
             hashlib.sha224(
-                pickle.dumps(
+                dill.dumps(
                     tuple([hash(getattr(self, attr)) for attr in self.members()])
                 )
             ).hexdigest(),
