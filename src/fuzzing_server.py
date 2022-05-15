@@ -100,15 +100,11 @@ def start_fuzzer():
 
 
 def register_generator_configuration(generator_id: str, config: "SPIRVSmithConfig"):
-    if config.misc.broadcast_generated_shaders:
-        cred = credentials.Certificate("infra/spirvsmith_gcp.json")
-        firebase_admin.initialize_app(cred)
-
-        firestore_client = firestore.client()
-        document_reference = firestore_client.collection("configurations").document(
-            str(generator_id)
-        )
-        document_reference.set(OmegaConf.to_container(config))
+    firestore_client = firestore.client()
+    document_reference = firestore_client.collection("configurations").document(
+        str(generator_id)
+    )
+    document_reference.set(OmegaConf.to_container(config))
 
 
 @dataclass
@@ -123,7 +119,10 @@ class ShaderGenerator:
             flask_thread = ServerThread(app)
             flask_thread.start()
 
-        register_generator_configuration(self.generator_id, self.config)
+        if self.config.misc.broadcast_generated_shaders:
+            cred = credentials.Certificate("infra/spirvsmith_gcp.json")
+            firebase_admin.initialize_app(cred)
+            register_generator_configuration(self.generator_id, self.config)
 
         try:
             os.mkdir("out")
@@ -156,7 +155,8 @@ class ShaderGenerator:
                 old_strategy = copy.deepcopy(self.config.strategy)
                 mutate_config(self.config)
                 self.generator_id = str(uuid4())
-                register_generator_configuration(self.generator_id, self.config)
+                if self.config.misc.broadcast_generated_shaders:
+                    register_generator_configuration(self.generator_id, self.config)
                 Monitor(self.config).info(
                     event=Event.GENERATOR_MUTATION,
                     extra={

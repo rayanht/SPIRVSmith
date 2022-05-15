@@ -24,7 +24,7 @@ class MutationsConfig:
     w_memory_operation: tuple[int, int] = (2, 6)
     w_logical_operation: tuple[int, int] = (2, 6)
     w_arithmetic_operation: tuple[int, int] = (2, 6)
-    w_control_flow_operation: tuple[int, int] = (0, 1)
+    w_control_flow_operation: tuple[int, int] = (0, 2)
     w_function_operation: tuple[int, int] = (1, 1)
     w_bitwise_operation: tuple[int, int] = (2, 6)
     w_conversion_operation: tuple[int, int] = (2, 6)
@@ -96,7 +96,7 @@ class FuzzingStrategyConfig:
     )
 
     # P(generating a statement at step t + 1 | a statement was generated at step t)
-    p_statement: float = 0.995
+    p_statement: float = 0.997
 
     # Number of optimiser fuzzing iterations
     optimiser_fuzzing_iterations: int = 20
@@ -110,7 +110,7 @@ class FuzzingStrategyConfig:
 @dataclass
 class MiscConfig:
     start_web_server: bool = False
-    broadcast_generated_shaders: bool = False
+    broadcast_generated_shaders: bool = True
     upload_logs: bool = True
     version: str = get_spirvsmith_version()
 
