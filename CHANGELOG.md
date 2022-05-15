@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.2.0 - 2022-05-15
+#### Bug Fixes
+- **(infra)** remove extraneous comma in DB schema - (05e5932) - Rayan Hatout
+#### Features
+- **(all)** implement SPIR-V parser - (9ecced7) - Rayan Hatout
+- **(fuzzer)** implement random mutations - (a1a5ca8) - Rayan Hatout
+- **(reducer)** implement interestingness-guided automatic reduction, only uses statics checks for now - (bad987a) - Rayan Hatout
+- **(runner)** add debug prints as a workaround for not being able to install DataDog on DoC machines - (5ed4a5c) - Rayan Hatout
+#### Style
+- **(all)** clean-up imports - (1ad4636) - Rayan Hatout
+
+- - -
 ## v1.1.0 - 2022-05-03
 #### Bug Fixes
 - **(infra)** add missing comma in Terraform config - (8cb81f0) - Rayan Hatout
