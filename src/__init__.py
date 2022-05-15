@@ -137,7 +137,7 @@ T = TypeVar("T", bound=OpCode)
 class FuzzResult(Generic[T]):
     opcode: T
     side_effects: list[OpCode] = field(default_factory=list)
-    is_opcode_pre_side_effects: bool = field(default_factory=lambda: False, init=False)
+    is_opcode_pre_side_effects: bool = field(default_factory=lambda: False)
 
 
 # A FuzzDelegator is a transient object, we need to commit

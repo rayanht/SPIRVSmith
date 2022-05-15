@@ -6,6 +6,9 @@ from enum import Enum
 from random import SystemRandom
 from uuid import uuid4
 
+from shortuuid import uuid
+from typing_extensions import Self
+
 from src import OpCode
 from src.context import Context
 from src.enums import (
@@ -18,25 +21,24 @@ from src.misc import OpMemoryModel
 from src.monitor import Event
 from src.monitor import Monitor
 from src.operators.memory.variable import OpVariable
+from src.recondition import recondition_opcodes
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
+from src.utils import SubprocessResult
 
 
 @dataclass
 class SPIRVShader:
+    id: str = field(default_factory=lambda: str(uuid()), init=False)
     capabilities: list[OpCapability]
-    # extension: Optional[list[Extension]]
-    # ext_inst: list[ExtInstImport]
     memory_model: OpMemoryModel
     entry_point: OpEntryPoint
     execution_mode: OpExecutionMode
     opcodes: list[OpCode]
     context: Context
-    id: str = field(default_factory=lambda: str(uuid4()))
 
-    def export(self, filename: str) -> None:
-        # Generate assembly
-        with open(filename, "w") as f:
+    def generate_assembly_file(self, outfile_path: str) -> None:
+        with open(outfile_path, "w") as f:
             f.write("; Magic:     0x07230203 (SPIR-V)\n")
             f.write("; Version:   0x00010300 (Version: 1.3.0)\n")
             f.write("; Generator: 0x00220001 (SPIRVSmith)\n")
@@ -60,6 +62,73 @@ class SPIRVShader:
                 f.write(tvc.to_spasm(self.context))
             for opcode in self.opcodes:
                 f.write(opcode.to_spasm(self.context))
+
+    def normalise_ids(self: Self) -> Self:
+        def id_generator(i=1):
+            while True:
+                yield i
+                i += 1
+
+        id_gen = id_generator()
+        for ext in self.context.extension_sets.values():
+            ext.id = str(next(id_gen))
+        new_tvc = {}
+        for tvc in self.context.tvc.keys():
+            tvc.id = str(next(id_gen))
+            new_tvc[tvc] = tvc.id
+        self.context.tvc = new_tvc
+        for opcode in self.opcodes:
+            opcode.id = str(next(id_gen))
+
+        return self
+
+    def recondition(self: Self) -> Self:
+        self.opcodes = recondition_opcodes(self.context, self.opcodes)
+        return self
+
+    def assemble(self: Self, outfile_path: str, silent: bool = False) -> bool:
+        with tempfile.NamedTemporaryFile(suffix=".spasm") as spasm_file:
+            self.generate_assembly_file(spasm_file.name)
+            process_result: SubprocessResult = assemble_spasm_file(
+                spasm_file.name, outfile_path
+            )
+            if process_result.exit_code != 0 and not silent:
+                Monitor(self.context.config).error(
+                    event=Event.ASSEMBLER_FAILURE,
+                    extra={
+                        "stderr": process_result.stderr,
+                        "executed_command": process_result.executed_command,
+                        "shader_id": self.id,
+                    },
+                )
+                return False
+            elif not silent:
+                Monitor(self.context.config).info(
+                    event=Event.ASSEMBLER_SUCCESS, extra={"shader_id": self.id}
+                )
+                return True
+
+    def validate(self: Self, silent: bool = False) -> bool:
+        with tempfile.NamedTemporaryFile(suffix=".spv") as spv_file:
+            if not self.assemble(spv_file.name, silent):
+                return False
+            process_result: SubprocessResult = validate_spv_file(spv_file.name)
+            if process_result.exit_code != 0 and not silent:
+                Monitor(self.context.config).error(
+                    event=Event.VALIDATOR_FAILURE,
+                    extra={
+                        "stderr": process_result.stderr,
+                        "executed_command": process_result.executed_command,
+                        "shader_id": self.id,
+                    },
+                )
+                return False
+            elif not silent:
+                Monitor(self.context.config).info(
+                    event=Event.VALIDATOR_SUCCESS,
+                    extra={"shader_id": self.id},
+                )
+                return True
 
 
 # class CrossLanguage(Enum):
@@ -91,71 +160,77 @@ class SPIRVShader:
 #     return process.returncode == 0
 
 
-def assemble_shader(shader: SPIRVShader, filename: str, silent: bool = False) -> bool:
-    with tempfile.NamedTemporaryFile(suffix=".spasm") as infile:
-        shader.export(filename=infile.name)
-        process: subprocess.CompletedProcess = subprocess.run(
-            [
-                shader.context.config.binaries.ASSEMBLER_PATH,
-                "--target-env",
-                "spv1.3",
-                infile.name,
-                "-o",
-                filename,
-            ],
-            capture_output=True,
-        )
-        if process.returncode != 0 and not silent:
-            Monitor(shader.context.config).error(
-                event=Event.ASSEMBLER_FAILURE,
-                extra={
-                    "stderr": process.stderr.decode("utf-8"),
-                    "cli_args": str(process.args),
-                    "shader_id": shader.id,
-                },
-            )
-        elif not silent:
-            Monitor(shader.context.config).info(
-                event=Event.ASSEMBLER_SUCCESS, extra={"shader_id": shader.id}
-            )
-
-        return process.returncode == 0
-
-
-def validate_spirv_file(
-    shader: SPIRVShader,
-    filename: str,
-    opt: bool = False,
-    silent: bool = False,
-) -> bool:
+def assemble_spasm_file(infile_path: str, outfile_path: str) -> SubprocessResult:
     process: subprocess.CompletedProcess = subprocess.run(
         [
-            shader.context.config.binaries.VALIDATOR_PATH,
+            "spirv-as",
+            "--target-env",
+            "spv1.3",
+            infile_path,
+            "-o",
+            outfile_path,
+        ],
+        capture_output=True,
+    )
+    return SubprocessResult(
+        process.returncode,
+        process.stdout.decode("utf-8"),
+        process.stderr.decode("utf-8"),
+        " ".join(process.args),
+    )
+
+
+def disassemble_spv_file(spv_path: str, outfile_path: str, silent: bool = False):
+    process: subprocess.CompletedProcess = subprocess.run(
+        [
+            "spirv-dis",
+            "--no-indent",
+            "--raw-id",
+            "-o",
+            outfile_path,
+            spv_path,
+        ],
+        capture_output=True,
+    )
+    if process.returncode != 0 and not silent:
+        Monitor().error(
+            event=Event.DISASSEMBLER_FAILURE,
+            extra={
+                "stderr": process.stderr.decode("utf-8"),
+                "run_args": " ".join(process.args),
+                "shader_id": spv_path.split("/")[-1].split(".spv")[0],
+            },
+        )
+    elif not silent:
+        Monitor().info(
+            event=Event.DISASSEMBLER_SUCCESS,
+            extra={"shader_id": spv_path.split("/")[-1].split(".spv")[0]},
+        )
+
+    return process.returncode == 0
+
+
+def validate_spv_file(
+    filename: str,
+) -> SubprocessResult:
+    process: subprocess.CompletedProcess = subprocess.run(
+        [
+            "spirv-val",
             "--target-env",
             "vulkan1.2",
             filename,
         ],
         capture_output=True,
     )
-    if process.returncode != 0 and not silent:
-        Monitor(shader.context.config).error(
-            event=Event.VALIDATOR_OPT_FAILURE if opt else Event.VALIDATOR_FAILURE,
-            extra={
-                "stderr": process.stderr.decode("utf-8"),
-                "cli_args": str(process.args),
-                "shader_id": shader.id,
-            },
-        )
-    elif not silent:
-        Monitor(shader.context.config).info(
-            event=Event.VALIDATOR_OPT_SUCCESS if opt else Event.VALIDATOR_SUCCESS,
-            extra={"shader_id": shader.id},
-        )
-
-    return process.returncode == 0
+    return SubprocessResult(
+        process.returncode,
+        process.stdout.decode("utf-8"),
+        process.stderr.decode("utf-8"),
+        " ".join(process.args),
+    )
 
 
-def optimise_spirv_file(shader: SPIRVShader, filename: str) -> bool:
+def optimise_spv_file(shader: SPIRVShader, filename: str) -> bool:
     process: subprocess.CompletedProcess = subprocess.run(
         [
             shader.context.config.binaries.OPTIMISER_PATH,
@@ -171,7 +246,35 @@ def optimise_spirv_file(shader: SPIRVShader, filename: str) -> bool:
             event=Event.OPTIMIZER_FAILURE,
             extra={
                 "stderr": process.stderr.decode("utf-8"),
-                "cli_args": str(process.args),
+                "run_args": " ".join(process.args),
+                "shader_id": shader.id,
+            },
+        )
+    else:
+        Monitor(shader.context.config).info(
+            event=Event.OPTIMIZER_SUCCESS, extra={"shader_id": shader.id}
+        )
+
+    return process.returncode == 0
+
+
+def reduce_spv_file(shader: SPIRVShader, filename: str) -> bool:
+    process: subprocess.CompletedProcess = subprocess.run(
+        [
+            shader.context.config.binaries.OPTIMISER_PATH,
+            "--target-env=spv1.3",
+            filename,
+            "-o",
+            f"out/{shader.id}/spv_opt/shader.spv",
+        ],
+        capture_output=True,
+    )
+    if process.returncode != 0:
+        Monitor(shader.context.config).error(
+            event=Event.OPTIMIZER_FAILURE,
+            extra={
+                "stderr": process.stderr.decode("utf-8"),
+                "run_args": " ".join(process.args),
                 "shader_id": shader.id,
             },
         )
@@ -281,7 +384,7 @@ def create_amber_file(shader: SPIRVShader, filename: str) -> None:
         fw.write("#!amber\n")
         fw.write(f"SHADER compute {'shader'} SPIRV-ASM TARGET_ENV spv1.3\n")
         with tempfile.NamedTemporaryFile(suffix=".spasm") as fr:
-            shader.export(filename=fr.name)
+            shader.generate_assembly_file(filename=fr.name)
             lines = fr.readlines()
             for line in lines:
                 fw.write(line.decode("utf-8"))
