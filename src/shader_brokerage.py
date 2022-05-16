@@ -78,7 +78,7 @@ def BQ_update_shader_with_buffer_dumps(
         "{execution_platform.get_active_hardware().hardware_model}",
         "{execution_platform.get_active_hardware().driver_version}",
         "{execution_platform.vulkan_backend.value}",
-        CURRENT_TIMESTAMP(),
+        CURRENT_TIMESTAMP()
     )
     """
     delete_query = f"""
