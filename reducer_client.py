@@ -37,9 +37,10 @@ class SPIRVReducer(ProgramReducer):
     @classmethod
     def reduce(cls, target: ReductionTarget) -> ReductionResult:
         shader: SPIRVShader = GCS_download_shader(target.shader_id)
+        n_expected_reports: int = len(target.shader_data)
         with NamedTemporaryFile(suffix=".spv") as spv_in_file:
             with NamedTemporaryFile(suffix=".spv") as spv_out_file:
-                if not shader.assemble(spv_in_file.name, silent=True):
+                if not shader.assemble(spv_in_file.name):
                     return ReductionResult(False, shader)
                 reduce_process: subprocess.CompletedProcess = subprocess.run(
                     [
@@ -47,12 +48,15 @@ class SPIRVReducer(ProgramReducer):
                         spv_in_file.name,
                         "-o",
                         spv_out_file.name,
-                        "--" f"./scripts/interestingness.sh",
-                        {shader.id},
+                        "--",
+                        f"./scripts/interestingness.sh",
+                        shader.id,
+                        str(n_expected_reports),
                     ],
                     capture_output=True,
                 )
                 if reduce_process.returncode != 0:
+                    print(reduce_process.stderr.decode("utf-8"))
                     return ReductionResult(False, shader)
                 with NamedTemporaryFile(
                     suffix=".spasm"
@@ -60,7 +64,6 @@ class SPIRVReducer(ProgramReducer):
                     if not disassemble_spv_file(
                         spv_out_file.name,
                         disassembled_reduced_spasm_file.name,
-                        silent=True,
                     ):
                         return ReductionResult(False, shader)
                     parsed_shader: SPIRVShader = parse_spirv_assembly_file(
@@ -87,4 +90,4 @@ if __name__ == "__main__":
             reduction_result: ReductionResult = SPIRVReducer.reduce(reduction_target)
             if reduction_result.success:
                 print(f"Shader {shader_id} successfully reduced.")
-        exit(0)
+            exit(0)
