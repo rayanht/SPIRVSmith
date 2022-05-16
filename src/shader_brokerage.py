@@ -121,7 +121,7 @@ def BQ_fetch_shaders_pending_execution(
 
 
 def BQ_fetch_mismatched_shaders() -> RowIterator:
-    mismatches_query: str = """
+    mismatches_query: str = f"""
     SELECT
     t1.shader_id,
     n_buffers,
@@ -154,6 +154,7 @@ def BQ_fetch_mismatched_shaders() -> RowIterator:
     t1.shader_id = t2.shader_id
     WHERE
     buffer_dump IS NOT NULL
+    AND generator_version = "{get_spirvsmith_version()}"
     ORDER BY
     shader_id
     """
