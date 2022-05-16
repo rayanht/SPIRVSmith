@@ -35,6 +35,8 @@ def is_interesting(spv_file_path: str, n_reports: int) -> int:
             if len(buffer_dumps) >= n_reports:
                 break
             time.sleep(5)
+        if not all(x == buffer_dumps[0] for x in buffer_dumps):
+            return 1
 
 
 if __name__ == "__main__":

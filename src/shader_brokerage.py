@@ -98,23 +98,53 @@ def BQ_fetch_shaders_pending_execution(
     execution_platform: ExecutionPlatform,
 ) -> RowIterator:
     fetch_query: str = f"""
+        SELECT shader_id, n_buffers, generator_version, generator_id, execution_priority
+        FROM (
         SELECT
-        *
+            shader_id,
+            n_buffers,
+            generator_version,
+            generator_id,
+            MIN(insertion_time) AS insertion_time,
+            MAX(execution_priority) AS execution_priority,
+            ARRAY_AGG(platform_backend) AS platform_backend,
+            ARRAY_AGG(platform_os) AS platform_os,
+            ARRAY_AGG(platform_hardware_type) AS platform_hardware_type
         FROM
-        `spirvsmith.spirv.shader_data`
+            `spirvsmith.spirv.shader_data`
+        GROUP BY
+            shader_id,
+            n_buffers,
+            generator_version,
+            generator_id)
         WHERE
-        (platform_os != "{execution_platform.operating_system.value}"
-        OR platform_os IS NULL)
-        AND (platform_hardware_type != "{execution_platform.get_active_hardware().hardware_type.value}"
-        OR platform_hardware_type IS NULL)
-        AND (platform_backend != "{execution_platform.vulkan_backend.value}"
-        OR platform_backend IS NULL)
-        OR (platform_os = "{execution_platform.operating_system.value}"
-        AND platform_hardware_type = "{execution_platform.get_active_hardware().hardware_type.value}"
-        AND platform_backend = "{execution_platform.vulkan_backend.value}"
-        AND buffer_dump IS NULL)
-        AND generator_version = "{get_spirvsmith_version()}"
-        ORDER BY execution_priority DESC, insertion_time ASC
+        NOT EXISTS (
+            SELECT
+                *
+            FROM
+                UNNEST(platform_os) AS s
+            WHERE
+                s = "{execution_platform.operating_system.value}"
+        )
+        AND NOT EXISTS (
+            SELECT
+                *
+            FROM
+                UNNEST(platform_backend) AS s
+            WHERE
+                s = "{execution_platform.vulkan_backend.value}"
+        )
+        AND NOT EXISTS (
+            SELECT
+                *
+            FROM
+                UNNEST(platform_hardware_type) AS s
+            WHERE
+                s = "{execution_platform.get_active_hardware().hardware_type.value}"
+        )
+        ORDER BY
+        execution_priority DESC,
+        insertion_time ASC
     """
     query_job: QueryJob = BQ_CLIENT.query(fetch_query)
     return query_job.result()
