@@ -175,3 +175,13 @@ def BQ_fetch_reduced_buffer_dumps(shader_id: str) -> RowIterator:
     """
     query_job: QueryJob = BQ_CLIENT.query(fetch_query)
     return query_job.result()
+
+
+def BQ_delete_shader(shader_id: str) -> None:
+    delete_query = f"""
+        DELETE FROM
+        `spirvsmith.spirv.shader_data`
+        WHERE
+        shader_id = "{shader_id}"
+    """
+    BQ_CLIENT.query(delete_query).result()

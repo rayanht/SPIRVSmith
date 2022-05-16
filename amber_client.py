@@ -5,12 +5,14 @@ from functools import reduce
 from itertools import repeat
 from operator import iconcat
 
+from google.api_core.exceptions import NotFound
 from google.cloud.bigquery.table import RowIterator
 
 from run import *
 from src.execution_platform import ExecutionPlatform
 from src.monitor import Event
 from src.monitor import Monitor
+from src.shader_brokerage import BQ_delete_shader
 from src.shader_brokerage import BQ_fetch_shaders_pending_execution
 from src.shader_brokerage import BQ_update_shader_with_buffer_dumps
 from src.shader_brokerage import GCS_download_shader
@@ -20,6 +22,16 @@ from src.shader_utils import SPIRVShader
 AMBER_PATH = "bin/amber"
 
 MONITOR = Monitor()
+
+terminate = False
+
+
+def signal_handling(signum, frame):
+    global terminate
+    terminate = True
+
+
+signal.signal(signal.SIGINT, signal_handling)
 
 
 def run_amber(amber_filename: str, n_buffers: int, shader_id: str) -> str:
@@ -88,7 +100,11 @@ if __name__ == "__main__":
         n_pending = pending_shaders.total_rows
         print(f"Found {n_pending} pending shaders for {str(execution_platform)}")
         for row in pending_shaders:
-            shader: SPIRVShader = GCS_download_shader(row.shader_id)
+            try:
+                shader: SPIRVShader = GCS_download_shader(row.shader_id)
+            except NotFound:
+                print(f"No GCS entry found for shader {row.shader_id}")
+                BQ_delete_shader(row.shader_id)
             with tempfile.NamedTemporaryFile(suffix=".amber") as amber_file:
                 create_amber_file(shader, amber_file.name)
                 buffer_dump: str = run_amber(
@@ -103,3 +119,7 @@ if __name__ == "__main__":
                         row.shader_id,
                         buffer_dump,
                     )
+            if terminate:
+                break
+        if terminate:
+            break
