@@ -1,8 +1,10 @@
+from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
 
 import dill
 
 from src.execution_platform import ExecutionPlatform
+from src.shader_parser import parse_spirv_assembly_file
 from src.utils import get_spirvsmith_version
 
 if TYPE_CHECKING:
@@ -22,15 +24,17 @@ if "pytest" not in sys.modules:
 
 
 def GCS_upload_shader(shader: "SPIRVShader") -> None:
-    pickled_shader: bytes = dill.dumps(shader, protocol=dill.HIGHEST_PROTOCOL)
-    blob = BUCKET.blob(f"{shader.id}.pkl")
-    blob.upload_from_string(pickled_shader)
+    with NamedTemporaryFile(suffix=".spasm") as f:
+        shader.assemble(f.name, silent=True)
+        blob = BUCKET.blob(f"{shader.id}.spasm")
+        blob.upload_from_filename(f.name)
 
 
 def GCS_download_shader(shader_id: str) -> "SPIRVShader":
-    blob = BUCKET.blob(f"{shader_id}.pkl")
-    pickled_shader: bytes = blob.download_as_bytes()
-    return dill.loads(pickled_shader)
+    with NamedTemporaryFile(suffix=".spasm") as f:
+        blob = BUCKET.blob(f"{shader_id}.spasm")
+        blob.download_to_filename(f.name)
+        return parse_spirv_assembly_file(f.name)
 
 
 def BQ_insert_new_shader(
@@ -154,4 +158,19 @@ def BQ_fetch_mismatched_shaders() -> RowIterator:
     shader_id
     """
     query_job: QueryJob = BQ_CLIENT.query(mismatches_query)
+    return query_job.result()
+
+
+def BQ_fetch_reduced_buffer_dumps(shader_id: str) -> RowIterator:
+    fetch_query: str = f"""
+        SELECT
+        *
+        FROM
+        `spirvsmith.spirv.shader_data`
+        WHERE
+        shader_id = "{shader_id}"
+        AND buffer_dump IS NOT NULL
+        AND generator_id = "reducer"
+    """
+    query_job: QueryJob = BQ_CLIENT.query(fetch_query)
     return query_job.result()

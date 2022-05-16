@@ -1,1 +1,1 @@
-python3 interestingness.py $1 $2
+python3 interestingness.py $1 $2 $3
