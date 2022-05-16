@@ -145,3 +145,4 @@ out/
 **/**.metal
 **/**.metallib
 **/**.txt
+bin/
