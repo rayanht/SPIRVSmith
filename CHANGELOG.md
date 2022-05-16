@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.3.0 - 2022-05-16
+#### Bug Fixes
+- **(brokerage)** limit fetching of mismatched shaders to current generator version - (bcd3142) - Rayan Hatout
+- **(brokerage)** remove extraneous comma in buffer dump insert query - (b0fb57d) - Rayan Hatout
+- **(brokerage)** replace use of pickle by dill - (68e122d) - Rayan Hatout
+- **(brokerage)** remove extraneous quote in pending shaders query - (56afd6a) - Rayan Hatout
+#### Miscellaneous Chores
+- **(version)** v1.2.0 - (92964bd) - Rayan Hatout
+
+- - -
+
 ## v1.2.0 - 2022-05-15
 #### Bug Fixes
 - **(infra)** remove extraneous comma in DB schema - (05e5932) - Rayan Hatout
