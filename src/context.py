@@ -53,6 +53,7 @@ class Context:
     parent_context: Optional["Context"]
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
+    rng: random.SystemRandom
     symbol_table: list["OpCode"] = field(default_factory=list)
     tvc: dict["OpCode", str] = field(default_factory=dict)
     annotations: dict[Annotation, NoneType] = field(default_factory=dict)
@@ -64,7 +65,7 @@ class Context:
         execution_model: ExecutionModel,
         config: "SPIRVSmithConfig",
     ) -> "Context":
-        return cls(None, None, execution_model, config)
+        return cls(None, None, execution_model, config, random.SystemRandom())
 
     def make_child_context(self, function: Optional[OpFunction] = None) -> Self:
         return Context(
@@ -72,6 +73,7 @@ class Context:
             self,
             self.execution_model,
             self.config,
+            self.rng,
             tvc=self.tvc,
             annotations=self.annotations,
             extension_sets=self.extension_sets,
@@ -99,7 +101,7 @@ class Context:
             filter(predicate, self.get_local_variables() + self.get_global_variables())
         )
         try:
-            return random.SystemRandom().choice(variables)
+            return self.rng.choice(variables)
         except IndexError:
             Monitor(self.config).info(
                 event=Event.NO_OPERAND_FOUND,
@@ -183,7 +185,7 @@ class Context:
 
     def gen_global_variables(self):
         n = len(self.tvc)
-        for i in range(random.SystemRandom().randint(1, 3)):
+        for i in range(self.rng.randint(1, 3)):
             variable = self.create_on_demand_variable(StorageClass.StorageBuffer)
             if len(self.tvc) != n:
                 self.add_annotation(
@@ -264,7 +266,7 @@ class Context:
 
         # TODO parametrize using a geometric distribution
         try:
-            return random.SystemRandom().choice(list(statements) + list(constants))
+            return self.rng.choice(list(statements) + list(constants))
         except IndexError:
             try:
                 opcode_name: str = inspect.stack()[1][0].f_locals["cls"].__name__
@@ -337,7 +339,7 @@ class Context:
         if type:
             pointer_inner_type = type
         else:
-            pointer_inner_type = random.SystemRandom().choice(
+            pointer_inner_type = self.rng.choice(
                 list(
                     filter(
                         lambda tvc: isinstance(tvc, OpTypeStruct),

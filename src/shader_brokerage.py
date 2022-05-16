@@ -25,7 +25,7 @@ if "pytest" not in sys.modules:
 
 def GCS_upload_shader(shader: "SPIRVShader") -> None:
     with NamedTemporaryFile(suffix=".spasm") as f:
-        shader.assemble(f.name, silent=True)
+        shader.generate_assembly_file(f.name)
         blob = BUCKET.blob(f"{shader.id}.spasm")
         blob.upload_from_filename(f.name)
 

@@ -41,7 +41,7 @@ class OpFunction(OpCode):
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         op_function: Self = cls(
             context.current_function_type.return_type,
-            random.SystemRandom().choice(list(FunctionControlMask)),
+            context.rng.choice(list(FunctionControlMask)),
             context.current_function_type,
         )
         child_context = context.make_child_context(op_function)
@@ -110,7 +110,7 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
         true_label = if_block[0]
         false_label = else_block[0]
         try:
-            condition = random.SystemRandom().choice(
+            condition = context.rng.choice(
                 context.get_statements(
                     lambda s: not isinstance(s, Untyped)
                     and isinstance(s.type, OpTypeBool)
@@ -204,7 +204,7 @@ def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCod
     # if context.config.strategy.enable_ext_glsl_std_450:
     #     import src.operators.arithmetic.glsl
 
-    while random.SystemRandom().random() < context.config.strategy.p_statement:
+    while context.rng.random() < block_context.config.strategy.p_statement:
         try:
             fuzzed_opcode: FuzzResult = Statement.fuzz(block_context)
         except AbortFuzzing:

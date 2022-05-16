@@ -42,7 +42,7 @@ class OpLoad(MemoryOperator):
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
-        variable: OpVariable = random.SystemRandom().choice(
+        variable: OpVariable = context.rng.choice(
             list(
                 filter(
                     Not(IsOutputVariable),
@@ -74,7 +74,7 @@ class OpAccessChain(MemoryOperator):
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         predicate: Callable[[OpVariable], bool] = lambda var: IsCompositeType(var.type)
-        base: OpVariable = random.SystemRandom().choice(
+        base: OpVariable = context.rng.choice(
             list(filter(predicate, context.get_storage_buffers()))
         )
         if base is None:
@@ -82,14 +82,12 @@ class OpAccessChain(MemoryOperator):
         composite_pointer = base.type
         if IsMatrixType(composite_pointer):
             indexes = (
-                random.SystemRandom().randint(0, len(composite_pointer.type) - 1),
-                random.SystemRandom().randint(0, len(composite_pointer.type.type) - 1),
+                context.rng.randint(0, len(composite_pointer.type) - 1),
+                context.rng.randint(0, len(composite_pointer.type.type) - 1),
             )
             pointer_inner_type = composite_pointer.get_base_type()
         else:
-            indexes = (
-                random.SystemRandom().randint(0, len(composite_pointer.type) - 1),
-            )
+            indexes = (context.rng.randint(0, len(composite_pointer.type) - 1),)
             pointer_inner_type = (
                 composite_pointer.type.types[indexes[0]]
                 if IsStructType(composite_pointer)

@@ -77,7 +77,7 @@ class OpTypeVector(UniformContainerType[ScalarType]):
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         fuzzed_inner_type: ScalarType = ScalarType.fuzz(context).opcode
-        size: int = random.SystemRandom().choice([2, 3, 4])
+        size: int = context.rng.choice([2, 3, 4])
         return FuzzResult(cls(type=fuzzed_inner_type, size=size), [fuzzed_inner_type])
 
     def __len__(self):
@@ -92,9 +92,9 @@ class OpTypeMatrix(UniformContainerType[OpTypeVector]):
     size: int
 
     @classmethod
-    def fuzz(cls, _: "Context") -> FuzzResult[Self]:
-        n_columns: int = random.SystemRandom().choice([2, 3, 4])
-        n_rows: int = random.SystemRandom().choice([2, 3, 4])
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        n_columns: int = context.rng.choice([2, 3, 4])
+        n_rows: int = context.rng.choice([2, 3, 4])
         float_type: OpTypeFloat = OpTypeFloat(width=32)
         vector_type: OpTypeVector = OpTypeVector(type=float_type, size=n_rows)
         return FuzzResult(
@@ -130,12 +130,12 @@ class OpTypeMatrix(UniformContainerType[OpTypeVector]):
 #             # will randomly pick from the reparametrized
 #             # probability distribution
 #             raise ReparametrizationError
-#         self.dim = random.SystemRandom().choice(list(Dim))
-#         self.depth = random.SystemRandom().choice([0, 1, 2])
-#         self.arrayed = random.SystemRandom().choice([0, 1])
-#         self.MS = random.SystemRandom().choice([0, 1])
-#         self.sampled = random.SystemRandom().choice([0, 1, 2])
-#         self.image_format = random.SystemRandom().choice(list(ImageFormat))
+#         self.dim = context.rng.choice(list(Dim))
+#         self.depth = context.rng.choice([0, 1, 2])
+#         self.arrayed = context.rng.choice([0, 1])
+#         self.MS = context.rng.choice([0, 1])
+#         self.sampled = context.rng.choice([0, 1, 2])
+#         self.image_format = context.rng.choice(list(ImageFormat))
 #         self.type = ScalarType().fuzz(context)[0]
 #         return [self.type, self]
 
@@ -148,7 +148,7 @@ class OpTypeArray(UniformContainerType[ScalarType]):
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         fuzzed_inner_type: ScalarType = ScalarType.fuzz(context).opcode
         length = context.create_on_demand_numerical_constant(
-            OpTypeInt, value=random.SystemRandom().randint(1, 32), width=32, signed=0
+            OpTypeInt, value=context.rng.randint(1, 32), width=32, signed=0
         )
         return FuzzResult(
             cls(type=fuzzed_inner_type, length=length),
@@ -177,11 +177,11 @@ class OpTypeStruct(MixedContainerType):
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         struct_types = []
         side_effect_types = []
-        for _ in range(random.SystemRandom().randint(2, 5)):
+        for _ in range(context.rng.randint(2, 5)):
             # TODO relax parameter type constraint
-            fuzzed_parameter_type: FuzzResult = (
-                random.SystemRandom().choice([OpTypeFloat, OpTypeInt]).fuzz(context)
-            )
+            fuzzed_parameter_type: FuzzResult = context.rng.choice(
+                [OpTypeFloat, OpTypeInt]
+            ).fuzz(context)
             struct_types.append(fuzzed_parameter_type.opcode)
             side_effect_types += fuzzed_parameter_type.side_effects
             side_effect_types.append(fuzzed_parameter_type.opcode)
@@ -198,8 +198,8 @@ class OpTypePointer(MixedContainerType):
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
-        fuzzed_type: FuzzResult = (
-            random.SystemRandom().choice([ScalarType, ContainerType]).fuzz(context)
+        fuzzed_type: FuzzResult = context.rng.choice([ScalarType, ContainerType]).fuzz(
+            context
         )
         return FuzzResult(
             cls(type=fuzzed_type.opcode, storage_class=StorageClass.StorageBuffer),
@@ -217,12 +217,12 @@ class OpTypeFunction(MiscType):
         if len(context.get_function_types()) >= context.config.limits.n_functions:
             MiscType.set_zero_probability(cls, context)
             raise ReparametrizationError
-        # return_type = random.SystemRandom().choice([ScalarType, ContainerType])().fuzz(context)
+        # return_type = context.rng.choice([ScalarType, ContainerType])().fuzz(context)
         return_type = OpTypeVoid()
         parameter_types = []
-        for _ in range(random.SystemRandom().randint(4, 7)):
-            parameter_type = (
-                random.SystemRandom().choice([ScalarType, ContainerType]).fuzz(context)
+        for _ in range(context.rng.randint(4, 7)):
+            parameter_type = context.rng.choice([ScalarType, ContainerType]).fuzz(
+                context
             )
             parameter_types.append(parameter_type.opcode)
         return FuzzResult(

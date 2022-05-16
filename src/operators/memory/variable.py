@@ -45,7 +45,7 @@ class OpVariable(MemoryOperator):
                 else StorageClass.Input
             )
         try:
-            variable_type = random.SystemRandom().choice(
+            variable_type = context.rng.choice(
                 list(
                     filter(
                         lambda t: isinstance(t, OpTypePointer)
@@ -70,7 +70,7 @@ class OpVariable(MemoryOperator):
                 else StorageClass.Input
             )
             if storage_class == target_storage_class:
-                pointer_inner_type = random.SystemRandom().choice(
+                pointer_inner_type = context.rng.choice(
                     list(
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct))
@@ -80,7 +80,7 @@ class OpVariable(MemoryOperator):
                     )
                 )
             else:
-                pointer_inner_type = random.SystemRandom().choice(
+                pointer_inner_type = context.rng.choice(
                     list(
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct)),

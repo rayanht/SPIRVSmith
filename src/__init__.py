@@ -216,16 +216,12 @@ class FuzzDelegator(OpCode):
         if sum(weights) == 0 or len(weights) == 0:
             print(cls, subclasses, weights)
         try:
-            return (
-                random.SystemRandom()
-                .choices(subclasses, weights=weights, k=1)[0]
-                .fuzz(context)
+            return context.rng.choices(subclasses, weights=weights, k=1)[0].fuzz(
+                context
             )
         except ReparametrizationError:
-            return (
-                random.SystemRandom()
-                .choices(subclasses, weights=weights, k=1)[0]
-                .fuzz(context)
+            return context.rng.choices(subclasses, weights=weights, k=1)[0].fuzz(
+                context
             )
 
 

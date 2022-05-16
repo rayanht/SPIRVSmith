@@ -58,23 +58,21 @@ class OpConstant(ScalarConstant):
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         fuzzed_type: OpTypeInt | OpTypeFloat = (
-            random.SystemRandom().choice([OpTypeInt, OpTypeFloat]).fuzz(context).opcode
+            context.rng.choice([OpTypeInt, OpTypeFloat]).fuzz(context).opcode
         )
 
         if isinstance(fuzzed_type, OpTypeInt):
             if fuzzed_type.signed:
                 return FuzzResult(
-                    cls(
-                        type=fuzzed_type, value=random.SystemRandom().randint(-100, 100)
-                    ),
+                    cls(type=fuzzed_type, value=context.rng.randint(-100, 100)),
                     [fuzzed_type],
                 )
             return FuzzResult(
-                cls(type=fuzzed_type, value=random.SystemRandom().randint(0, 100)),
+                cls(type=fuzzed_type, value=context.rng.randint(0, 100)),
                 [fuzzed_type],
             )
         return FuzzResult(
-            cls(type=fuzzed_type, value=random.SystemRandom().uniform(0, 100)),
+            cls(type=fuzzed_type, value=context.rng.uniform(0, 100)),
             [fuzzed_type],
         )
 
@@ -96,11 +94,9 @@ class OpConstantComposite(CompositeConstant):
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
-        fuzzed_inner_type: FuzzResult[Self] = (
-            random.SystemRandom()
-            .choice([OpTypeArray, OpTypeVector, OpTypeMatrix])
-            .fuzz(context)
-        )
+        fuzzed_inner_type: FuzzResult[Self] = context.rng.choice(
+            [OpTypeArray, OpTypeVector, OpTypeMatrix]
+        ).fuzz(context)
         constituents = []
         match fuzzed_inner_type.opcode:
             case OpTypeMatrix():

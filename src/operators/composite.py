@@ -81,7 +81,7 @@ class OpVectorShuffle(CompositeOperator):
         context.add_to_tvc(inner_type)
         components = tuple(
             [
-                random.SystemRandom().randint(0, len(inner_type) - 1)
+                context.rng.randint(0, len(inner_type) - 1)
                 for _ in range(len(inner_type))
             ]
         )
@@ -106,12 +106,12 @@ class OpCompositeExtract(CompositeOperator):
         composite: Operand = context.get_random_operand(IsCompositeType)
         if IsMatrixType(composite):
             indexes = (
-                random.SystemRandom().randint(0, len(composite.type) - 1),
-                random.SystemRandom().randint(0, len(composite.type.type) - 1),
+                context.rng.randint(0, len(composite.type) - 1),
+                context.rng.randint(0, len(composite.type.type) - 1),
             )
             inner_type = composite.get_base_type()
         else:
-            indexes = (random.SystemRandom().randint(0, len(composite.type) - 1),)
+            indexes = (context.rng.randint(0, len(composite.type) - 1),)
             inner_type = (
                 composite.type.types[indexes[0]]
                 if IsStructType(composite)
@@ -131,14 +131,14 @@ class OpCompositeInsert(CompositeOperator):
         composite = context.get_random_operand(IsCompositeType)
         if IsMatrixType(composite):
             indexes = (
-                random.SystemRandom().randint(0, len(composite.type) - 1),
-                random.SystemRandom().randint(0, len(composite.type.type) - 1),
+                context.rng.randint(0, len(composite.type) - 1),
+                context.rng.randint(0, len(composite.type.type) - 1),
             )
             target_object = context.get_random_operand(
                 HasType(composite.get_base_type())
             )
         else:
-            indexes = (random.SystemRandom().randint(0, len(composite.type) - 1),)
+            indexes = (context.rng.randint(0, len(composite.type) - 1),)
             target_type = (
                 composite.type.types[indexes[0]]
                 if IsStructType(composite)
