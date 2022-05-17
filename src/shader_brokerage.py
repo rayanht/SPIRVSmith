@@ -66,12 +66,13 @@ def BQ_update_shader_with_buffer_dumps(
     execution_platform: ExecutionPlatform,
     shader_id: str,
     buffer_dump: str,
+    downgrade_priority: bool = False,
 ) -> None:
     insert_query = f"""
     INSERT INTO `spirvsmith.spirv.shader_data`
     VALUES (
         "{shader_id}",
-        {original_entry.execution_priority},
+        {0 if downgrade_priority else original_entry.execution_priority},
         "{original_entry.generator_id}",
         "{original_entry.generator_version}",
         {original_entry.n_buffers},
@@ -207,16 +208,16 @@ def BQ_fetch_reduced_buffer_dumps(shader_id: str) -> RowIterator:
     return query_job.result()
 
 
-def BQ_are_there_high_priority_shaders() -> bool:
+def BQ_get_high_priority_shader_ids() -> set[str]:
     fetch_query: str = f"""
         SELECT
-        COUNT(*)
+        shader_id
         FROM
         `spirvsmith.spirv.shader_data`
         WHERE execution_priority = 1
     """
     query_job: QueryJob = BQ_CLIENT.query(fetch_query)
-    return query_job.result().to_dataframe().iloc[0][0] > 0
+    return set(row.shader_id for row in query_job.result())
 
 
 def BQ_delete_shader(shader_id: str) -> None:

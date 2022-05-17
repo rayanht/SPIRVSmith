@@ -15,6 +15,7 @@ from src.monitor import Monitor
 from src.shader_brokerage import BQ_are_there_high_priority_shaders
 from src.shader_brokerage import BQ_delete_shader
 from src.shader_brokerage import BQ_fetch_shaders_pending_execution
+from src.shader_brokerage import BQ_get_high_priority_shader_ids
 from src.shader_brokerage import BQ_update_shader_with_buffer_dumps
 from src.shader_brokerage import GCS_download_shader
 from src.shader_utils import create_amber_file
@@ -99,11 +100,9 @@ if __name__ == "__main__":
             execution_platform
         )
         n_pending = pending_shaders.total_rows
+        current_shader_set: set[str] = set(pending_shaders.to_dataframe()["shader_id"])
         print(f"Found {n_pending} pending shaders for {str(execution_platform)}")
         for row in pending_shaders:
-            if BQ_are_there_high_priority_shaders():
-                print("There are high priority shaders, refreshing execution queue...")
-                break
             try:
                 shader: SPIRVShader = GCS_download_shader(row.shader_id)
             except NotFound:
@@ -118,11 +117,16 @@ if __name__ == "__main__":
                 )
                 if buffer_dump:
                     BQ_update_shader_with_buffer_dumps(
-                        row,
-                        execution_platform,
-                        row.shader_id,
-                        buffer_dump,
+                        row, execution_platform, row.shader_id, buffer_dump
                     )
+            high_priority_shader_set: set[str] = BQ_get_high_priority_shader_ids()
+            if not all(
+                [shader in current_shader_set for shader in high_priority_shader_set]
+            ):
+                print(
+                    "Detected high priority shaders not in current execution queue, refreshing..."
+                )
+                break
             if terminate:
                 break
         if terminate:
