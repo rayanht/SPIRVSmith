@@ -12,7 +12,6 @@ from run import *
 from src.execution_platform import ExecutionPlatform
 from src.monitor import Event
 from src.monitor import Monitor
-from src.shader_brokerage import BQ_are_there_high_priority_shaders
 from src.shader_brokerage import BQ_delete_shader
 from src.shader_brokerage import BQ_fetch_shaders_pending_execution
 from src.shader_brokerage import BQ_get_high_priority_shader_ids
