@@ -53,7 +53,7 @@ class SPIRVReducer(ProgramReducer):
                         shader.id,
                         str(n_expected_reports),
                     ],
-                    capture_output=True,
+                    capture_output=False,
                 )
                 if reduce_process.returncode != 0:
                     print(reduce_process.stderr.decode("utf-8"))
@@ -75,12 +75,13 @@ class SPIRVReducer(ProgramReducer):
 if __name__ == "__main__":
     while True:
         mismatched_shaders: pd.DataFrame = BQ_fetch_mismatched_shaders().to_dataframe()
-        unique_mismatches: set[str] = set(mismatched_shaders.shader_id)
+        unique_mismatches: list[str] = mismatched_shaders.shader_id.unique()
         print(
             f"Found {len(mismatched_shaders)} mismatched shaders ({len(unique_mismatches)} unique)"
         )
         print(mismatched_shaders)
         for shader_id in unique_mismatches:
+            print(f"Reducing shader {shader_id}")
             reduction_target: ReductionTarget = ReductionTarget(
                 shader_id,
                 mismatched_shaders[mismatched_shaders.shader_id == shader_id].drop(
@@ -90,4 +91,7 @@ if __name__ == "__main__":
             reduction_result: ReductionResult = SPIRVReducer.reduce(reduction_target)
             if reduction_result.success:
                 print(f"Shader {shader_id} successfully reduced.")
+                reduction_result.reduced_shader.generate_assembly_file(
+                    f"interesting_shaders/{shader_id}.spasm"
+                )
             exit(0)

@@ -12,6 +12,7 @@ from run import *
 from src.execution_platform import ExecutionPlatform
 from src.monitor import Event
 from src.monitor import Monitor
+from src.shader_brokerage import BQ_are_there_high_priority_shaders
 from src.shader_brokerage import BQ_delete_shader
 from src.shader_brokerage import BQ_fetch_shaders_pending_execution
 from src.shader_brokerage import BQ_update_shader_with_buffer_dumps
@@ -100,6 +101,9 @@ if __name__ == "__main__":
         n_pending = pending_shaders.total_rows
         print(f"Found {n_pending} pending shaders for {str(execution_platform)}")
         for row in pending_shaders:
+            if BQ_are_there_high_priority_shaders():
+                print("There are high priority shaders, refreshing execution queue...")
+                break
             try:
                 shader: SPIRVShader = GCS_download_shader(row.shader_id)
             except NotFound:

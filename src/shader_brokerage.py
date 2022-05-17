@@ -46,7 +46,7 @@ def BQ_insert_new_shader(
             "{shader.id}",
             {1 if high_priority else 0},
             "{generator_id}",
-            "{shader.context.config.misc.version}",
+            "{get_spirvsmith_version()}",
             {len(shader.context.get_storage_buffers())},
             NULL,
             NULL,
@@ -195,7 +195,7 @@ def BQ_fetch_mismatched_shaders() -> RowIterator:
 def BQ_fetch_reduced_buffer_dumps(shader_id: str) -> RowIterator:
     fetch_query: str = f"""
         SELECT
-        *
+        buffer_dump
         FROM
         `spirvsmith.spirv.shader_data`
         WHERE
@@ -205,6 +205,18 @@ def BQ_fetch_reduced_buffer_dumps(shader_id: str) -> RowIterator:
     """
     query_job: QueryJob = BQ_CLIENT.query(fetch_query)
     return query_job.result()
+
+
+def BQ_are_there_high_priority_shaders() -> bool:
+    fetch_query: str = f"""
+        SELECT
+        COUNT(*)
+        FROM
+        `spirvsmith.spirv.shader_data`
+        WHERE execution_priority = 1
+    """
+    query_job: QueryJob = BQ_CLIENT.query(fetch_query)
+    return query_job.result().to_dataframe().iloc[0][0] > 0
 
 
 def BQ_delete_shader(shader_id: str) -> None:
