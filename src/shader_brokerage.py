@@ -2,6 +2,7 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
 
 import dill
+import pandas as pd
 
 from src.execution_platform import ExecutionPlatform
 from src.shader_parser import parse_spirv_assembly_file
@@ -97,7 +98,7 @@ def BQ_update_shader_with_buffer_dumps(
 
 def BQ_fetch_shaders_pending_execution(
     execution_platform: ExecutionPlatform,
-) -> RowIterator:
+) -> pd.DataFrame:
     fetch_query: str = f"""
         SELECT shader_id, n_buffers, generator_version, generator_id, execution_priority
         FROM (
@@ -148,7 +149,7 @@ def BQ_fetch_shaders_pending_execution(
         insertion_time ASC
     """
     query_job: QueryJob = BQ_CLIENT.query(fetch_query)
-    return query_job.result()
+    return query_job.result().to_dataframe()
 
 
 def BQ_fetch_mismatched_shaders() -> RowIterator:

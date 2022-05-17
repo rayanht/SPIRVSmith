@@ -5,6 +5,7 @@ from functools import reduce
 from itertools import repeat
 from operator import iconcat
 
+import pandas as pd
 from google.api_core.exceptions import NotFound
 from google.cloud.bigquery.table import RowIterator
 
@@ -95,13 +96,14 @@ if __name__ == "__main__":
     execution_platform.display_summary()
     input("Press enter to continue...")
     while True:
-        pending_shaders: RowIterator = BQ_fetch_shaders_pending_execution(
+        pending_shaders: pd.DataFrame = BQ_fetch_shaders_pending_execution(
             execution_platform
         )
-        n_pending = pending_shaders.total_rows
-        current_shader_set: set[str] = set(pending_shaders.to_dataframe()["shader_id"])
-        print(f"Found {n_pending} pending shaders for {str(execution_platform)}")
-        for row in pending_shaders:
+        current_shader_set: set[str] = set(pending_shaders.shader_id)
+        print(
+            f"Found {len(pending_shaders)} pending shaders for {str(execution_platform)}"
+        )
+        for _, row in pending_shaders.iterrows():
             try:
                 shader: SPIRVShader = GCS_download_shader(row.shader_id)
             except NotFound:
