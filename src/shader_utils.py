@@ -11,10 +11,10 @@ from shortuuid import uuid
 from typing_extensions import Self
 
 from src import OpCode
+from src.annotations import OpDecorate
 from src.context import Context
-from src.enums import (
-    StorageClass,
-)
+from src.enums import Decoration
+from src.enums import StorageClass
 from src.misc import OpCapability
 from src.misc import OpEntryPoint
 from src.misc import OpExecutionMode
@@ -332,6 +332,16 @@ def create_amber_file(shader: SPIRVShader, filename: str, seed: int) -> None:
     shader_interfaces: list[OpVariable] = shader.context.get_storage_buffers()
     struct_declarations: list[AmberStructDeclaration] = []
     buffers: list[AmberStructDefinition] = []
+    bindings: list[int] = sorted(
+        map(
+            lambda b: b.extra_operands[0],
+            filter(
+                lambda a: isinstance(a, OpDecorate)
+                and a.decoration == Decoration.Binding,
+                list(shader.context.annotations.keys()),
+            ),
+        )
+    )
     random.seed(seed)
     for i, interface in enumerate(shader_interfaces):
         amber_struct_members = []
@@ -397,9 +407,9 @@ def create_amber_file(shader: SPIRVShader, filename: str, seed: int) -> None:
             fw.write(f"{buffer.to_amberscript()}\n")
         fw.write(f"PIPELINE {'compute'} pipeline\n")
         fw.write(f"ATTACH {'shader'}\n")
-        for i, buffer in enumerate(buffers):
+        for buffer, binding in zip(buffers, bindings):
             fw.write(
-                f"BIND BUFFER {buffer.name} AS storage DESCRIPTOR_SET 0 BINDING {i}\n"
+                f"BIND BUFFER {buffer.name} AS storage DESCRIPTOR_SET 0 BINDING {binding}\n"
             )
         fw.write("END\n")
         fw.write("RUN pipeline 1 1 1\n")
