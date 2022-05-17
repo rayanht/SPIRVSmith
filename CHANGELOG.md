@@ -2,6 +2,44 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.4.0 - 2022-05-17
+#### Bug Fixes
+- **(brokerage)** modify the pending shaders query to avoid double execution by the same platform - (a9950dd) - Rayan Hatout
+- **(brokerage)** limit fetching of mismatched shaders to current generator version - (b5605b6) - Rayan Hatout
+- **(brokerage)** remove extraneous comma in buffer dump insert query - (eb1ecdb) - Rayan Hatout
+- **(brokerage)** replace use of pickle by dill - (223fa3c) - Rayan Hatout
+- **(brokerage)** remove extraneous quote in pending shaders query - (70059c6) - Rayan Hatout
+- **(fuzzer,runner)** add quotes around inserted values in DB queries - (e3e9728) - Rayan Hatout
+- **(infra)** remove extraneous comma in DB schema - (f6b0bda) - Rayan Hatout
+- **(infra)** add missing comma in Terraform config - (7b4efcd) - Rayan Hatout
+- **(runner)** avoid always refreshing the Amber runner execution queue - (0dc3981) - Rayan Hatout
+- **(runner)** remove extraneous comma in DML query - (beface7) - Rayan Hatout
+#### Features
+- **(all)** implement SPIR-V parser - (6dd0b0b) - Rayan Hatout
+- **(brokerage)** store raw SPIR-V assembly files in GCS instead of pickling - (656a602) - Rayan Hatout
+- **(fuzzer)** implement random mutations - (867168e) - Rayan Hatout
+- **(fuzzer,runner)** simplify code, enable parallelism and implement fuzzing of spirv-opt - (ec00929) - Rayan Hatout
+- **(infra)** record the shader revision in DB - (95cec8a) - Rayan Hatout
+- **(reducer)** implement interestingness-guided automatic reduction, only uses statics checks for now - (965b849) - Rayan Hatout
+- **(runner)** store random seed for buffer initialisation - (1633473) - Rayan Hatout
+- **(runner)** use a DataFrame object instead of a BigQuery RowIterator to maintain the execution queue - (dade575) - Rayan Hatout
+- **(runner)** add a check for pending high-priority shaders - (9520fcb) - Rayan Hatout
+- **(runner)** implement graceful termination and handle GCS missing shaders - (76e1b99) - Rayan Hatout
+- **(runner)** add debug prints as a workaround for not being able to install DataDog on DoC machines - (dd02a8a) - Rayan Hatout
+- **(runner,fuzzer)** use DML queries instead of streaming queries for DB manipulation - (41e8fb1) - Rayan Hatout
+#### Miscellaneous Chores
+- **(repo)** ignore binaries - (1f47c21) - Rayan Hatout
+- **(version)** v1.3.0 - (c6dd7bf) - Rayan Hatout
+- **(version)** v1.2.0 - (a4a44db) - Rayan Hatout
+- **(version)** v1.1.0 - (de2f30c) - Rayan Hatout
+#### Performance Improvements
+- **(fuzzer)** pass around an RNG object in the context to avoid initialisation overhead - (37db486) - Rayan Hatout
+#### Style
+- **(all)** clean-up imports - (3d0e8c2) - Rayan Hatout
+- **(runner)** clean up unused import - (a16ddfc) - Rayan Hatout
+
+- - -
+
 ## v1.3.0 - 2022-05-16
 #### Bug Fixes
 - **(brokerage)** limit fetching of mismatched shaders to current generator version - (bcd3142) - Rayan Hatout
