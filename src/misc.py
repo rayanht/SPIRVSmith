@@ -21,6 +21,9 @@ class OpNop(OpCode):
 class OpUndef(OpCode):
     type: Type
 
+    def get_base_type(self) -> Type:
+        return self.type.get_base_type()
+
 
 @dataclass
 class OpSizeOf(OpCode):
@@ -30,6 +33,9 @@ class OpSizeOf(OpCode):
     @staticmethod
     def get_required_capabilities() -> list[Capability]:
         return [Capability.Addresses]
+
+    def get_base_type(self) -> Type:
+        return self.type.get_base_type()
 
 
 @dataclass
