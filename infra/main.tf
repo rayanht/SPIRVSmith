@@ -166,6 +166,12 @@ resource "google_bigquery_table" "spirv_shader_data_table" {
     "type": "TIMESTAMP",
     "mode": "REQUIRED",
     "description": "Time of insertion into the database. Used to enforce FIFO execution."
+  },
+  {
+    "name": "buffer_initialisation_seed",
+    "type": "INT64",
+    "mode": "REQUIRED",
+    "description": "Seed used to randomly initialize the buffers"
   }
 ]
 EOF

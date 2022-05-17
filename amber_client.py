@@ -110,7 +110,9 @@ if __name__ == "__main__":
                 print(f"No GCS entry found for shader {row.shader_id}")
                 BQ_delete_shader(row.shader_id)
             with tempfile.NamedTemporaryFile(suffix=".amber") as amber_file:
-                create_amber_file(shader, amber_file.name)
+                create_amber_file(
+                    shader, amber_file.name, seed=row.buffer_initialisation_seed
+                )
                 buffer_dump: str = run_amber(
                     amber_filename=amber_file.name,
                     n_buffers=row.n_buffers,

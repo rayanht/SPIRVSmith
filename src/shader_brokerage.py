@@ -56,7 +56,8 @@ def BQ_insert_new_shader(
             NULL,
             NULL,
             NULL,
-            CURRENT_TIMESTAMP()
+            CURRENT_TIMESTAMP(),
+            {shader.context.rng.randint(1, 100)}
         )
     """
     BQ_CLIENT.query(insert_query).result()
@@ -84,7 +85,8 @@ def BQ_update_shader_with_buffer_dumps(
         "{execution_platform.get_active_hardware().hardware_model}",
         "{execution_platform.get_active_hardware().driver_version}",
         "{execution_platform.vulkan_backend.value}",
-        CURRENT_TIMESTAMP()
+        CURRENT_TIMESTAMP(),
+        {original_entry.buffer_initialisation_seed}
     )
     """
     delete_query = f"""
@@ -100,13 +102,14 @@ def BQ_fetch_shaders_pending_execution(
     execution_platform: ExecutionPlatform,
 ) -> pd.DataFrame:
     fetch_query: str = f"""
-        SELECT shader_id, n_buffers, generator_version, generator_id, execution_priority
+        SELECT shader_id, n_buffers, generator_version, generator_id, execution_priority, buffer_initialisation_seed
         FROM (
         SELECT
             shader_id,
             n_buffers,
             generator_version,
             generator_id,
+            buffer_initialisation_seed,
             MIN(insertion_time) AS insertion_time,
             MAX(execution_priority) AS execution_priority,
             ARRAY_AGG(platform_backend) AS platform_backend,
@@ -118,7 +121,8 @@ def BQ_fetch_shaders_pending_execution(
             shader_id,
             n_buffers,
             generator_version,
-            generator_id)
+            generator_id,
+            buffer_initialisation_seed)
         WHERE
         NOT EXISTS (
             SELECT
@@ -165,7 +169,8 @@ def BQ_fetch_mismatched_shaders() -> RowIterator:
     platform_hardware_driver_version,
     platform_backend,
     generator_id,
-    generator_version
+    generator_version,
+    buffer_initialisation_seed
     FROM (
     SELECT
         shader_id,

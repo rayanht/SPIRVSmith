@@ -1,3 +1,4 @@
+import random
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -326,11 +327,12 @@ class AmberStructDeclaration:
         return f"STRUCT {self.name}\n{chr(10).join([f'{member.type.value} {member.name}' for member in self.members])}\nEND"
 
 
-def create_amber_file(shader: SPIRVShader, filename: str) -> None:
+def create_amber_file(shader: SPIRVShader, filename: str, seed: int) -> None:
     # TODO we assume everything is a struct, relax this assumption at some point in the future
     shader_interfaces: list[OpVariable] = shader.context.get_storage_buffers()
     struct_declarations: list[AmberStructDeclaration] = []
     buffers: list[AmberStructDefinition] = []
+    random.seed(seed)
     for i, interface in enumerate(shader_interfaces):
         amber_struct_members = []
         for j, member in enumerate(interface.type.type.types):
@@ -340,7 +342,7 @@ def create_amber_file(shader: SPIRVShader, filename: str) -> None:
                         AmberStructMember(
                             f"var{j}",
                             AmberBufferType.INT32,
-                            SystemRandom().randint(-64, 64),
+                            random.randint(-64, 64),
                         )
                     )
                 case OpTypeInt():
@@ -348,7 +350,7 @@ def create_amber_file(shader: SPIRVShader, filename: str) -> None:
                         AmberStructMember(
                             f"var{j}",
                             AmberBufferType.UINT32,
-                            SystemRandom().randint(0, 128),
+                            random.randint(0, 128),
                         )
                     )
                 case OpTypeFloat():
@@ -356,7 +358,7 @@ def create_amber_file(shader: SPIRVShader, filename: str) -> None:
                         AmberStructMember(
                             f"var{j}",
                             AmberBufferType.FLOAT,
-                            SystemRandom().uniform(-64, 64),
+                            random.uniform(-64, 64),
                         )
                     )
                 case _:
