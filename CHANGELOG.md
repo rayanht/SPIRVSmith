@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.6.0 - 2022-05-19
+#### Bug Fixes
+- **(fuzzer)** handle case where no statements are available when picking random operands - (2b29856) - Rayan Hatout
+- **(runner)** correctly handle gaps in buffer bindings - (43ca411) - Rayan Hatout
+#### Features
+- **(fuzzer)** favour more recent operands when selecting random operands - (0bbd6f6) - Rayan Hatout
+#### Miscellaneous Chores
+- **(version)** v1.5.0 - (6c911e9) - Rayan Hatout
+#### Style
+- **(all)** clean-up code - (e2aaeb1) - Rayan Hatout
+
+- - -
+
 ## v1.5.0 - 2022-05-19
 #### Bug Fixes
 - **(utils)** use correct bindings when generating amber files - (eec1d5c) - Rayan Hatout
