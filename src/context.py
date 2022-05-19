@@ -275,9 +275,15 @@ class Context:
                     len(potential_operands) - n + len(potential_operands) // 2
                     for n in range(len(potential_operands))
                 ]
-                return self.rng.choices(potential_operands, weights=weights, k=1)[0]
+                try:
+                    return self.rng.choices(potential_operands, weights=weights, k=1)[0]
+                except IndexError:
+                    return self.rng.choice(list(constants))
             else:
-                return self.rng.choice(list(constants))
+                try:
+                    return self.rng.choice(list(constants))
+                except IndexError:
+                    return self.rng.choice(list(statements))
         except IndexError:
             try:
                 opcode_name: str = inspect.stack()[1][0].f_locals["cls"].__name__
