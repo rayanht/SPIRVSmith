@@ -169,7 +169,7 @@ class Context:
         for _ in range(n_scalars):
             try:
                 fuzzed_constant: FuzzResult = ScalarConstant.fuzz(self)
-            except RecursionError:
+            except (RecursionError, AbortFuzzing):
                 continue
             for side_effect in fuzzed_constant.side_effects:
                 self.add_to_tvc(side_effect)
@@ -177,7 +177,7 @@ class Context:
         for _ in range(n_constants - n_scalars):
             try:
                 fuzzed_constant: FuzzResult = CompositeConstant.fuzz(self)
-            except RecursionError:
+            except (RecursionError, AbortFuzzing):
                 continue
             for side_effect in fuzzed_constant.side_effects:
                 self.add_to_tvc(side_effect)
@@ -271,9 +271,12 @@ class Context:
             try:
                 opcode_name: str = inspect.stack()[1][0].f_locals["cls"].__name__
             except KeyError:
-                opcode_name: str = (
-                    inspect.stack()[1][0].f_locals["self"].__class__.__name__
-                )
+                try:
+                    opcode_name: str = (
+                        inspect.stack()[1][0].f_locals["self"].__class__.__name__
+                    )
+                except KeyError:
+                    opcode_name = "unknown"
             Monitor(self.config).info(
                 event=Event.NO_OPERAND_FOUND,
                 extra={

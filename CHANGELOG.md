@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.5.0 - 2022-05-19
+#### Bug Fixes
+- **(utils)** use correct bindings when generating amber files - (eec1d5c) - Rayan Hatout
+#### Features
+- **(fuzzer)** implement get_base_type for Miscellanous instructions - (494d317) - Rayan Hatout
+- **(reconditioner)** implement reconditioning for mod/rem operations to avoid the second operand being 0 - (c904f63) - Rayan Hatout
+- **(reconditioner)** handle OpUndef introduced by spirv-reduce - (7d103f2) - Rayan Hatout
+- **(reducer)** add an interestingness test for segfaults - (75dfb52) - Rayan Hatout
+
+- - -
+
 ## v1.4.0 - 2022-05-17
 #### Bug Fixes
 - **(brokerage)** modify the pending shaders query to avoid double execution by the same platform - (a9950dd) - Rayan Hatout
