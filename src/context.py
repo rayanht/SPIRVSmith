@@ -266,10 +266,13 @@ class Context:
 
         # TODO parametrize using a geometric distribution
         try:
-            if self.rng.random() < self.config.strategy.p_picking_operand_statement:
+            if (
+                self.rng.random() < self.config.strategy.p_picking_operand_statement
+                and len(list(statements)) > 0
+            ):
                 potential_operands: list[Statement] = list(statements)
                 weights = [
-                    len(potential_operands) - n + 1
+                    len(potential_operands) - n + len(potential_operands) // 2
                     for n in range(len(potential_operands))
                 ]
                 return self.rng.choices(potential_operands, weights=weights, k=1)[0]

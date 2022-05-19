@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self
 
 from src.constants import OpConstant
+from src.enums import StorageClass
 from src.operators import Operand
 from src.operators.memory import MemoryOperator
 from src.operators.memory.variable import OpVariable
@@ -12,6 +13,7 @@ from src.patched_dataclass import dataclass
 from src.predicates import HasType
 from src.predicates import IsCompositeType
 from src.predicates import IsMatrixType
+from src.predicates import IsOfType
 from src.predicates import IsOutputVariable
 from src.predicates import IsPointerType
 from src.predicates import IsStructType
@@ -55,8 +57,8 @@ class OpLoad(MemoryOperator):
 
 @dataclass
 class OpStore(MemoryOperator, Untyped, VoidOp):
-    pointer: OpTypePointer
-    object: OpCode
+    pointer: Operand
+    object: Statement
     # memory_operands: Optional[???]
 
     @classmethod

@@ -22,7 +22,7 @@ class BinariesConfig:
 @dataclass
 class MutationsConfig:
     ## Operations weights
-    w_memory_operation: tuple[int, int] = (2, 6)
+    w_memory_operation: tuple[int, int] = (1, 2)
     w_logical_operation: tuple[int, int] = (2, 6)
     w_arithmetic_operation: tuple[int, int] = (2, 6)
     w_control_flow_operation: tuple[int, int] = (0, 2)

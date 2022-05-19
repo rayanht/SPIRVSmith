@@ -177,7 +177,7 @@ class OpTypeStruct(MixedContainerType):
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         struct_types = []
         side_effect_types = []
-        for _ in range(context.rng.randint(2, 5)):
+        for _ in range(context.rng.randint(2, 3)):
             # TODO relax parameter type constraint
             fuzzed_parameter_type: FuzzResult = context.rng.choice(
                 [OpTypeFloat, OpTypeInt]
@@ -201,8 +201,11 @@ class OpTypePointer(MixedContainerType):
         fuzzed_type: FuzzResult = context.rng.choice([ScalarType, ContainerType]).fuzz(
             context
         )
+        storage_class: StorageClass = context.rng.choice(
+            [StorageClass.StorageBuffer, StorageClass.Function]
+        )
         return FuzzResult(
-            cls(type=fuzzed_type.opcode, storage_class=StorageClass.StorageBuffer),
+            cls(type=fuzzed_type.opcode, storage_class=storage_class),
             fuzzed_type.side_effects + [fuzzed_type.opcode],
         )
 

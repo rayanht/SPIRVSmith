@@ -13,6 +13,7 @@ from src import Untyped
 from src import VoidOp
 from src.enums import FunctionControlMask
 from src.enums import SelectionControlMask
+from src.enums import StorageClass
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -21,6 +22,7 @@ from src.types.concrete_types import (
     EmptyType,
     OpTypeBool,
     OpTypeFunction,
+    OpTypePointer,
     Type,
 )
 from src.patched_dataclass import dataclass
@@ -188,21 +190,14 @@ class OpBranch(FuzzLeafMixin, Untyped, VoidOp):
     label: OpLabel
 
 
-def fuzz_block(context: "Context", exit_label: Optional[OpLabel]) -> tuple[OpCode]:
+def fuzz_block(
+    context: "Context",
+    exit_label: Optional[OpLabel],
+) -> tuple[OpCode]:
     block_label: OpLabel = OpLabel.fuzz(context).opcode
     instructions: list[OpCode] = []
     variables: list[OpVariable] = []
     block_context = context.make_child_context()
-    # TODO this is terrible, there must be a better way
-    # import src.operators.arithmetic.scalar_arithmetic
-    # import src.operators.arithmetic.linear_algebra
-    # import src.operators.logic
-    # import src.operators.bitwise
-    # import src.operators.conversions
-    # import src.operators.composite
-
-    # if context.config.strategy.enable_ext_glsl_std_450:
-    #     import src.operators.arithmetic.glsl
 
     while context.rng.random() < block_context.config.strategy.p_statement:
         try:

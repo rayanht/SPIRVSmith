@@ -26,11 +26,6 @@ from src.types.concrete_types import (
 class OpVariable(MemoryOperator):
     storage_class: StorageClass
 
-    def hashing_members(self):
-        return tuple(
-            [x.name for x in fields(self.__class__) if x.name not in {"id", "context"}]
-        )
-
     def get_base_type(self) -> Type:
         return self.type.get_base_type()
 
