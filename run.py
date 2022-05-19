@@ -5,8 +5,9 @@ import hydra
 from hydra.core.config_store import ConfigStore
 
 from src.fuzzing_server import ShaderGenerator
-from src.utils import ClampedInt
 from src.utils import get_spirvsmith_version
+
+rng = random.SystemRandom()
 
 
 @dataclass
@@ -49,59 +50,41 @@ class LimitsConfig:
 
 @dataclass
 class FuzzingStrategyConfig:
-    ## Mutations
+    # Mutations
     mutations_config: MutationsConfig = MutationsConfig()
 
-    ## Extensions
+    # Extensions
     enable_ext_glsl_std_450: bool = True
 
-    ## Operations weights
-    w_memory_operation: int = random.SystemRandom().randint(
-        *mutations_config.w_memory_operation
-    )
-    w_logical_operation: int = random.SystemRandom().randint(
-        *mutations_config.w_logical_operation
-    )
-    w_arithmetic_operation: int = random.SystemRandom().randint(
-        *mutations_config.w_arithmetic_operation
-    )
-    w_control_flow_operation: int = random.SystemRandom().randint(
+    # Operations weights
+    w_memory_operation: int = rng.randint(*mutations_config.w_memory_operation)
+    w_logical_operation: int = rng.randint(*mutations_config.w_logical_operation)
+    w_arithmetic_operation: int = rng.randint(*mutations_config.w_arithmetic_operation)
+    w_control_flow_operation: int = rng.randint(
         *mutations_config.w_control_flow_operation
     )
-    w_function_operation: int = random.SystemRandom().randint(
-        *mutations_config.w_function_operation
-    )
-    w_bitwise_operation: int = random.SystemRandom().randint(
-        *mutations_config.w_bitwise_operation
-    )
-    w_conversion_operation: int = random.SystemRandom().randint(
-        *mutations_config.w_conversion_operation
-    )
-    w_composite_operation: int = random.SystemRandom().randint(
-        *mutations_config.w_composite_operation
-    )
+    w_function_operation: int = rng.randint(*mutations_config.w_function_operation)
+    w_bitwise_operation: int = rng.randint(*mutations_config.w_bitwise_operation)
+    w_conversion_operation: int = rng.randint(*mutations_config.w_conversion_operation)
+    w_composite_operation: int = rng.randint(*mutations_config.w_composite_operation)
 
-    ## Types weights
-    w_scalar_type: int = random.SystemRandom().randint(*mutations_config.w_scalar_type)
-    w_container_type: int = random.SystemRandom().randint(
-        *mutations_config.w_container_type
-    )
+    # Types weights
+    w_scalar_type: int = rng.randint(*mutations_config.w_scalar_type)
+    w_container_type: int = rng.randint(*mutations_config.w_container_type)
 
-    ## Constants weights
-    w_composite_constant: int = random.SystemRandom().randint(
-        *mutations_config.w_composite_constant
-    )
-    w_scalar_constant: int = random.SystemRandom().randint(
-        *mutations_config.w_scalar_constant
-    )
+    # Constants weights
+    w_composite_constant: int = rng.randint(*mutations_config.w_composite_constant)
+    w_scalar_constant: int = rng.randint(*mutations_config.w_scalar_constant)
 
     # P(generating a statement at step t + 1 | a statement was generated at step t)
     p_statement: float = 0.995
 
+    # P(picking a statement as operand as opposed to a constant)
+    p_picking_operand_statement: float = 0.5
+
     # Number of optimiser fuzzing iterations
     optimiser_fuzzing_iterations: int = 20
 
-    # Strategy mutation parameters
     # When a mutation is triggered, one random parameter from FuzzingStrategyConfig
     # is chosen and slightly altered
     mutation_rate: float = 0.05

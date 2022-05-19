@@ -266,7 +266,15 @@ class Context:
 
         # TODO parametrize using a geometric distribution
         try:
-            return self.rng.choice(list(statements) + list(constants))
+            if self.rng.random() < self.config.strategy.p_picking_operand_statement:
+                potential_operands: list[Statement] = list(statements)
+                weights = [
+                    len(potential_operands) - n + 1
+                    for n in range(len(potential_operands))
+                ]
+                return self.rng.choices(potential_operands, weights=weights, k=1)[0]
+            else:
+                return self.rng.choice(list(constants))
         except IndexError:
             try:
                 opcode_name: str = inspect.stack()[1][0].f_locals["cls"].__name__

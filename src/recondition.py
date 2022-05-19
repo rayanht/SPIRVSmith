@@ -356,7 +356,7 @@ class TooLargeShift(DangerousPattern[TooLargeShiftVulnerableOpCode]):
 UndefOpCodeVulnerableOpCode = OpCode
 
 
-class TooLargeShift(DangerousPattern[UndefOpCodeVulnerableOpCode]):
+class UndefOpCode(DangerousPattern[UndefOpCodeVulnerableOpCode]):
     @staticmethod
     def recondition(
         context: Context,
