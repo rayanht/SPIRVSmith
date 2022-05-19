@@ -33,10 +33,15 @@ from src.operators.arithmetic.glsl import UClamp
 from src.operators.arithmetic.glsl import UMax
 from src.operators.arithmetic.glsl import UMin
 from src.operators.arithmetic.scalar_arithmetic import OpFAdd
+from src.operators.arithmetic.scalar_arithmetic import OpFMod
+from src.operators.arithmetic.scalar_arithmetic import OpFRem
 from src.operators.arithmetic.scalar_arithmetic import OpFSub
 from src.operators.arithmetic.scalar_arithmetic import OpIAdd
 from src.operators.arithmetic.scalar_arithmetic import OpISub
+from src.operators.arithmetic.scalar_arithmetic import OpSDiv
 from src.operators.arithmetic.scalar_arithmetic import OpSMod
+from src.operators.arithmetic.scalar_arithmetic import OpSRem
+from src.operators.arithmetic.scalar_arithmetic import OpUDiv
 from src.operators.arithmetic.scalar_arithmetic import OpUMod
 from src.operators.bitwise import OpShiftLeftLogical
 from src.operators.bitwise import OpShiftRightArithmetic
@@ -46,6 +51,7 @@ from src.operators.composite import OpVectorInsertDynamic
 from src.predicates import IsOfFloatBaseType
 from src.predicates import IsVectorType
 from src.types.concrete_types import OpTypeFloat
+from src.types.concrete_types import OpTypeInt
 
 T = TypeVar("T")
 
@@ -145,6 +151,67 @@ class FirstOperandLessThanOne(
     @staticmethod
     def get_affected_opcodes() -> set[FirstOperandLessThanOneVulnerableOpCode]:
         return {Acosh, Log, Pow, Log2, Sqrt, InverseSqrt}
+
+
+SecondOperandEqualsZeroVulnerableOpCode = (
+    OpUMod | OpSMod | OpSRem | OpFRem | OpFMod | OpSDiv | OpUDiv
+)
+
+
+class SecondOperandEqualsZero(
+    DangerousPattern[SecondOperandEqualsZeroVulnerableOpCode]
+):
+    @staticmethod
+    def recondition(
+        context: Context,
+        opcode: SecondOperandEqualsZeroVulnerableOpCode,
+    ):
+        """Recondition op(x, y) AND y = 0 using y := |y| + 1"""
+        match t := opcode.operand2.get_base_type():
+            case OpTypeFloat():
+                op_abs = OpExtInst(
+                    type=opcode.operand2.type,
+                    extension_set=context.extension_sets["GLSL.std.450"],
+                    instruction=FAbs,
+                    operands=(opcode.operand2,),
+                )
+            case OpTypeInt() if t.signed:
+                op_abs = OpExtInst(
+                    type=opcode.operand2.type,
+                    extension_set=context.extension_sets["GLSL.std.450"],
+                    instruction=SAbs,
+                    operands=(opcode.operand2,),
+                )
+            case OpTypeInt() if not t.signed:
+                op_abs = None
+        const_one = context.create_on_demand_numerical_constant(
+            opcode.operand2.get_base_type().__class__, value=1.0
+        )
+        if IsVectorType(opcode.operand2):
+            const_one = context.create_on_demand_vector_constant(
+                inner_constant=const_one, size=len(opcode.operand2.type)
+            )
+        match opcode.operand2.get_base_type():
+            case OpTypeFloat():
+                op_add = OpFAdd(
+                    opcode.operand2.type,
+                    op_abs if op_abs else opcode.operand2,
+                    const_one,
+                )
+            case OpTypeInt():
+                op_add = OpIAdd(
+                    opcode.operand2.type,
+                    op_abs if op_abs else opcode.operand2,
+                    const_one,
+                )
+        opcode.operand2 = op_add
+        if op_abs:
+            return [op_abs, op_add]
+        return [op_add]
+
+    @staticmethod
+    def get_affected_opcodes() -> set[SecondOperandEqualsZeroVulnerableOpCode]:
+        return {OpUMod, OpSMod, OpSRem, OpFRem, OpFMod, OpSDiv, OpUDiv}
 
 
 BothOperandsEqualZeroVulnerableOpCode = Atan2
