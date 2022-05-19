@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 
 import pandas as pd
 
+from src.shader_brokerage import BQ_delete_shader
 from src.shader_brokerage import BQ_fetch_mismatched_shaders
 from src.shader_brokerage import GCS_download_shader
 from src.shader_parser import parse_spirv_assembly_file
@@ -94,4 +95,4 @@ if __name__ == "__main__":
                 reduction_result.reduced_shader.generate_assembly_file(
                     f"interesting_shaders/{shader_id}.spasm"
                 )
-            exit(0)
+                BQ_delete_shader(shader_id)

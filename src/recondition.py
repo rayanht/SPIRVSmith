@@ -6,6 +6,7 @@ from typing import TypeVar
 from src import OpCode
 from src.context import Context
 from src.extension import OpExtInst
+from src.misc import OpUndef
 from src.operators.arithmetic.glsl import Acos
 from src.operators.arithmetic.glsl import Acosh
 from src.operators.arithmetic.glsl import Asin
@@ -283,6 +284,26 @@ class TooLargeShift(DangerousPattern[TooLargeShiftVulnerableOpCode]):
     @staticmethod
     def get_affected_opcodes() -> set[TooLargeShiftVulnerableOpCode]:
         return {OpShiftLeftLogical, OpShiftRightLogical, OpShiftRightArithmetic}
+
+
+UndefOpCodeVulnerableOpCode = OpCode
+
+
+class TooLargeShift(DangerousPattern[UndefOpCodeVulnerableOpCode]):
+    @staticmethod
+    def recondition(
+        context: Context,
+        opcode: UndefOpCodeVulnerableOpCode,
+    ):
+        for attr in opcode.members():
+            if attr.startswith("type") or attr.endswith("type"):
+                return []
+            if isinstance(getattr(opcode, attr), OpUndef):
+                opcode.fuzz(context)
+
+    @staticmethod
+    def get_affected_opcodes() -> set[UndefOpCodeVulnerableOpCode]:
+        return {OpCode}
 
 
 def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):

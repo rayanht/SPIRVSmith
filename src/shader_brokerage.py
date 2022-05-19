@@ -181,6 +181,7 @@ def BQ_fetch_mismatched_shaders() -> RowIterator:
         `spirvsmith.spirv.shader_data`
     WHERE
         buffer_dump IS NOT NULL
+        AND buffer_dump != "SEGFAULT"
     GROUP BY
         shader_id
     HAVING

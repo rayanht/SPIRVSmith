@@ -10,6 +10,7 @@ from src.enums import ExecutionModel
 from src.enums import MemoryModel
 from src.function import OpFunction
 from src.patched_dataclass import dataclass
+from src.types.concrete_types import EmptyType
 from src.types.concrete_types import Type
 
 
@@ -22,7 +23,7 @@ class OpUndef(OpCode):
     type: Type
 
     def get_base_type(self) -> Type:
-        return self.type.get_base_type()
+        return EmptyType()
 
 
 @dataclass
