@@ -7,9 +7,10 @@ from operator import iconcat
 
 import pandas as pd
 from google.api_core.exceptions import NotFound
-from google.cloud.bigquery.table import RowIterator
 
 from run import *
+from src.annotations import OpDecorate
+from src.enums import Decoration
 from src.execution_platform import ExecutionPlatform
 from src.monitor import Event
 from src.monitor import Monitor
@@ -36,7 +37,7 @@ def signal_handling(signum, frame):
 signal.signal(signal.SIGINT, signal_handling)
 
 
-def run_amber(amber_filename: str, n_buffers: int, shader_id: str) -> str:
+def run_amber(amber_filename: str, buffer_bindings: list[int], shader_id: str) -> str:
     with tempfile.NamedTemporaryFile(suffix=".txt") as temp_file:
         process: subprocess.CompletedProcess = subprocess.run(
             [
@@ -49,7 +50,7 @@ def run_amber(amber_filename: str, n_buffers: int, shader_id: str) -> str:
                 temp_file.name,
                 *reduce(
                     iconcat,
-                    zip(repeat("-B"), [f"pipeline:0:{i}" for i in range(n_buffers)]),
+                    zip(repeat("-B"), [f"pipeline:0:{i}" for i in buffer_bindings]),
                     [],
                 ),
                 amber_filename,
@@ -113,9 +114,19 @@ if __name__ == "__main__":
                 create_amber_file(
                     shader, amber_file.name, seed=row.buffer_initialisation_seed
                 )
+                bindings: list[int] = sorted(
+                    map(
+                        lambda b: b.extra_operands[0],
+                        filter(
+                            lambda a: isinstance(a, OpDecorate)
+                            and a.decoration == Decoration.Binding,
+                            list(shader.context.annotations.keys()),
+                        ),
+                    )
+                )
                 buffer_dump: str = run_amber(
                     amber_filename=amber_file.name,
-                    n_buffers=row.n_buffers,
+                    buffer_bindings=bindings,
                     shader_id=row.shader_id,
                 )
                 if buffer_dump:
