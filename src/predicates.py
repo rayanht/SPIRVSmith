@@ -1,6 +1,7 @@
 from src import Untyped
 from src.enums import StorageClass
 from src.types.concrete_types import OpTypeArray
+from src.types.concrete_types import OpTypeBool
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import OpTypeMatrix
@@ -39,6 +40,7 @@ IsArithmeticType = IsOfType((OpTypeFloat, OpTypeInt, OpTypeVector))
 
 IsScalarInteger = IsOfType(OpTypeInt)
 IsScalarFloat = IsOfType(OpTypeFloat)
+IsScalarBoolean = IsOfType(OpTypeBool)
 
 IsScalarUnsignedInteger = And(IsScalarInteger, Not(IsBaseTypeSigned))
 IsScalarSignedInteger = And(IsScalarInteger, IsBaseTypeSigned)

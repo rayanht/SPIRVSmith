@@ -56,9 +56,7 @@ def fuzz_optimiser(shader: "SPIRVShader"):
     with tempfile.NamedTemporaryFile(suffix=".spv") as spv_file:
         if shader.assemble(spv_file.name, silent=True) and shader.validate(silent=True):
             with ThreadPoolExecutor(max_workers=4) as executor:
-                for _ in range(
-                    shader.context.config.strategy.optimiser_fuzzing_iterations
-                ):
+                for _ in range(20):
                     executor.submit(_fuzz_optimiser, shader, spv_file.name)
 
 

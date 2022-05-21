@@ -64,53 +64,22 @@ class TestContext(unittest.TestCase):
         self.assertEqual(constant1, constant2)
 
     def test_context_same_types_should_be_conflated_bool(self):
-        bool_type1 = OpTypeBool()
-        bool_type2 = OpTypeBool()
-
-        self.context.tvc[bool_type1] = bool_type1.id
-        self.context.tvc[bool_type2] = bool_type2.id
+        self.context.add_to_tvc(OpTypeBool())
+        self.context.add_to_tvc(OpTypeBool())
 
         self.assertEqual(len(self.context.tvc), 1)
 
     def test_context_same_types_should_be_conflated_int(self):
-        int_type1 = OpTypeInt(32, 1)
-        int_type2 = OpTypeInt(32, 1)
-
-        self.context.tvc[int_type1] = int_type1.id
-        self.context.tvc[int_type2] = int_type2.id
+        self.context.add_to_tvc(OpTypeInt(32, 1))
+        self.context.add_to_tvc(OpTypeInt(32, 1))
 
         self.assertEqual(len(self.context.tvc), 1)
 
-    def test_context_same_types_should_be_conflated_vector1(self):
-        int_type = OpTypeInt(32, 1)
+    def test_context_same_types_should_be_conflated_vector(self):
+        self.context.add_to_tvc(OpTypeVector(OpTypeInt(32, 1), 4))
+        self.context.add_to_tvc(OpTypeVector(OpTypeInt(32, 1), 4))
 
-        self.context.tvc[int_type] = int_type.id
-
-        vec_type1 = OpTypeVector(int_type, 4)
-        vec_type2 = OpTypeVector(int_type, 4)
-
-        self.context.tvc[vec_type1] = vec_type1.id
-        self.context.tvc[vec_type2] = vec_type2.id
-
-        self.assertEqual(len(self.context.tvc), 2)
-
-    def test_context_same_types_should_be_conflated_vector2(self):
-        int_type1 = OpTypeInt(32, 1)
-        int_type2 = OpTypeInt(32, 1)
-
-        self.context.tvc[int_type1] = int_type1.id
-        self.context.tvc[int_type2] = int_type2.id
-
-        vec_type1 = OpTypeVector(int_type1, 4)
-        vec_type2 = OpTypeVector(int_type2, 4)
-
-        self.context.tvc[vec_type1] = vec_type1.id
-        self.context.tvc[vec_type2] = vec_type2.id
-
-        self.assertEqual(len(self.context.tvc), 2)
-
-    def test_context_variables_in_different_scopes_should_not_be_conflated(self):
-        pass
+        self.assertEqual(len(self.context.tvc), 1)
 
     def test_context_finds_all_arithmetic_operands(self):
         constant1 = self.context.create_on_demand_numerical_constant(OpTypeInt, 0)

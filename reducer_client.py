@@ -57,7 +57,6 @@ class SPIRVReducer(ProgramReducer):
                     capture_output=False,
                 )
                 if reduce_process.returncode != 0:
-                    print(reduce_process.stderr.decode("utf-8"))
                     return ReductionResult(False, shader)
                 with NamedTemporaryFile(
                     suffix=".spasm"

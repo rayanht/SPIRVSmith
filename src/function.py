@@ -14,6 +14,8 @@ from src import VoidOp
 from src.enums import FunctionControlMask
 from src.enums import SelectionControlMask
 from src.enums import StorageClass
+from src.predicates import IsOfType
+from src.predicates import IsScalarBoolean
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -133,49 +135,45 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
         )
 
 
-# class OpLoopMerge(ControlFlowOperator, Untyped, VoidOp):
-#     merge_label: OpLabel = None
-#     continue_label: OpLabel = None
-#     selection_control: SelectionControlMask = None
+@dataclass
+class OpLoopMerge(ControlFlowOperator, Untyped, VoidOp):
+    merge_label: OpLabel
+    continue_label: OpLabel
+    selection_control: SelectionControlMask
 
-#     def fuzz(self, context: "Context") -> list[OpCode]:
-#         if context.get_depth() > context.config.limits.max_depth:
-#             return []
-#         self.merge_label = OpLabel().fuzz(context)[0]
-#         self.selection_control = None  # TODO
-#         loop_label = OpLabel().fuzz(context)[0]
-#         block = fuzz_block(context, loop_label)
-#         try:
-#             condition = random.SystemRandom().choice(context.get_statements(
-#                 lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
-#             ))
-#         except IndexError:
-#             return []
-#         op_branch = OpBranchConditional(
-#             condition=condition, true_label=self.continue_label, false_label=self.merge_label
-#         )
-#         return [loop_label, self, op_branch, *block, self.merge_label]
-
-
-# class OpSwitch(ControlFlowOperator, Untyped, VoidOp):
-#     selection_control: SelectionControlMask = None
-#     default_label: OpLabel = None
-#     case_labels: list[OpLabel] = None
-#     value: OpCode = None
-
-#     def fuzz(self, context: "Context") -> tuple[OpCode]:
-#         if context.get_depth() > context.limits.max_depth:
-#             return []
-#         self.selection_control = random.SystemRandom().choice(list(SelectionControlMask))
-#         self.default_label = OpLabel().fuzz(context)[0]
-#         self.case_labels = []
-#         for _ in range(random.SystemRandom().randint(1, 5)):
-#             self.case_labels.append(OpLabel().fuzz(context)[0])
-#         self.value = random.SystemRandom().choice(context.get_statements(
-#                 lambda s: not isinstance(s, Untyped) and isinstance(s.type, OpTypeBool)
-#             )
-#         ).fuzz(context)[0]
-#         return [self, *self.case_labels, self.default_label, self.value]
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        loop_back_label = OpLabel.fuzz(context).opcode
+        pre_loop_branch = OpBranch(loop_back_label)
+        loop_back_branch = OpBranch(loop_back_label)
+        if context.get_depth() > context.config.limits.max_depth:
+            raise AbortFuzzing
+        merge_label = OpLabel.fuzz(context).opcode
+        selection_control = SelectionControlMask.NONE
+        block = fuzz_block(context, None)
+        continue_label = block[0]
+        condition = context.get_random_operand(IsScalarBoolean)
+        loop_entry_branch = OpBranchConditional(
+            condition=condition, true_label=continue_label, false_label=merge_label
+        )
+        op_loop = cls(
+            type=EmptyType(),
+            merge_label=merge_label,
+            continue_label=continue_label,
+            selection_control=selection_control,
+        )
+        return FuzzResult(
+            pre_loop_branch,
+            [
+                loop_back_label,
+                op_loop,
+                loop_entry_branch,
+                *block,
+                loop_back_branch,
+                merge_label,
+            ],
+            True,
+        )
 
 
 @dataclass

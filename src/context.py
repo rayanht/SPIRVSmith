@@ -267,7 +267,7 @@ class Context:
         # TODO parametrize using a geometric distribution
         try:
             if (
-                self.rng.random() < self.config.strategy.p_picking_operand_statement
+                self.rng.random() < self.config.strategy.p_picking_statement_operand
                 and len(list(statements)) > 0
             ):
                 potential_operands: list[Statement] = list(statements)

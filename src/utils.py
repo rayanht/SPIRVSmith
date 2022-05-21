@@ -84,7 +84,6 @@ def mutate_config(config: "SPIRVSmithConfig") -> None:
             "mutation_rate",
             "enable_ext_glsl_std_450",
             "p_statement",
-            "optimiser_fuzzing_iterations",
         }
     ]
     mutation_target: str = random.SystemRandom().choice(mutable_fields)

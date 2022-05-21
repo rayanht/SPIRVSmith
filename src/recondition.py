@@ -1,11 +1,13 @@
 from abc import ABC
-from abc import abstractmethod
+from inspect import isclass
 from typing import Generic
+from typing import TypeAlias
 from typing import TypeVar
 
 from src import OpCode
 from src.context import Context
 from src.extension import OpExtInst
+from src.extension import OpExtInstImport
 from src.misc import OpUndef
 from src.operators.arithmetic.glsl import Acos
 from src.operators.arithmetic.glsl import Acosh
@@ -57,16 +59,44 @@ T = TypeVar("T")
 
 
 class DangerousPattern(ABC, Generic[T]):
-    @abstractmethod
-    def recondition(self, context: Context, opcode: T):
+    @staticmethod
+    def recondition(context: Context, opcode: T):
         ...
 
-    @abstractmethod
-    def get_affected_opcodes(self) -> set[T]:
+    @staticmethod
+    def get_affected_opcodes() -> set[T]:
         ...
 
 
-VectorAccessOutOfBoundsVulnerableOpCode = OpVectorExtractDynamic | OpVectorInsertDynamic
+UndefOpCodeVulnerableOpCode: TypeAlias = OpCode
+
+
+class UndefOpCode(DangerousPattern[UndefOpCodeVulnerableOpCode]):
+    @staticmethod
+    def recondition(
+        context: Context,
+        opcode: UndefOpCodeVulnerableOpCode,
+    ):
+        if not isclass(opcode):
+            fuzzed_opcode = None
+            for attr in opcode.members():
+                if attr.startswith("type") or attr.endswith("type"):
+                    continue
+                if isinstance(getattr(opcode, attr), OpUndef):
+                    fuzzed_opcode = opcode.fuzz(context).opcode
+                    for attr in opcode.members():
+                        setattr(opcode, attr, getattr(fuzzed_opcode, attr))
+                    break
+        return []
+
+    @staticmethod
+    def get_affected_opcodes() -> set[type[UndefOpCodeVulnerableOpCode]]:
+        return {OpCode}
+
+
+VectorAccessOutOfBoundsVulnerableOpCode: TypeAlias = (
+    OpVectorExtractDynamic | OpVectorInsertDynamic
+)
 
 
 class VectorAccessOutOfBounds(
@@ -92,18 +122,18 @@ class VectorAccessOutOfBounds(
         return [op_mod]
 
     @staticmethod
-    def get_affected_opcodes() -> set[VectorAccessOutOfBoundsVulnerableOpCode]:
+    def get_affected_opcodes() -> set[type[VectorAccessOutOfBoundsVulnerableOpCode]]:
         return {OpVectorExtractDynamic, OpVectorInsertDynamic}
 
 
-FirstOperandAbsLessThanOneeVulnerableOpCode = Asin | Acos | Atanh
+TooLargeMagnitudeVulnerableOpCode: TypeAlias = Asin | Acos | Atanh
 
 
-class TooLargeMagnitude(DangerousPattern[FirstOperandAbsLessThanOneeVulnerableOpCode]):
+class TooLargeMagnitude(DangerousPattern[TooLargeMagnitudeVulnerableOpCode]):
     @staticmethod
     def recondition(
         context: Context,
-        opcode: FirstOperandAbsLessThanOneeVulnerableOpCode,
+        opcode: TooLargeMagnitudeVulnerableOpCode,
     ):
         """Recondition |x| > 1 scalars using x := x - floor(x)."""
         op_fract = OpExtInst(
@@ -116,11 +146,13 @@ class TooLargeMagnitude(DangerousPattern[FirstOperandAbsLessThanOneeVulnerableOp
         return [op_fract]
 
     @staticmethod
-    def get_affected_opcodes() -> set[FirstOperandAbsLessThanOneeVulnerableOpCode]:
+    def get_affected_opcodes() -> set[type[TooLargeMagnitudeVulnerableOpCode]]:
         return {Asin, Acos, Atanh}
 
 
-FirstOperandLessThanOneVulnerableOpCode = Acosh | Log | Pow | Log2 | Sqrt | InverseSqrt
+FirstOperandLessThanOneVulnerableOpCode: TypeAlias = (
+    Acosh | Log | Pow | Log2 | Sqrt | InverseSqrt
+)
 
 
 class FirstOperandLessThanOne(
@@ -149,11 +181,11 @@ class FirstOperandLessThanOne(
         return [op_abs, op_add]
 
     @staticmethod
-    def get_affected_opcodes() -> set[FirstOperandLessThanOneVulnerableOpCode]:
+    def get_affected_opcodes() -> set[type[FirstOperandLessThanOneVulnerableOpCode]]:
         return {Acosh, Log, Pow, Log2, Sqrt, InverseSqrt}
 
 
-SecondOperandEqualsZeroVulnerableOpCode = (
+SecondOperandEqualsZeroVulnerableOpCode: TypeAlias = (
     OpUMod | OpSMod | OpSRem | OpFRem | OpFMod | OpSDiv | OpUDiv
 )
 
@@ -167,25 +199,25 @@ class SecondOperandEqualsZero(
         opcode: SecondOperandEqualsZeroVulnerableOpCode,
     ):
         """Recondition op(x, y) AND y = 0 using y := |y| + 1"""
-        match t := opcode.operand2.get_base_type():
+        match opcode.operand2.get_base_type():
             case OpTypeFloat():
-                op_abs = OpExtInst(
+                op_abs: OpExtInst = OpExtInst(
                     type=opcode.operand2.type,
                     extension_set=context.extension_sets["GLSL.std.450"],
                     instruction=FAbs,
                     operands=(opcode.operand2,),
                 )
-            case OpTypeInt() if t.signed:
-                op_abs = OpExtInst(
+            case OpTypeInt(signed=1):
+                op_abs: OpExtInst = OpExtInst(
                     type=opcode.operand2.type,
                     extension_set=context.extension_sets["GLSL.std.450"],
                     instruction=SAbs,
                     operands=(opcode.operand2,),
                 )
-            case OpTypeInt() if not t.signed:
+            case OpTypeInt(signed=0):
                 op_abs = None
         const_one = context.create_on_demand_numerical_constant(
-            opcode.operand2.get_base_type().__class__, value=1.0
+            opcode.operand2.get_base_type().__class__, value=1
         )
         if IsVectorType(opcode.operand2):
             const_one = context.create_on_demand_vector_constant(
@@ -193,13 +225,13 @@ class SecondOperandEqualsZero(
             )
         match opcode.operand2.get_base_type():
             case OpTypeFloat():
-                op_add = OpFAdd(
+                op_add: OpFAdd = OpFAdd(
                     opcode.operand2.type,
                     op_abs if op_abs else opcode.operand2,
                     const_one,
                 )
             case OpTypeInt():
-                op_add = OpIAdd(
+                op_add: OpIAdd = OpIAdd(
                     opcode.operand2.type,
                     op_abs if op_abs else opcode.operand2,
                     const_one,
@@ -210,11 +242,11 @@ class SecondOperandEqualsZero(
         return [op_add]
 
     @staticmethod
-    def get_affected_opcodes() -> set[SecondOperandEqualsZeroVulnerableOpCode]:
+    def get_affected_opcodes() -> set[type[SecondOperandEqualsZeroVulnerableOpCode]]:
         return {OpUMod, OpSMod, OpSRem, OpFRem, OpFMod, OpSDiv, OpUDiv}
 
 
-BothOperandsEqualZeroVulnerableOpCode = Atan2
+BothOperandsEqualZeroVulnerableOpCode: TypeAlias = Atan2
 
 
 class BothOperandsEqualZero(DangerousPattern[BothOperandsEqualZeroVulnerableOpCode]):
@@ -254,11 +286,11 @@ class BothOperandsEqualZero(DangerousPattern[BothOperandsEqualZeroVulnerableOpCo
         return [op_sub1, op_add1, op_sub2, op_add2]
 
     @staticmethod
-    def get_affected_opcodes() -> set[BothOperandsEqualZeroVulnerableOpCode]:
+    def get_affected_opcodes() -> set[type[BothOperandsEqualZeroVulnerableOpCode]]:
         return {Atan2}
 
 
-DegenerateClampVulnerableOpCode = FClamp | UClamp | SClamp | NClamp
+DegenerateClampVulnerableOpCode: TypeAlias = FClamp | UClamp | SClamp | NClamp
 
 
 class DegenerateClamp(DangerousPattern[DegenerateClampVulnerableOpCode]):
@@ -301,11 +333,11 @@ class DegenerateClamp(DangerousPattern[DegenerateClampVulnerableOpCode]):
         return [op_min, op_max]
 
     @staticmethod
-    def get_affected_opcodes() -> set[DegenerateClampVulnerableOpCode]:
+    def get_affected_opcodes() -> set[type[DegenerateClampVulnerableOpCode]]:
         return {FClamp, UClamp, SClamp, NClamp}
 
 
-TooLargeShiftVulnerableOpCode = (
+TooLargeShiftVulnerableOpCode: TypeAlias = (
     OpShiftLeftLogical | OpShiftRightLogical | OpShiftRightArithmetic
 )
 
@@ -349,28 +381,8 @@ class TooLargeShift(DangerousPattern[TooLargeShiftVulnerableOpCode]):
         return [op_mod]
 
     @staticmethod
-    def get_affected_opcodes() -> set[TooLargeShiftVulnerableOpCode]:
+    def get_affected_opcodes() -> set[type[TooLargeShiftVulnerableOpCode]]:
         return {OpShiftLeftLogical, OpShiftRightLogical, OpShiftRightArithmetic}
-
-
-UndefOpCodeVulnerableOpCode = OpCode
-
-
-class UndefOpCode(DangerousPattern[UndefOpCodeVulnerableOpCode]):
-    @staticmethod
-    def recondition(
-        context: Context,
-        opcode: UndefOpCodeVulnerableOpCode,
-    ):
-        for attr in opcode.members():
-            if attr.startswith("type") or attr.endswith("type"):
-                return []
-            if isinstance(getattr(opcode, attr), OpUndef):
-                opcode.fuzz(context)
-
-    @staticmethod
-    def get_affected_opcodes() -> set[UndefOpCodeVulnerableOpCode]:
-        return {OpCode}
 
 
 def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):
@@ -378,6 +390,8 @@ def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):
     i = 0
     j = len(spirv_opcodes)
     reconditioning_side_effects = []
+    if "GLSL.std.450" not in context.extension_sets:
+        context.extension_sets["GLSL.std.450"] = OpExtInstImport("GLSL.std.450")
     while i < j:
         opcode = spirv_opcodes[i]
         for dangerous_pattern in dangerous_patterns:
@@ -387,7 +401,12 @@ def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):
                     setattr(opcode.instruction, f"operand{k + 1}", opcode.operands[k])
             else:
                 opcode_class = opcode.__class__
-            if opcode_class in dangerous_pattern.get_affected_opcodes():
+            if any(
+                [
+                    issubclass(opcode_class, affected_opcode)
+                    for affected_opcode in dangerous_pattern.get_affected_opcodes()
+                ]
+            ):
                 reconditioning_side_effects = dangerous_pattern.recondition(
                     context,
                     opcode.instruction if isinstance(opcode, OpExtInst) else opcode,

@@ -8,7 +8,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![DOI](https://zenodo.org/badge/429076310.svg)](https://zenodo.org/badge/latestdoi/429076310)
 
-## Introduction
+## SPIRVSmith
 
 SPIRVSmith is a differential testing tool that leverages structured fuzzing techniques to find bugs in producers and consumers of SPIRV shaders.
 
@@ -20,6 +20,59 @@ SPIRVSmith attempts to find bugs in the following projects:
 - [MoltenVK](https://github.com/KhronosGroup/MoltenVK)
 - ...and more to come!
 
+## Table of Contents
+- [Installation](#installation)
+- [Usage](#usage)
+- [How does it work?](#how-does-it-work)
+  - [Differential testing](#differential-testing)
+  - [Program Reconditioning](#program-reconditioning)
+- [SPIR-V Language Coverage](#spirv-language-coverage)
+- [Contributing](#contributing)
+- [Authors](#authors)
+- [License](#license)
+
+
+## Installation
+
+SPIRVSmith uses `poetry` to manage Python dependencies and ships with scripts to install external dependencies.
+
+1. Follow the poetry [installation instructions](https://python-poetry.org/docs/#installation) for your platform.
+
+1. Grab a local copy of SPIRVSmith:
+
+```bash
+$ git clone https://github.com/rayanht/SPIRVSmith.git && cd SPIRVSmith
+```
+
+3. Install Python dependencies using `poetry` and start a `poetry` shell:
+
+```bash
+$ poetry install && poetry shell
+```
+
+4. Install the external dependencies:
+
+```bash
+$ mkdir bin
+$ sh scripts/get_spirv_tools.sh <platform>
+```
+
+Replace `<platform>` by either `linux` or `macos` (No support for Windows :sob:)
+
+
+## Usage
+
+The first step is to run `SPIRVSmith` is to head to `config.py`. That file contains the various parameters that are used to dictate the behaviour of the fuzzer.
+
+`SPIRVSmith` is highly parametrizable, you can choose to disable certain features of the SPIR-V language (e.g. do not emit any control flow operation), limit the number of global constants generated, favour the generation of certain kinds of instructions etc.
+
+Once you are happy with your parametrization, make sure you are in a `poetry` virtual environment (`$ poetry shell`) and run `SPIRVSmith`:
+
+```bash
+$ sh scripts/run.sh
+```
+
+SPIR-V assembly files will be saved as they are generated to the `out/` directory and the fuzzer can be stopped at any time by pressing `Ctrl+C`.
 
 ## How does it work?
 
@@ -77,11 +130,6 @@ void main () {
     }
 }
 ```
-
-### SPIRVSmith in the cloud
-
-![SPIRVSmith drawio](https://user-images.githubusercontent.com/42040895/162422826-c65dfd6f-1f32-4dcc-be8c-8c7e6117b42b.png)
-
 
 ## SPIRV Language Coverage
 
@@ -247,7 +295,7 @@ void main () {
 | OpStore |:white_check_mark:  |
 | OpCopyMemory | :red_circle: |
 | OpCopyMemorySized | :red_circle: |
-| OpAccessChain | :red_circle: |
+| OpAccessChain | :white_check_mark: |
 | OpInBoundsAccessChain | :red_circle: |
 | OpPtrAccessChain | :red_circle: |
 | OpPtrEqual | :red_circle: |
@@ -476,7 +524,42 @@ void main () {
 
 </details>
 
+#### Control Flow
+
+<details>
+
+<summary>Expand</summary>
+
+
+|OpCode| Status |
+|--|--|
+| OpPhi | :red_circle: |
+| OpLoopMerge | :white_check_mark: |
+| OpSelectionMerge | :white_check_mark: |
+| OpLabel |:white_check_mark:  |
+| OpBranch | :white_check_mark: |
+| OpBranchConditional | :white_check_mark: |
+| OpSwitch | :red_circle: |
+| OpReturn | :red_circle: |
+| OpReturnValue | :red_circle: |
+
 </details>
 
+</details>
+
+## Contributing
+
+Encountered a bug? Have an idea for a new feature? This project is open to all
+sorts of contribution! Feel free to head to the `Issues` tab and describe your
+request!
+
+## Authors
+
+* **Rayan Hatout** - [GitHub](https://github.com/rayanht)
+  | [Twitter](https://twitter.com/rayanhtt)
+  | [LinkedIn](https://www.linkedin.com/in/rayan-hatout/)
+
 ## License
+This project is licensed under the Apache 2.0 license.
+
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B22322%2Fgithub.com%2Frayanht%2FSPIRVSmith.svg?type=large)](https://app.fossa.com/projects/custom%2B22322%2Fgithub.com%2Frayanht%2FSPIRVSmith?ref=badge_large)

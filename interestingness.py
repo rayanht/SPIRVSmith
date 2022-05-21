@@ -15,7 +15,7 @@ from src.shader_utils import validate_spv_file
 
 
 def is_interesting(spv_file_path: str, n_reports: int) -> int:
-    if not validate_spv_file(spv_file_path):
+    if validate_spv_file(spv_file_path).exit_code != 0:
         return 1
     with NamedTemporaryFile(suffix=".spasm") as disassembled_spasm_file:
         if not disassemble_spv_file(spv_file_path, disassembled_spasm_file.name):
@@ -38,6 +38,7 @@ def is_interesting(spv_file_path: str, n_reports: int) -> int:
             if len(buffer_dumps) >= n_reports:
                 break
             time.sleep(1)
+        print(buffer_dumps)
         BQ_delete_shader(parsed_shader.id)
         if not all(x == buffer_dumps[0] for x in buffer_dumps):
             return 0
