@@ -25,6 +25,7 @@ from src.operators.memory.variable import OpVariable
 from src.recondition import recondition_opcodes
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
+from src.utils import get_spirvsmith_version
 from src.utils import SubprocessResult
 
 
@@ -41,7 +42,9 @@ class SPIRVShader:
     def generate_assembly_file(self, outfile_path: str) -> None:
         with open(outfile_path, "w") as f:
             f.write("; Magic:     0x07230203 (SPIR-V)\n")
-            f.write("; Version:   0x00010300 (Version: 1.3.0)\n")
+            f.write(
+                f"; Version:   0x00010300 (Version: {get_spirvsmith_version()[1:]})\n"
+            )
             f.write("; Generator: 0x00220001 (SPIRVSmith)\n")
             f.write(f"; Bound:     {len(self.opcodes) + len(self.context.tvc) - 1}\n")
             f.write("; Schema:    0\n")
