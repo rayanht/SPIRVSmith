@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v1.7.0 - 2022-05-21
+#### Bug Fixes
+- **(parser)** account for OpLoopMerge empty type - (6d9254e) - Rayan Hatout
+- **(parser)** account for OpLoopMerge forward reference in parser - (630e1bc) - Rayan Hatout
+#### Documentation
+- update CITATION.cff for v1.7.0 - (ca6b51f) - Rayan Hatout
+#### Features
+- **(all)** fix reconditioning, implement OpLoopMerge, update README - (bee68dc) - Rayan Hatout
+
+- - -
+
 ## v1.6.0 - 2022-05-19
 #### Bug Fixes
 - **(fuzzer)** handle case where no statements are available when picking random operands - (2b29856) - Rayan Hatout
