@@ -119,7 +119,10 @@ def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
                 *_,
             ]:
                 deferred_lines.append(line)
-            case ["OpSelectionMerge" | "OpBranch" | "OpBranchConditional", *operands]:
+            case [
+                "OpSelectionMerge" | "OpLoopMerge" | "OpBranch" | "OpBranchConditional",
+                *operands,
+            ]:
                 opcode_class: type[OpCode] = get_opcode_class_from_name(line[0])
                 opcodes.append(opcode_class)
                 deferred_indices.append((len(opcodes) - 1, operands))
