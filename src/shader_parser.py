@@ -67,7 +67,7 @@ def resolve_operands(
         typed_operands = (typed_operands,)
     if opcode_class.__name__ == "OpReturn":
         typed_operands = (EmptyType(),)
-    if opcode_class.__name__ in {"OpStore", "OpSelectionMerge"}:
+    if opcode_class.__name__ in {"OpStore", "OpSelectionMerge", "OpLoopMerge"}:
         typed_operands = (EmptyType(), *typed_operands)
     elif opcode_class.__name__ == "OpConstantComposite":
         typed_operands = (typed_operands[0], typed_operands[1:])
