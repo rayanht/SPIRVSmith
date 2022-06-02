@@ -44,7 +44,7 @@ import signal
 
 from spirvsmith_server_client import Client
 
-client = Client(base_url="http://localhost:8000")
+client = Client(base_url="http://spirvsmith.hatout.dev")
 
 
 terminate = False

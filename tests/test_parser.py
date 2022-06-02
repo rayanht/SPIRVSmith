@@ -35,7 +35,7 @@ class TestParser(unittest.TestCase):
             set(self.parsed_shader.context.globals.keys()),
         )
 
-    def test_parser_fully_reconstructs_operands(self):
+    def test_parser_fully_reconstructs_opcodes(self):
         self.assertListEqual(self.shader.opcodes, self.parsed_shader.opcodes)
 
     def test_parser_fully_reconstructs_annotatons(self):
