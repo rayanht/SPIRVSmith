@@ -9,7 +9,7 @@ from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:
     from src.context import Context
-from src.enums import StorageClass
+from spirv_enums import StorageClass
 from src import (
     AbortFuzzing,
     FuzzResult,
@@ -70,7 +70,7 @@ class OpVariable(MemoryOperator):
                         filter(
                             lambda tvc: isinstance(tvc, (OpTypeStruct))
                             and not isinstance(tvc, OpTypeBool),
-                            context.tvc.keys(),
+                            context.globals.keys(),
                         )
                     )
                 )

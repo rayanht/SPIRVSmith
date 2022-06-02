@@ -67,7 +67,3 @@ class OpConvertUToF(
     UnaryConversionOperator[OpTypeInt, OpTypeFloat, Unsigned, None],
 ):
     ...
-
-
-# class OpUConvert(UnaryConversionOperator[OpTypeInt, Unsigned]):
-#     ...

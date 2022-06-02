@@ -9,6 +9,9 @@ from typing import Optional
 from typing import TYPE_CHECKING
 
 import ulid
+from spirv_enums import Decoration
+from spirv_enums import ExecutionModel
+from spirv_enums import StorageClass
 from typing_extensions import Self
 
 from src import AbortFuzzing
@@ -23,16 +26,10 @@ from src.constants import Constant
 from src.constants import OpConstant
 from src.constants import OpConstantComposite
 from src.constants import ScalarConstant
-from src.enums import Decoration
-from src.enums import ExecutionModel
-from src.enums import StorageClass
 from src.function import OpFunction
 from src.monitor import Event
 from src.monitor import Monitor
 from src.operators import Operand
-from src.predicates import (
-    HaveSameTypeLength,
-)
 from src.types.abstract_types import Type
 from src.types.concrete_types import OpTypeFunction
 from src.types.concrete_types import OpTypePointer
@@ -50,12 +47,12 @@ from src.operators.memory.memory_access import OpVariable
 class Context:
     id: str = field(default_factory=lambda: ulid.new().str, init=False)
     function: Optional["OpFunction"]
-    parent_context: Optional["Context"]
+    parent_context: Optional[Self]
     execution_model: ExecutionModel
     config: "SPIRVSmithConfig"
     rng: random.SystemRandom
     symbol_table: list["OpCode"] = field(default_factory=list)
-    tvc: dict["OpCode", str] = field(default_factory=dict)
+    globals: dict["OpCode", str] = field(default_factory=dict)
     annotations: dict[Annotation, NoneType] = field(default_factory=dict)
     extension_sets: dict[str, "OpExtInstImport"] = field(default_factory=dict)
 
@@ -64,7 +61,7 @@ class Context:
         cls,
         execution_model: ExecutionModel,
         config: "SPIRVSmithConfig",
-    ) -> "Context":
+    ) -> Self:
         return cls(None, None, execution_model, config, random.SystemRandom())
 
     def make_child_context(self, function: Optional[OpFunction] = None) -> Self:
@@ -74,14 +71,14 @@ class Context:
             self.execution_model,
             self.config,
             self.rng,
-            tvc=self.tvc,
+            globals=self.globals,
             annotations=self.annotations,
             extension_sets=self.extension_sets,
         )
 
     def add_to_tvc(self, opcode: "OpCode") -> None:
-        if not opcode in self.tvc:
-            self.tvc[opcode] = opcode.id
+        if not opcode in self.globals:
+            self.globals[opcode] = opcode.id
 
     def get_local_variables(self) -> list[OpVariable]:
         variables: list[OpVariable] = list(
@@ -92,7 +89,9 @@ class Context:
         return variables
 
     def get_global_variables(self) -> list[OpVariable]:
-        return list(filter(lambda tvc: isinstance(tvc, OpVariable), self.tvc.keys()))
+        return list(
+            filter(lambda tvc: isinstance(tvc, OpVariable), self.globals.keys())
+        )
 
     def get_random_variable(
         self, predicate: Callable[[OpVariable], bool]
@@ -184,10 +183,10 @@ class Context:
             self.add_to_tvc(fuzzed_constant.opcode)
 
     def gen_global_variables(self):
-        n = len(self.tvc)
+        n = len(self.globals)
         for i in range(self.rng.randint(1, 3)):
             variable = self.create_on_demand_variable(StorageClass.StorageBuffer)
-            if len(self.tvc) != n:
+            if len(self.globals) != n:
                 self.add_annotation(
                     OpDecorate(target=variable.type.type, decoration=Decoration.Block)
                 )
@@ -216,7 +215,7 @@ class Context:
                         )
                     )
                     offset += t.width
-            n = len(self.tvc)
+            n = len(self.globals)
 
     def gen_opcodes(self) -> list["OpCode"]:
         function_types: list[OpTypeFunction] = self.get_function_types()
@@ -237,7 +236,7 @@ class Context:
         self, predicate: Optional[Callable[[Constant], bool]] = None
     ) -> list[Constant]:
         constants: Iterable[Constant] = filter(
-            lambda t: isinstance(t, Constant), self.tvc.keys()
+            lambda t: isinstance(t, Constant), self.globals.keys()
         )
         if not predicate:
             return list(constants)
@@ -250,19 +249,6 @@ class Context:
     ) -> Operand:
         statements: list[Statement] = self.get_typed_statements(predicate)
         constants: list[Constant] = self.get_constants(predicate)
-        if constraint:
-            statements = filter(
-                lambda sym: isinstance(sym.type, constraint.type.__class__),
-                statements,
-            )
-            constants = filter(
-                lambda const: isinstance(const.type, constraint.type.__class__),
-                constants,
-            )
-            if isinstance(constraint.type, OpTypeVector):
-                type_length_predicate = lambda x: HaveSameTypeLength(constraint, x)
-                statements = filter(type_length_predicate, statements)
-                constants = filter(type_length_predicate, constants)
 
         # TODO parametrize using a geometric distribution
         try:
@@ -306,7 +292,9 @@ class Context:
             raise AbortFuzzing
 
     def get_function_types(self) -> list[OpTypeFunction]:
-        return list(filter(lambda t: isinstance(t, OpTypeFunction), self.tvc.keys()))
+        return list(
+            filter(lambda t: isinstance(t, OpTypeFunction), self.globals.keys())
+        )
 
     def get_interfaces(self) -> tuple[OpVariable, ...]:
         return tuple(
@@ -315,8 +303,9 @@ class Context:
                 and (
                     s.storage_class == StorageClass.Input
                     or s.storage_class == StorageClass.Output
+                    # or s.storage_class == StorageClass.StorageBuffer
                 ),
-                self.tvc,
+                self.globals,
             )
         )
 
@@ -325,7 +314,7 @@ class Context:
             filter(
                 lambda s: isinstance(s, OpVariable)
                 and (s.storage_class == StorageClass.StorageBuffer),
-                self.tvc,
+                self.globals,
             )
         )
 
@@ -363,7 +352,7 @@ class Context:
                 list(
                     filter(
                         lambda tvc: isinstance(tvc, OpTypeStruct),
-                        self.tvc.keys(),
+                        self.globals.keys(),
                     )
                 )
             )

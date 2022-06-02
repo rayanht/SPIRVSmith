@@ -1,3 +1,4 @@
+import inspect
 from types import NoneType
 from typing import get_args
 from typing import TYPE_CHECKING
@@ -9,6 +10,7 @@ from src import FuzzResult
 from src import Signed
 from src import Statement
 from src.constants import OpConstantComposite
+from src.predicates import HasType
 
 if TYPE_CHECKING:
     from src.context import Context
@@ -84,17 +86,12 @@ class BinaryOperatorFuzzMixin:
         operand1: Operand = context.get_random_operand(
             cls.OPERAND_SELECTION_PREDICATE(source_type, source_signed)
         )
-        operand2: Operand = context.get_random_operand(
-            cls.OPERAND_SELECTION_PREDICATE(source_type, source_signed),
-            constraint=operand1,
-        )
+        operand2: Operand = context.get_random_operand(HasType(operand1.type))
         if not issubclass(destination_type, NoneType):
             inner_type = destination_type.fuzz(context).opcode
             if destination_signed is not None:
                 inner_type.signed = int(destination_signed)
             context.add_to_tvc(inner_type)
-            # if isinstance(operand, OpConstantComposite):
-            #     inner_type.width = operand.type.type.width
             if hasattr(operand1, "width"):
                 inner_type.width = operand1.get_base_type().width
             if isinstance(operand1.type, (OpConstantComposite, OpTypeVector)):

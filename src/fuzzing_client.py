@@ -1,29 +1,27 @@
 import copy
-import logging
 import multiprocessing
 import os
 import random
-import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from dataclasses import field
-from threading import Thread
+from multiprocessing.pool import Pool
+from typing import Optional
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
 from omegaconf import OmegaConf
+from spirv_enums import AddressingModel
+from spirv_enums import Capability
+from spirv_enums import ExecutionMode
+from spirv_enums import ExecutionModel
+from spirv_enums import MemoryModel
+from spirvsmith_server_client.api.generators import register_generator
+from spirvsmith_server_client.api.shaders import submit_shader
+from spirvsmith_server_client.models import *
 
 from src import FuzzDelegator
 from src import OpCode
 from src.context import Context
-from src.enums import AddressingModel
-from src.enums import Capability
-from src.enums import ExecutionMode
-from src.enums import ExecutionModel
-from src.enums import MemoryModel
 from src.extension import OpExtInstImport
 from src.misc import OpCapability
 from src.misc import OpEntryPoint
@@ -33,11 +31,10 @@ from src.monitor import Event
 from src.monitor import Monitor
 from src.operators.memory.memory_access import OpVariable
 from src.optimiser_fuzzer import fuzz_optimiser
-from src.shader_brokerage import BQ_insert_new_shader
-from src.shader_brokerage import GCS_upload_shader
 from src.shader_utils import SPIRVShader
 from src.types.concrete_types import OpTypeFunction
 from src.types.concrete_types import OpTypeVoid
+from src.utils import get_spirvsmith_version
 from src.utils import mutate_config
 
 if TYPE_CHECKING:
@@ -45,11 +42,10 @@ if TYPE_CHECKING:
 
 
 import signal
-from flask import Flask
 
-app = Flask(__name__)
+from spirvsmith_server_client import Client
 
-logging.getLogger("werkzeug").disabled = True
+client = Client(base_url="http://localhost:8000")
 
 
 terminate = False
@@ -68,71 +64,30 @@ def init_MP_pool():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
-from werkzeug.serving import make_server
-
-
-class ServerThread(Thread):
-    def __init__(self, app):
-        Thread.__init__(self)
-        self.server = make_server("127.0.0.1", 54254, app)
-        self.ctx = app.app_context()
-        self.ctx.push()
-
-    def run(self):
-        self.server.serve_forever()
-
-    def shutdown(self):
-        self.server.shutdown()
-
-
-@app.route("/pause")
-def pause_fuzzer():
-    global paused
-    paused = True
-    return ("", 204)
-
-
-@app.route("/start")
-def start_fuzzer():
-    global paused
-    paused = False
-    return ("", 204)
-
-
-def register_generator_configuration(generator_id: str, config: "SPIRVSmithConfig"):
-    firestore_client = firestore.client()
-    document_reference = firestore_client.collection("configurations").document(
-        str(generator_id)
-    )
-    document_reference.set(OmegaConf.to_container(config))
-
-
 @dataclass
 class ShaderGenerator:
     config: "SPIRVSmithConfig"
-    generator_id: str = field(default_factory=lambda: str(uuid4()))
+    generator_info: Optional[GeneratorInfo] = None
 
     def start(self):
-        MP_pool = multiprocessing.Pool(4, init_MP_pool)
-        thread_pool_executor = ThreadPoolExecutor(max_workers=4)
-        if self.config.misc.start_web_server:
-            flask_thread = ServerThread(app)
-            flask_thread.start()
+        self.generator_info = GeneratorInfo(
+            id=str(uuid4()),
+            fuzzer_version=get_spirvsmith_version(),
+            strategy=FuzzingStrategy.from_dict(
+                OmegaConf.to_container(self.config.strategy)
+            ),
+        )
+        MP_pool: Pool = multiprocessing.Pool(4, init_MP_pool)
+        thread_pool_executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=4)
 
         if self.config.misc.broadcast_generated_shaders:
-            cred = credentials.Certificate("infra/spirvsmith_gcp.json")
-            firebase_admin.initialize_app(cred)
-            register_generator_configuration(self.generator_id, self.config)
-
+            register_generator.sync(client=client, json_body=self.generator_info)
         try:
             os.mkdir("out")
         except FileExistsError:
             pass
         while True:
             if terminate:
-                if self.config.misc.start_web_server:
-                    flask_thread.shutdown()
-                    flask_thread.join()
                 MP_pool.close()
                 MP_pool.join()
                 thread_pool_executor.shutdown()
@@ -144,19 +99,36 @@ class ShaderGenerator:
                 if shader.validate():
                     MP_pool.apply_async(func=fuzz_optimiser, args=(shader,))
                     if self.config.misc.broadcast_generated_shaders:
-                        thread_pool_executor.submit(GCS_upload_shader, shader)
-                        thread_pool_executor.submit(
-                            BQ_insert_new_shader, shader, self.generator_id
+                        submit_shader.sync(
+                            client=client,
+                            json_body=ShaderSubmission(
+                                shader_id=shader.id,
+                                shader_assembly="\n".join(
+                                    shader.generate_assembly_lines()
+                                ),
+                                generator_info=self.generator_info,
+                                prioritize=False,
+                                n_buffers=len(shader.context.get_storage_buffers()),
+                            ),
                         )
+
             if paused:
                 Monitor(self.config).info(event=Event.PAUSED)
 
             if random.SystemRandom().random() <= self.config.strategy.mutation_rate:
                 old_strategy = copy.deepcopy(self.config.strategy)
                 mutate_config(self.config)
-                self.generator_id = str(uuid4())
+                self.generator_info = GeneratorInfo(
+                    id=str(uuid4()),
+                    fuzzer_version=get_spirvsmith_version(),
+                    strategy=FuzzingStrategy.from_dict(
+                        OmegaConf.to_container(self.config.strategy)
+                    ),
+                )
                 if self.config.misc.broadcast_generated_shaders:
-                    register_generator_configuration(self.generator_id, self.config)
+                    register_generator.sync(
+                        client=client, json_body=self.generator_info
+                    )
                 Monitor(self.config).info(
                     event=Event.GENERATOR_MUTATION,
                     extra={
@@ -166,10 +138,6 @@ class ShaderGenerator:
                 )
 
     def gen_shader(self) -> SPIRVShader:
-        # execution_model = random.SystemRandom().choice(list(ExecutionModel))
-        # execution_model = random.SystemRandom().choice(
-        #     [ExecutionModel.GLCompute, ExecutionModel.Kernel]
-        # )
         execution_model = ExecutionModel.GLCompute
         context: Context = Context.create_global_context(execution_model, self.config)
         void_type: OpTypeVoid = OpTypeVoid()
@@ -177,9 +145,11 @@ class ShaderGenerator:
             return_type=void_type, parameter_types=()
         )
         context.main_type = main_type
-        context.tvc[void_type] = void_type.id
-        context.tvc[main_type] = main_type.id
-
+        context.globals[void_type] = void_type.id
+        context.globals[main_type] = main_type.id
+        # context.extension_sets["SPV_KHR_bit_instructions"] = OpExtension(
+        #     "SPV_KHR_bit_instructions"
+        # )
         if self.config.strategy.enable_ext_glsl_std_450:
             context.extension_sets["GLSL.std.450"] = OpExtInstImport(
                 name="GLSL.std.450"
@@ -193,7 +163,7 @@ class ShaderGenerator:
         opcodes: list[OpCode] = context.gen_opcodes()
 
         interfaces: tuple[OpVariable, ...] = context.get_interfaces()
-        entry_point = OpEntryPoint(
+        entry_point: OpEntryPoint = OpEntryPoint(
             execution_model=execution_model,
             function=context.main_fn,
             name="main",
@@ -202,6 +172,7 @@ class ShaderGenerator:
         capabilities: list[OpCapability] = [
             OpCapability(capability=Capability.Shader),
             OpCapability(capability=Capability.Matrix),
+            # OpCapability(capability=Capability.BitInstructions),
         ]
         memory_model: OpMemoryModel = OpMemoryModel(
             addressing_model=AddressingModel.Logical, memory_model=MemoryModel.GLSL450

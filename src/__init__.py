@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from src.context import Context
 from src.patched_dataclass import dataclass
 import random
-from src.enums import Capability
+from spirv_enums import Capability
 from ulid import monotonic as ulid
 
 OpCodeName = str
@@ -97,7 +97,7 @@ class OpCode(ABC):
             if isinstance(attr, (Type, Constant)):
                 # print("======")
                 # print(self, attr)
-                attr_spasm = f" %{context.tvc[attr]}"
+                attr_spasm = f" %{context.globals[attr]}"
             else:
                 attr_spasm = f" %{attr.id}"
         elif isinstance(attr, str) and not isinstance(attr, Enum):
@@ -121,7 +121,6 @@ class OpCode(ABC):
                     spasm += self.resolve_attribute_spasm(_attr, context)
             else:
                 spasm += self.resolve_attribute_spasm(attr, context)
-        spasm += "\n"
         return spasm
 
 

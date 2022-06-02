@@ -45,7 +45,12 @@ from src.operators.arithmetic.scalar_arithmetic import OpSMod
 from src.operators.arithmetic.scalar_arithmetic import OpSRem
 from src.operators.arithmetic.scalar_arithmetic import OpUDiv
 from src.operators.arithmetic.scalar_arithmetic import OpUMod
-from src.operators.bitwise import OpShiftLeftLogical
+from src.operators.bitwise import (
+    # OpBitFieldInsert,
+    # OpBitFieldSExtract,
+    # OpBitFieldUExtract,
+    OpShiftLeftLogical,
+)
 from src.operators.bitwise import OpShiftRightArithmetic
 from src.operators.bitwise import OpShiftRightLogical
 from src.operators.composite import OpVectorExtractDynamic
@@ -383,6 +388,56 @@ class TooLargeShift(DangerousPattern[TooLargeShiftVulnerableOpCode]):
     @staticmethod
     def get_affected_opcodes() -> set[type[TooLargeShiftVulnerableOpCode]]:
         return {OpShiftLeftLogical, OpShiftRightLogical, OpShiftRightArithmetic}
+
+
+# DegenerateBitManipulationVulnerableOpCode: TypeAlias = (
+#     OpBitFieldInsert | OpBitFieldSExtract | OpBitFieldUExtract
+# )
+
+
+# class DegenerateBitManipulation(
+#     DangerousPattern[DegenerateBitManipulationVulnerableOpCode]
+# ):
+#     @staticmethod
+#     def generate_clamp(context: Context, operand, lower_bound: int, upper_bound: int):
+#         const_lower = context.create_on_demand_numerical_constant(
+#             operand.get_base_type().__class__,
+#             lower_bound,
+#             operand.get_base_type().width,
+#             operand.get_base_type().signed,
+#         )
+#         const_upper = context.create_on_demand_numerical_constant(
+#             operand.get_base_type().__class__,
+#             upper_bound,
+#             operand.get_base_type().width,
+#             operand.get_base_type().signed,
+#         )
+#         if operand.get_base_type().signed:
+#             return OpExtInst(
+#                 type=operand.type,
+#                 extension_set=context.extension_sets["GLSL.std.450"],
+#                 instruction=SClamp,
+#                 operands=(operand, const_lower, const_upper),
+#             )
+#         return OpExtInst(
+#             type=operand.type,
+#             extension_set=context.extension_sets["GLSL.std.450"],
+#             instruction=UClamp,
+#             operands=(operand, const_lower, const_upper),
+#         )
+
+#     @staticmethod
+#     def recondition(
+#         context: Context,
+#         opcode: DegenerateBitManipulationVulnerableOpCode,
+#     ):
+#         opcode.offset = DegenerateBitManipulation.generate_clamp(context, opcode.offset, 0, 16)
+#         opcode.count = DegenerateBitManipulation.generate_clamp(context, opcode.count, 0, 16)
+#         return [opcode.offset, opcode.count]
+
+#     @staticmethod
+#     def get_affected_opcodes() -> set[type[DegenerateClampVulnerableOpCode]]:
+#         return {OpBitFieldInsert, OpBitFieldSExtract, OpBitFieldUExtract}
 
 
 def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):

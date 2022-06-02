@@ -1,13 +1,14 @@
 from dataclasses import field
 
+from spirv_enums import AddressingModel
+from spirv_enums import Capability
+from spirv_enums import ExecutionMode
+from spirv_enums import ExecutionModel
+from spirv_enums import MemoryModel
+
 from src import FuzzLeafMixin
 from src import OpCode
 from src import VoidOp
-from src.enums import AddressingModel
-from src.enums import Capability
-from src.enums import ExecutionMode
-from src.enums import ExecutionModel
-from src.enums import MemoryModel
 from src.function import OpFunction
 from src.patched_dataclass import dataclass
 from src.types.concrete_types import EmptyType

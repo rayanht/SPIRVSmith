@@ -46,17 +46,17 @@ class Monitor:
             daiquiri.output.Stream(
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt=("[%(levelname)s] [%(asctime)s] %(message)s")
-                ),
-                level=logging.WARNING,
+                )
             )
         ]
         if config and config.misc.upload_logs:
-            outputs.append(daiquiri.output.Datadog(level=logging.INFO))
+            outputs.append(daiquiri.output.Datadog())
         daiquiri.setup(
             outputs=outputs,
         )
 
         self.logger = daiquiri.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
 
     def debug(self, event: Event, extra: dict[str, str] = None) -> None:
         if not extra:

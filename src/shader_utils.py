@@ -1,20 +1,16 @@
 import random
 import subprocess
 import tempfile
-from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
-from random import SystemRandom
-from uuid import uuid4
 
 from shortuuid import uuid
+from spirv_enums import Decoration
 from typing_extensions import Self
 
 from src import OpCode
 from src.annotations import OpDecorate
 from src.context import Context
-from src.enums import Decoration
-from src.enums import StorageClass
 from src.misc import OpCapability
 from src.misc import OpEntryPoint
 from src.misc import OpExecutionMode
@@ -22,11 +18,13 @@ from src.misc import OpMemoryModel
 from src.monitor import Event
 from src.monitor import Monitor
 from src.operators.memory.variable import OpVariable
+from src.patched_dataclass import dataclass
 from src.recondition import recondition_opcodes
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 from src.utils import get_spirvsmith_version
 from src.utils import SubprocessResult
+from src.utils import TARGET_SPIRV_VERSION
 
 
 @dataclass
@@ -39,33 +37,36 @@ class SPIRVShader:
     opcodes: list[OpCode]
     context: Context
 
+    def generate_assembly_lines(self: Self) -> list[str]:
+        assembly_lines: list[str] = [
+            "; Magic:     0x07230203 (SPIR-V)",
+            f"; Version:   0x00010300 (Version: {get_spirvsmith_version()[1:]})",
+            "; Generator: 0x00220001 (SPIRVSmith)",
+            f"; Bound:     {len(self.opcodes) + len(self.context.globals) - 1}",
+            "; Schema:    0",
+        ]
+        assembly_lines += [
+            capability.to_spasm(self.context) for capability in self.capabilities
+        ]
+        assembly_lines += [
+            ext.to_spasm(self.context) for ext in self.context.extension_sets.values()
+        ]
+        assembly_lines.append(self.memory_model.to_spasm(self.context))
+        assembly_lines.append(self.entry_point.to_spasm(self.context))
+        assembly_lines.append(self.execution_mode.to_spasm(self.context))
+        assembly_lines += [
+            annotation.to_spasm(self.context)
+            for annotation in self.context.get_global_context().annotations.keys()
+        ]
+        assembly_lines += [
+            tvc.to_spasm(self.context) for tvc, _ in self.context.globals.items()
+        ]
+        assembly_lines += [opcode.to_spasm(self.context) for opcode in self.opcodes]
+        return assembly_lines
+
     def generate_assembly_file(self, outfile_path: str) -> None:
         with open(outfile_path, "w") as f:
-            f.write("; Magic:     0x07230203 (SPIR-V)\n")
-            f.write(
-                f"; Version:   0x00010300 (Version: {get_spirvsmith_version()[1:]})\n"
-            )
-            f.write("; Generator: 0x00220001 (SPIRVSmith)\n")
-            f.write(f"; Bound:     {len(self.opcodes) + len(self.context.tvc) - 1}\n")
-            f.write("; Schema:    0\n")
-            for capability in self.capabilities:
-                f.write(capability.to_spasm(self.context))
-            for ext in self.context.extension_sets.values():
-                f.write(ext.to_spasm(self.context))
-            f.write(self.memory_model.to_spasm(self.context))
-            f.write(self.entry_point.to_spasm(self.context))
-            f.write(self.execution_mode.to_spasm(self.context))
-            for annotation in self.context.get_global_context().annotations.keys():
-                f.write(annotation.to_spasm(self.context))
-            for tvc, _ in self.context.tvc.items():
-                if (
-                    isinstance(tvc, OpVariable)
-                    and tvc.storage_class == StorageClass.Function
-                ):
-                    continue
-                f.write(tvc.to_spasm(self.context))
-            for opcode in self.opcodes:
-                f.write(opcode.to_spasm(self.context))
+            f.write("\n".join(self.generate_assembly_lines()))
 
     def normalise_ids(self: Self) -> Self:
         def id_generator(i=1):
@@ -77,10 +78,10 @@ class SPIRVShader:
         for ext in self.context.extension_sets.values():
             ext.id = str(next(id_gen))
         new_tvc = {}
-        for tvc in self.context.tvc.keys():
+        for tvc in self.context.globals.keys():
             tvc.id = str(next(id_gen))
             new_tvc[tvc] = tvc.id
-        self.context.tvc = new_tvc
+        self.context.globals = new_tvc
         for opcode in self.opcodes:
             opcode.id = str(next(id_gen))
 
@@ -169,7 +170,7 @@ def assemble_spasm_file(infile_path: str, outfile_path: str) -> SubprocessResult
         [
             "spirv-as",
             "--target-env",
-            "spv1.3",
+            TARGET_SPIRV_VERSION,
             infile_path,
             "-o",
             outfile_path,
@@ -221,7 +222,7 @@ def validate_spv_file(
         [
             "spirv-val",
             "--target-env",
-            "vulkan1.2",
+            TARGET_SPIRV_VERSION,
             filename,
         ],
         capture_output=True,
@@ -238,7 +239,7 @@ def optimise_spv_file(shader: SPIRVShader, filename: str) -> bool:
     process: subprocess.CompletedProcess = subprocess.run(
         [
             shader.context.config.binaries.OPTIMISER_PATH,
-            "--target-env=spv1.3",
+            f"--target-env={TARGET_SPIRV_VERSION}",
             filename,
             "-o",
             f"out/{shader.id}/spv_opt/shader.spv",
@@ -266,7 +267,7 @@ def reduce_spv_file(shader: SPIRVShader, filename: str) -> bool:
     process: subprocess.CompletedProcess = subprocess.run(
         [
             shader.context.config.binaries.OPTIMISER_PATH,
-            "--target-env=spv1.3",
+            f"--target-env={TARGET_SPIRV_VERSION}",
             filename,
             "-o",
             f"out/{shader.id}/spv_opt/shader.spv",
@@ -330,8 +331,7 @@ class AmberStructDeclaration:
         return f"STRUCT {self.name}\n{chr(10).join([f'{member.type.value} {member.name}' for member in self.members])}\nEND"
 
 
-def create_amber_file(shader: SPIRVShader, filename: str, seed: int) -> None:
-    # TODO we assume everything is a struct, relax this assumption at some point in the future
+def create_amber_file(shader: SPIRVShader, filename: str) -> None:
     shader_interfaces: list[OpVariable] = shader.context.get_storage_buffers()
     struct_declarations: list[AmberStructDeclaration] = []
     buffers: list[AmberStructDefinition] = []
@@ -345,7 +345,7 @@ def create_amber_file(shader: SPIRVShader, filename: str, seed: int) -> None:
             ),
         )
     )
-    random.seed(seed)
+    random.seed(len(shader.opcodes))
     for i, interface in enumerate(shader_interfaces):
         amber_struct_members = []
         for j, member in enumerate(interface.type.type.types):
@@ -397,7 +397,9 @@ def create_amber_file(shader: SPIRVShader, filename: str, seed: int) -> None:
         )
     with open(filename, "w") as fw:
         fw.write("#!amber\n")
-        fw.write(f"SHADER compute {'shader'} SPIRV-ASM TARGET_ENV spv1.3\n")
+        fw.write(
+            f"SHADER compute {'shader'} SPIRV-ASM TARGET_ENV {TARGET_SPIRV_VERSION}\n"
+        )
         with tempfile.NamedTemporaryFile(suffix=".spasm") as fr:
             shader.generate_assembly_file(fr.name)
             lines = fr.readlines()

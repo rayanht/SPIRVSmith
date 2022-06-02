@@ -2,13 +2,14 @@ from dataclasses import fields
 from inspect import isclass
 from typing import Optional
 
+from spirv_enums import AddressingModel
+from spirv_enums import Capability
+from spirv_enums import ExecutionModel
+from spirv_enums import MemoryModel
+from spirv_enums import SPIRVEnum
+
 from src import OpCode
 from src.context import Context
-from src.enums import AddressingModel
-from src.enums import Capability
-from src.enums import ExecutionModel
-from src.enums import MemoryModel
-from src.enums import SPIRVEnum
 from src.misc import OpCapability
 from src.misc import OpEntryPoint
 from src.misc import OpExecutionMode
@@ -75,6 +76,7 @@ def resolve_operands(
         "OpCompositeExtract",
         "OpExecutionMode",
         "OpAccessChain",
+        "OpInBoundsAccessChain",
         "OpDecorate",
     }:
         typed_operands = (*typed_operands[:2], typed_operands[2:])
@@ -89,11 +91,7 @@ def resolve_operands(
     return typed_operands
 
 
-def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
-    with open(filename, "r") as fr:
-        lines: list[list[str]] = list(
-            map(lambda l: l.strip().split(" "), fr.readlines())
-        )
+def parse_spirv_assembly_lines(lines: list[str]) -> SPIRVShader:
     capabilities: list[OpCapability] = []
     global_context: Context = Context.create_global_context(
         ExecutionModel.GLCompute, None
@@ -104,7 +102,7 @@ def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
     opcode_lookup_table: dict[str, OpCode] = {}
     opcodes: list[OpCode] = []
     current_opcode: Optional[OpCode] = None
-    for line in lines:
+    for line in (line.split(" ") for line in lines):
         match line:
             case [";", *_]:
                 continue
@@ -148,7 +146,10 @@ def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
                 ("OpType", "OpConstant", "OpVariable")
             ):
                 current_context.add_to_tvc(current_opcode)
-            elif current_opcode.__class__.__name__ == "OpExtInstImport":
+            elif current_opcode.__class__.__name__ in {
+                "OpExtInstImport",
+                "OpExtension",
+            }:
                 current_context.extension_sets[current_opcode.name] = current_opcode
             else:
                 current_context.symbol_table.append(current_opcode)
@@ -182,3 +183,9 @@ def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
         opcodes=opcodes,
         context=current_context.get_global_context(),
     )
+
+
+def parse_spirv_assembly_file(filename: str) -> SPIRVShader:
+    with open(filename, "r") as fr:
+        lines: list[list[str]] = list(map(lambda l: l.strip(), fr.readlines()))
+    return parse_spirv_assembly_lines(lines)

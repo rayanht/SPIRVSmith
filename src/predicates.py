@@ -1,5 +1,6 @@
+from spirv_enums import StorageClass
+
 from src import Untyped
-from src.enums import StorageClass
 from src.types.concrete_types import OpTypeArray
 from src.types.concrete_types import OpTypeBool
 from src.types.concrete_types import OpTypeFloat

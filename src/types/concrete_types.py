@@ -3,6 +3,8 @@ from dataclasses import field
 from typing import NoReturn
 from typing import TYPE_CHECKING
 
+from spirv_enums import Capability
+from spirv_enums import StorageClass
 from typing_extensions import Self
 
 from src import AbortFuzzing
@@ -10,8 +12,6 @@ from src import FuzzLeafMixin
 from src import FuzzResult
 from src import OpCode
 from src import ReparametrizationError
-from src.enums import Capability
-from src.enums import StorageClass
 from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:

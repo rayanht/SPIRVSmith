@@ -1,30 +1,35 @@
 import signal
 import subprocess
 import tempfile
+import time
 from functools import reduce
 from itertools import repeat
 from operator import iconcat
+from pydoc import cli
 
-import pandas as pd
-from google.api_core.exceptions import NotFound
+from dataclass_wizard import asdict
+from dataclass_wizard import DumpMeta
+from spirv_enums import Decoration
+from vulkan_platform_py import *
 
 from run import *
 from src.annotations import OpDecorate
-from src.enums import Decoration
-from src.execution_platform import ExecutionPlatform
 from src.monitor import Event
 from src.monitor import Monitor
-from src.shader_brokerage import BQ_delete_shader
-from src.shader_brokerage import BQ_fetch_shaders_pending_execution
-from src.shader_brokerage import BQ_get_high_priority_shader_ids
-from src.shader_brokerage import BQ_update_shader_with_buffer_dumps
-from src.shader_brokerage import GCS_download_shader
+from src.shader_parser import parse_spirv_assembly_lines
 from src.shader_utils import create_amber_file
 from src.shader_utils import SPIRVShader
+from src.utils import TARGET_SPIRV_VERSION
+from src.utils import TARGET_VULKAN_VERSION
 
 AMBER_PATH = "bin/amber"
 
 MONITOR = Monitor()
+
+from spirvsmith_server_client import Client
+
+client = Client(base_url="http://localhost:8000")
+
 
 terminate = False
 
@@ -43,9 +48,9 @@ def run_amber(amber_filename: str, buffer_bindings: list[int], shader_id: str) -
             [
                 AMBER_PATH,
                 "-t",
-                "spv1.3",
+                TARGET_SPIRV_VERSION,
                 "-v",
-                "1.2",
+                TARGET_VULKAN_VERSION,
                 "-b",
                 temp_file.name,
                 *reduce(
@@ -88,60 +93,64 @@ def run_amber(amber_filename: str, buffer_bindings: list[int], shader_id: str) -
             buffer_dumps: list[str] = list(
                 filter(lambda l: not l.startswith("pipeline"), f.readlines())
             )
-            buffer_dumps: list[str] = [d.strip().replace(" ", "") for d in buffer_dumps]
-            return " ".join(buffer_dumps)
+            return " ".join(buffer_dumps).replace("\n", "").replace(" ", "")
 
+
+from spirvsmith_server_client.models.retrieved_shader import RetrievedShader
+from spirvsmith_server_client.models.execution_platform import ExecutionPlatform as EP
+from spirvsmith_server_client.models.buffer_submission import BufferSubmission
+from spirvsmith_server_client.api.queues import register_executor
+from spirvsmith_server_client.api.shaders import get_next_shader
+from spirvsmith_server_client.api.buffers import post_buffers
+from spirvsmith_server_client.types import Response
 
 if __name__ == "__main__":
     execution_platform = ExecutionPlatform.auto_detect()
     execution_platform.display_summary()
+    DumpMeta(
+        key_transform="SNAKE",
+    ).bind_to(ExecutionPlatform)
     input("Press enter to continue...")
+    register_executor.sync(
+        client=client, json_body=EP.from_dict(asdict(execution_platform))
+    )
     while True:
-        pending_shaders: pd.DataFrame = BQ_fetch_shaders_pending_execution(
-            execution_platform
+        response: Response[RetrievedShader] = get_next_shader.sync_detailed(
+            client=client, json_body=EP.from_dict(asdict(execution_platform))
         )
-        current_shader_set: set[str] = set(pending_shaders.shader_id)
-        print(
-            f"Found {len(pending_shaders)} pending shaders for {str(execution_platform)}"
+        if response.status_code == 404:
+            time.sleep(2)
+            continue
+
+        retrieved_shader: RetrievedShader = response.parsed
+
+        shader: SPIRVShader = parse_spirv_assembly_lines(
+            retrieved_shader.shader_assembly.split("\n")
         )
-        for _, row in pending_shaders.iterrows():
-            try:
-                shader: SPIRVShader = GCS_download_shader(row.shader_id)
-            except NotFound:
-                print(f"No GCS entry found for shader {row.shader_id}")
-                BQ_delete_shader(row.shader_id)
-            with tempfile.NamedTemporaryFile(suffix=".amber") as amber_file:
-                create_amber_file(
-                    shader, amber_file.name, seed=row.buffer_initialisation_seed
+        with tempfile.NamedTemporaryFile(suffix=".amber") as amber_file:
+            create_amber_file(shader, amber_file.name)
+            bindings: list[int] = sorted(
+                map(
+                    lambda b: b.extra_operands[0],
+                    filter(
+                        lambda a: isinstance(a, OpDecorate)
+                        and a.decoration == Decoration.Binding,
+                        list(shader.context.annotations.keys()),
+                    ),
                 )
-                bindings: list[int] = sorted(
-                    map(
-                        lambda b: b.extra_operands[0],
-                        filter(
-                            lambda a: isinstance(a, OpDecorate)
-                            and a.decoration == Decoration.Binding,
-                            list(shader.context.annotations.keys()),
-                        ),
-                    )
+            )
+            buffer_dump: str = run_amber(
+                amber_filename=amber_file.name,
+                buffer_bindings=bindings,
+                shader_id=retrieved_shader.shader_id,
+            )
+            if buffer_dump:
+                buffer_submission: BufferSubmission = BufferSubmission(
+                    executor=EP.from_dict(asdict(execution_platform)),
+                    buffer_dump=buffer_dump,
                 )
-                buffer_dump: str = run_amber(
-                    amber_filename=amber_file.name,
-                    buffer_bindings=bindings,
-                    shader_id=row.shader_id,
+                post_buffers.sync(
+                    shader_id=retrieved_shader.shader_id,
+                    client=client,
+                    json_body=buffer_submission,
                 )
-                if buffer_dump:
-                    BQ_update_shader_with_buffer_dumps(
-                        row, execution_platform, row.shader_id, buffer_dump
-                    )
-            high_priority_shader_set: set[str] = BQ_get_high_priority_shader_ids()
-            if not all(
-                [shader in current_shader_set for shader in high_priority_shader_set]
-            ):
-                print(
-                    "Detected high priority shaders not in current execution queue, refreshing..."
-                )
-                break
-            if terminate:
-                break
-        if terminate:
-            break

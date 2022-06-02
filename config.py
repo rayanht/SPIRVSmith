@@ -7,6 +7,15 @@ rng = random.SystemRandom()
 
 
 @dataclass
+class BoundedInt:
+    min: int
+    max: int
+
+    def __iter__(self):
+        return iter((self.min, self.max))
+
+
+@dataclass
 class BinariesConfig:
     ASSEMBLER_PATH: str = "bin/spirv-as"
     VALIDATOR_PATH: str = "bin/spirv-val"
@@ -18,22 +27,22 @@ class BinariesConfig:
 @dataclass
 class MutationsConfig:
     # Operations
-    w_memory_operation: tuple[int, int] = (1, 2)
-    w_logical_operation: tuple[int, int] = (2, 6)
-    w_arithmetic_operation: tuple[int, int] = (2, 6)
-    w_control_flow_operation: tuple[int, int] = (0, 2)
-    w_function_operation: tuple[int, int] = (1, 1)
-    w_bitwise_operation: tuple[int, int] = (2, 6)
-    w_conversion_operation: tuple[int, int] = (2, 6)
-    w_composite_operation: tuple[int, int] = (2, 6)
+    w_memory_operation: BoundedInt = BoundedInt(1, 2)
+    w_logical_operation: BoundedInt = BoundedInt(2, 6)
+    w_arithmetic_operation: BoundedInt = BoundedInt(2, 6)
+    w_control_flow_operation: BoundedInt = BoundedInt(0, 0)
+    w_function_operation: BoundedInt = BoundedInt(1, 1)
+    w_bitwise_operation: BoundedInt = BoundedInt(2, 6)
+    w_conversion_operation: BoundedInt = BoundedInt(2, 6)
+    w_composite_operation: BoundedInt = BoundedInt(2, 6)
 
     # Types
-    w_scalar_type: tuple[int, int] = (1, 3)
-    w_container_type: tuple[int, int] = (1, 3)
+    w_scalar_type: BoundedInt = BoundedInt(1, 3)
+    w_container_type: BoundedInt = BoundedInt(1, 3)
 
     # Constants
-    w_composite_constant: tuple[int, int] = (1, 3)
-    w_scalar_constant: tuple[int, int] = (2, 4)
+    w_composite_constant: BoundedInt = BoundedInt(1, 3)
+    w_scalar_constant: BoundedInt = BoundedInt(2, 4)
 
 
 @dataclass
@@ -129,7 +138,7 @@ class FuzzingStrategyConfig:
     #   - Statements -> the result of a previous operation in scope
     #
     # Setting a higher probability will favour statements over constants.
-    p_picking_statement_operand: float = 0.5
+    p_picking_statement_operand: float = 0.8
 
     # The following parameter is used to determine how often a fuzzer mutation
     # should be trigger.
@@ -147,9 +156,8 @@ class MiscConfig:
     # The following parameters are only useful when running SPIRVSmith in
     # a distributed fashion. Enabling these will almost definitely crash SPIRVSmith
     # unless you have deployed the associated infrastructure and have a credentials file.
-    start_web_server: bool = False
-    broadcast_generated_shaders: bool = False
-    upload_logs: bool = False
+    broadcast_generated_shaders: bool = True
+    upload_logs: bool = True
     version: str = get_spirvsmith_version()
 
 

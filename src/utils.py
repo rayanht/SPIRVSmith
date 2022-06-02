@@ -10,6 +10,10 @@ if TYPE_CHECKING:
 
 from src import OpCode
 
+# Lowest common denominator to allow testing with MoltenVK
+TARGET_VULKAN_VERSION = "1.1"
+TARGET_SPIRV_VERSION = "spv1.3"
+
 
 @dataclass
 class SubprocessResult:
@@ -84,9 +88,10 @@ def mutate_config(config: "SPIRVSmithConfig") -> None:
             "mutation_rate",
             "enable_ext_glsl_std_450",
             "p_statement",
+            "p_picking_statement_operand",
         }
     ]
     mutation_target: str = random.SystemRandom().choice(mutable_fields)
     config.strategy[mutation_target] = random.SystemRandom().randint(
-        *config.strategy.mutations_config[mutation_target]
+        *config.strategy.mutations_config[mutation_target].values()
     )

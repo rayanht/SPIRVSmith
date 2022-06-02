@@ -467,10 +467,10 @@ void main () {
 | OpBitwiseXor | :white_check_mark: |
 | OpBitwiseAnd | :white_check_mark: |
 | OpNot | :white_check_mark: |
-| OpBitFieldInsert | :red_circle: |
-| OpBitFieldSExtract | :red_circle: |
-| OpBitFieldUExtract | :red_circle: |
-| OpBitReverse | :red_circle: |
+| OpBitFieldInsert | :white_check_mark: |
+| OpBitFieldSExtract | :white_check_mark: |
+| OpBitFieldUExtract | :white_check_mark: |
+| OpBitReverse | :white_check_mark: |
 | OpBitCount | :white_check_mark: |
 
 </details>
@@ -484,15 +484,15 @@ void main () {
 
 |OpCode| Status |
 |--|--|
-| OpAny | :red_circle: |
-| OpAll | :red_circle: |
+| OpAny | :white_check_mark: |
+| OpAll | :white_check_mark: |
 | OpIsNan | :white_check_mark: |
 | OpIsInf |:white_check_mark:  |
-| OpIsFinite | :white_check_mark: |
-| OpIsNormal | :white_check_mark: |
-| OpSignBitSet | :white_check_mark: |
-| OpOrdered | :white_check_mark: |
-| OpUnordered | :white_check_mark: |
+| OpIsFinite | :red_circle: |
+| OpIsNormal | :red_circle: |
+| OpSignBitSet | :red_circle: |
+| OpOrdered | :red_circle: |
+| OpUnordered | :red_circle: |
 | OpLogicalEqual | :white_check_mark: |
 | OpLogicalNotEqual | :white_check_mark: |
 | OpLogicalOr | :white_check_mark: |

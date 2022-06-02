@@ -3,6 +3,8 @@ from ast import Constant
 from typing import Optional
 from typing import TYPE_CHECKING
 
+from spirv_enums import FunctionControlMask
+from spirv_enums import SelectionControlMask
 from typing_extensions import Self
 
 from src import AbortFuzzing
@@ -11,10 +13,6 @@ from src import FuzzResult
 from src import OpCode
 from src import Untyped
 from src import VoidOp
-from src.enums import FunctionControlMask
-from src.enums import SelectionControlMask
-from src.enums import StorageClass
-from src.predicates import IsOfType
 from src.predicates import IsScalarBoolean
 
 if TYPE_CHECKING:
@@ -24,7 +22,6 @@ from src.types.concrete_types import (
     EmptyType,
     OpTypeBool,
     OpTypeFunction,
-    OpTypePointer,
     Type,
 )
 from src.patched_dataclass import dataclass
@@ -43,9 +40,12 @@ class OpFunction(OpCode):
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        allowed_control_masks = list(
+            set(FunctionControlMask) - {FunctionControlMask.OptNoneINTEL}
+        )
         op_function: Self = cls(
             context.current_function_type.return_type,
-            context.rng.choice(list(FunctionControlMask)),
+            context.rng.choice(allowed_control_masks),
             context.current_function_type,
         )
         child_context = context.make_child_context(op_function)

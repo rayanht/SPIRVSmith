@@ -2,13 +2,13 @@ import copy
 import unittest
 
 from omegaconf import OmegaConf
+from spirv_enums import ExecutionModel
 
 from run import SPIRVSmithConfig
 from src import FuzzDelegator
 from src.constants import OpConstant
 from src.constants import OpConstantComposite
 from src.context import Context
-from src.enums import ExecutionModel
 from src.misc import OpUndef
 from src.monitor import Monitor
 from src.operators.arithmetic.scalar_arithmetic import OpIAdd
@@ -22,12 +22,11 @@ from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import OpTypeVector
 
 
-config = OmegaConf.structured(SPIRVSmithConfig())
+config: SPIRVSmithConfig = OmegaConf.structured(SPIRVSmithConfig())
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)
 
 config.misc.broadcast_generated_shaders = False
-config.misc.start_web_server = False
 config.misc.upload_logs = False
 monitor = Monitor(config)
 

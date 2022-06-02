@@ -2,10 +2,10 @@ import random
 from typing import Callable
 from typing import TYPE_CHECKING
 
+from spirv_enums import StorageClass
 from typing_extensions import Self
 
 from src.constants import OpConstant
-from src.enums import StorageClass
 from src.operators import Operand
 from src.operators.memory import MemoryOperator
 from src.operators.memory.variable import OpVariable
@@ -70,6 +70,48 @@ class OpStore(MemoryOperator, Untyped, VoidOp):
 
 @dataclass
 class OpAccessChain(MemoryOperator):
+    base: OpVariable
+    indexes: tuple[OpConstant, ...]
+
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        predicate: Callable[[OpVariable], bool] = lambda var: IsCompositeType(var.type)
+        base: OpVariable = context.rng.choice(
+            list(filter(predicate, context.get_storage_buffers()))
+        )
+        if base is None:
+            raise AbortFuzzing
+        composite_pointer = base.type
+        if IsMatrixType(composite_pointer):
+            indexes = (
+                context.rng.randint(0, len(composite_pointer.type) - 1),
+                context.rng.randint(0, len(composite_pointer.type.type) - 1),
+            )
+            pointer_inner_type = composite_pointer.get_base_type()
+        else:
+            indexes = (context.rng.randint(0, len(composite_pointer.type) - 1),)
+            pointer_inner_type = (
+                composite_pointer.type.types[indexes[0]]
+                if IsStructType(composite_pointer)
+                else composite_pointer.get_base_type()
+            )
+        pointer_type = OpTypePointer(
+            storage_class=base.storage_class, type=pointer_inner_type
+        )
+        context.add_to_tvc(pointer_type)
+        indexes: tuple[OpConstant] = tuple(
+            [
+                context.create_on_demand_numerical_constant(
+                    OpTypeInt, value=idx, width=32, signed=0
+                )
+                for idx in indexes
+            ]
+        )
+        return FuzzResult(cls(type=pointer_type, base=base, indexes=indexes))
+
+
+@dataclass
+class OpInBoundsAccessChain(MemoryOperator):
     base: OpVariable
     indexes: tuple[OpConstant, ...]
 

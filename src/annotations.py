@@ -1,10 +1,11 @@
 from dataclasses import field
 from typing import Optional
 
+from spirv_enums import Decoration
+
 from src import FuzzLeafMixin
 from src import OpCode
 from src import VoidOp
-from src.enums import Decoration
 from src.patched_dataclass import dataclass
 from src.types.concrete_types import OpTypeStruct
 

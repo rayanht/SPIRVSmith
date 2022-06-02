@@ -3,8 +3,13 @@ from typing import Callable
 from typing import ClassVar
 from typing import Generic
 from typing import Optional
+from typing import TYPE_CHECKING
 from typing import TypeVar
 
+from numpy import result_type
+from typing_extensions import Self
+
+from src import FuzzResult
 from src import Signed
 from src import Statement
 from src import Unsigned
@@ -12,14 +17,19 @@ from src.operators import BinaryOperatorFuzzMixin
 from src.operators import Operand
 from src.operators import UnaryOperatorFuzzMixin
 from src.patched_dataclass import dataclass
+from src.predicates import And
+from src.predicates import HasBaseType
 from src.predicates import HasValidBaseTypeAndSign
 from src.predicates import IsArithmeticType
 from src.predicates import IsOfType
+from src.predicates import IsVectorType
 from src.predicates import Or
 from src.types.concrete_types import OpTypeBool
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 
+if TYPE_CHECKING:
+    from src.context import Context
 S = TypeVar("S")
 D = TypeVar("D")
 SC = TypeVar("SC")
@@ -52,11 +62,38 @@ class BinaryLogicalOperator(
     operand2: Operand
 
 
-# class OpAny(UnaryLogicalOperatorFuzzMixin, UnaryLogicalOperator[OpTypeBool]):
-#     ...
+class OpAny(UnaryLogicalOperator[OpTypeBool, None, None, None]):
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        operand1: Operand = context.get_random_operand(
+            And(IsVectorType, HasBaseType(OpTypeBool()))
+        )
+        result_type: OpTypeBool = OpTypeBool()
+        return FuzzResult(cls(result_type, operand1), [result_type])
 
-# class OpAll(UnaryLogicalOperatorFuzzMixin, UnaryLogicalOperator[OpTypeBool]):
-#     ...
+
+class OpAll(UnaryLogicalOperator[OpTypeBool, None, None, None]):
+    @classmethod
+    def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        operand1: Operand = context.get_random_operand(
+            And(IsVectorType, HasBaseType(OpTypeBool()))
+        )
+        result_type: OpTypeBool = OpTypeBool()
+        return FuzzResult(cls(result_type, operand1), [result_type])
+
+
+@dataclass
+class OpIsNan(
+    UnaryOperatorFuzzMixin, UnaryLogicalOperator[OpTypeFloat, OpTypeBool, None, None]
+):
+    ...
+
+
+@dataclass
+class OpIsInf(
+    UnaryOperatorFuzzMixin, UnaryLogicalOperator[OpTypeFloat, OpTypeBool, None, None]
+):
+    ...
 
 
 @dataclass

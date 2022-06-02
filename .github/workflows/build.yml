@@ -6,49 +6,7 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  PROJECT_ID: spirvsmith
-  GAR_LOCATION: us-west1
-  GCE_ZONE: us-west1-a
-  DEPLOYMENT_NAME: spirvsmith-primary
-  REPOSITORY: spirvsmith-docker-images
-  IMAGE: spirvsmith-primary
-
 jobs:
-  terraform:
-    name: "Infra"
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
-    environment: production
-
-    defaults:
-      run:
-        shell: bash
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-      - name: Terraform Init
-        working-directory: ./infra
-        run: terraform init -input=false
-
-      - name: Terraform Format
-        working-directory: ./infra
-        run: terraform fmt -check
-
-      - name: Terraform Plan
-        working-directory: ./infra
-        run: terraform plan -input=false > /dev/null 2>&1
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        working-directory: ./infra
-        run: terraform apply -input=false > /dev/null 2>&1
-
   build:
     name: "Build & Test"
     runs-on: ubuntu-latest
@@ -106,53 +64,3 @@ jobs:
         with:
           api-key: ${{ secrets.FOSSA_API_KEY }}
           run-tests: true
-
-  deploy:
-    name: "Deploy"
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    needs: [build, terraform]
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true
-      - name: Compute short GitHub SHA
-        id: vars
-        run: echo "::set-output name=SHA_SHORT::$(git rev-parse --short HEAD)"
-
-      - name: Check outputs
-        run: echo ${{ steps.vars.outputs.SHA_SHORT }}
-
-      # Get the GKE credentials so we can deploy to the cluster
-      - id: "auth"
-        uses: "google-github-actions/auth@v0"
-        with:
-          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
-
-      - name: Set up Cloud SDK
-        uses: "google-github-actions/setup-gcloud@v0"
-
-      - name: Set up Docker credentials
-        run: gcloud auth configure-docker "${{ env.GAR_LOCATION }}-docker.pkg.dev"
-
-      # Build the Docker image
-      - name: Build Docker Image
-        run: |-
-          docker build \
-            --tag  "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}" \
-            --build-arg GITHUB_SHA="${{ steps.vars.outputs.SHA_SHORT }}" \
-            --build-arg GITHUB_REF="${{ github.ref }}" \
-            .
-
-      - name: Publish to GCR
-        run: |-
-          docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
-
-      - name: Deploy to GCE
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY }}
-          GOOGLE_CREDENTIALS:  ${{ secrets.GCP_CREDENTIALS }}
-        run: |-
-          gcloud compute instances update-container "${{ env.DEPLOYMENT_NAME }}" --zone "${{ env.GCE_ZONE }}" --container-env DD_API_KEY=$DD_API_KEY,GOOGLE_CREDENTIALS=$GOOGLE_CREDENTIALS --container-image "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.vars.outputs.SHA_SHORT }}"
