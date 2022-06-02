@@ -40,7 +40,6 @@ from src.utils import mutate_config
 if TYPE_CHECKING:
     from run import SPIRVSmithConfig
 
-
 import signal
 
 from spirvsmith_server_client import Client

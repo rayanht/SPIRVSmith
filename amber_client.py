@@ -5,7 +5,6 @@ import time
 from functools import reduce
 from itertools import repeat
 from operator import iconcat
-from pydoc import cli
 
 from dataclass_wizard import asdict
 from dataclass_wizard import DumpMeta
@@ -96,12 +95,12 @@ def run_amber(amber_filename: str, buffer_bindings: list[int], shader_id: str) -
             return " ".join(buffer_dumps).replace("\n", "").replace(" ", "")
 
 
-from spirvsmith_server_client.models.retrieved_shader import RetrievedShader
-from spirvsmith_server_client.models.execution_platform import ExecutionPlatform as EP
-from spirvsmith_server_client.models.buffer_submission import BufferSubmission
+from spirvsmith_server_client.api.buffers import post_buffers
 from spirvsmith_server_client.api.queues import register_executor
 from spirvsmith_server_client.api.shaders import get_next_shader
-from spirvsmith_server_client.api.buffers import post_buffers
+from spirvsmith_server_client.models.buffer_submission import BufferSubmission
+from spirvsmith_server_client.models.execution_platform import ExecutionPlatform as EP
+from spirvsmith_server_client.models.retrieved_shader import RetrievedShader
 from spirvsmith_server_client.types import Response
 
 if __name__ == "__main__":

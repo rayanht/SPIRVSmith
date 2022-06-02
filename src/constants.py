@@ -1,4 +1,3 @@
-import random
 from typing import TYPE_CHECKING
 
 from typing_extensions import Self
@@ -11,9 +10,9 @@ from src.predicates import HasType
 
 if TYPE_CHECKING:
     from src.context import Context
-from src.types.abstract_types import (
-    Type,
-)
+
+from src.patched_dataclass import dataclass
+from src.types.abstract_types import Type
 from src.types.concrete_types import (
     OpTypeArray,
     OpTypeBool,
@@ -22,7 +21,6 @@ from src.types.concrete_types import (
     OpTypeMatrix,
     OpTypeVector,
 )
-from src.patched_dataclass import dataclass
 
 
 @dataclass

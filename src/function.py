@@ -1,4 +1,3 @@
-import random
 from ast import Constant
 from typing import Optional
 from typing import TYPE_CHECKING
@@ -17,14 +16,10 @@ from src.predicates import IsScalarBoolean
 
 if TYPE_CHECKING:
     from src.context import Context
+
 from src.operators.memory.memory_access import OpVariable, Statement
-from src.types.concrete_types import (
-    EmptyType,
-    OpTypeBool,
-    OpTypeFunction,
-    Type,
-)
 from src.patched_dataclass import dataclass
+from src.types.concrete_types import EmptyType, OpTypeBool, OpTypeFunction, Type
 
 
 @dataclass

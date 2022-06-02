@@ -16,6 +16,7 @@ from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:
     from src.context import Context
+
 from src.types.abstract_types import (
     ContainerType,
     MiscType,

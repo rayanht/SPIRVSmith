@@ -5,28 +5,17 @@ from typing import Optional
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
-from typing_extensions import Self
-
-from src import FuzzResult
-from src import Signed
 from src import Statement
 from src.operators import BinaryOperatorFuzzMixin
 from src.operators import Operand
 from src.operators import UnaryOperatorFuzzMixin
 from src.patched_dataclass import dataclass
-from src.predicates import And
-from src.predicates import HasBaseType
-from src.predicates import HasType
 from src.predicates import HasValidBaseTypeAndSign
 from src.predicates import IsArithmeticType
-from src.predicates import IsOfBaseType
-from src.predicates import IsScalarInteger
-from src.predicates import IsVectorType
-from src.predicates import Or
 from src.types.concrete_types import OpTypeInt
 
 if TYPE_CHECKING:
-    from src.context import Context
+    pass
 S = TypeVar("S")
 D = TypeVar("D")
 SC = TypeVar("SC")

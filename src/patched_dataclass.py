@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 dataclass = dataclass(
     init=True,
     repr=False,

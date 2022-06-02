@@ -1,8 +1,6 @@
-import random
 from typing import Callable
 from typing import TYPE_CHECKING
 
-from spirv_enums import StorageClass
 from typing_extensions import Self
 
 from src.constants import OpConstant
@@ -13,7 +11,6 @@ from src.patched_dataclass import dataclass
 from src.predicates import HasType
 from src.predicates import IsCompositeType
 from src.predicates import IsMatrixType
-from src.predicates import IsOfType
 from src.predicates import IsOutputVariable
 from src.predicates import IsPointerType
 from src.predicates import IsStructType
@@ -21,20 +18,9 @@ from src.predicates import Not
 
 if TYPE_CHECKING:
     from src.context import Context
-from src import (
-    AbortFuzzing,
-    FuzzResult,
-    OpCode,
-    Statement,
-    Untyped,
-    VoidOp,
-)
-from src.types.concrete_types import (
-    EmptyType,
-    OpTypeInt,
-    OpTypePointer,
-    Type,
-)
+
+from src import AbortFuzzing, FuzzResult, Statement, Untyped, VoidOp
+from src.types.concrete_types import EmptyType, OpTypeInt, OpTypePointer
 
 
 @dataclass

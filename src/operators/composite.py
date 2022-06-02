@@ -1,4 +1,3 @@
-import random
 from math import ceil
 from math import log2
 from typing import TYPE_CHECKING

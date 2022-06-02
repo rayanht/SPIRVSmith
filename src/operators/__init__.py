@@ -1,4 +1,3 @@
-import inspect
 from types import NoneType
 from typing import get_args
 from typing import TYPE_CHECKING
@@ -14,6 +13,7 @@ from src.predicates import HasType
 
 if TYPE_CHECKING:
     from src.context import Context
+
 from src.extension import OpExtInst
 from src.types.concrete_types import OpTypeVector
 

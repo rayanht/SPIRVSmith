@@ -12,7 +12,6 @@ from src.context import Context
 from src.misc import OpUndef
 from src.monitor import Monitor
 from src.operators.arithmetic.scalar_arithmetic import OpIAdd
-from src.operators.arithmetic.scalar_arithmetic import OpSDiv
 from src.operators.arithmetic.scalar_arithmetic import OpSMod
 from src.operators.arithmetic.scalar_arithmetic import OpUDiv
 from src.operators.composite import OpVectorExtractDynamic
@@ -20,7 +19,6 @@ from src.recondition import recondition_opcodes
 from src.types.concrete_types import EmptyType
 from src.types.concrete_types import OpTypeInt
 from src.types.concrete_types import OpTypeVector
-
 
 config: SPIRVSmithConfig = OmegaConf.structured(SPIRVSmithConfig())
 init_strategy = copy.deepcopy(config.strategy)

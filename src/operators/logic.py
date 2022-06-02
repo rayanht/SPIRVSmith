@@ -1,4 +1,3 @@
-from dataclasses import field
 from typing import Callable
 from typing import ClassVar
 from typing import Generic
@@ -6,7 +5,6 @@ from typing import Optional
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
-from numpy import result_type
 from typing_extensions import Self
 
 from src import FuzzResult

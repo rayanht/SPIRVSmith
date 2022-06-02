@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.fuzzing_client import SPIRVShader
+
 from src.monitor import Event, Monitor
 
 SPIRV_OPTIMISER_FLAGS = [

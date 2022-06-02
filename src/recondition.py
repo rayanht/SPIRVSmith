@@ -46,11 +46,8 @@ from src.operators.arithmetic.scalar_arithmetic import OpSRem
 from src.operators.arithmetic.scalar_arithmetic import OpUDiv
 from src.operators.arithmetic.scalar_arithmetic import OpUMod
 from src.operators.bitwise import (
-    # OpBitFieldInsert,
-    # OpBitFieldSExtract,
-    # OpBitFieldUExtract,
     OpShiftLeftLogical,
-)
+)  # OpBitFieldInsert,; OpBitFieldSExtract,; OpBitFieldUExtract,
 from src.operators.bitwise import OpShiftRightArithmetic
 from src.operators.bitwise import OpShiftRightLogical
 from src.operators.composite import OpVectorExtractDynamic

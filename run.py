@@ -4,7 +4,6 @@ from hydra.core.config_store import ConfigStore
 from config import SPIRVSmithConfig
 from src.fuzzing_client import ShaderGenerator
 
-
 cs = ConfigStore.instance()
 
 cs.store(name="config", node=SPIRVSmithConfig)

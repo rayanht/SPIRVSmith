@@ -11,13 +11,13 @@ from typing import TypeVar
 import dill
 from typing_extensions import Self
 
-
 if TYPE_CHECKING:
     from src.context import Context
-from src.patched_dataclass import dataclass
-import random
+
 from spirv_enums import Capability
 from ulid import monotonic as ulid
+
+from src.patched_dataclass import dataclass
 
 OpCodeName = str
 ParameterName = str
@@ -199,15 +199,10 @@ class FuzzDelegator(OpCode):
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         # TODO this is terrible, there must be a better way
-        import src.operators.arithmetic.scalar_arithmetic
-        import src.operators.arithmetic.linear_algebra
-        import src.operators.logic
-        import src.operators.bitwise
-        import src.operators.conversions
-        import src.operators.composite
+        pass
 
         if context.config.strategy.enable_ext_glsl_std_450:
-            import src.operators.arithmetic.glsl
+            pass
         if not cls.is_parametrized():
             cls.parametrize(context=context)
         subclasses: list["FuzzDelegator"] = list(cls.get_subclasses())

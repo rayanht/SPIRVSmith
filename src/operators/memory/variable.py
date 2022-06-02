@@ -1,5 +1,3 @@
-import random
-from dataclasses import fields
 from typing import TYPE_CHECKING
 
 from typing_extensions import Self
@@ -9,17 +7,11 @@ from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:
     from src.context import Context
+
 from spirv_enums import StorageClass
-from src import (
-    AbortFuzzing,
-    FuzzResult,
-    Type,
-)
-from src.types.concrete_types import (
-    OpTypeBool,
-    OpTypePointer,
-    OpTypeStruct,
-)
+
+from src import AbortFuzzing, FuzzResult, Type
+from src.types.concrete_types import OpTypeBool, OpTypePointer, OpTypeStruct
 
 
 @dataclass

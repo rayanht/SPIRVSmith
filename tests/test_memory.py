@@ -11,7 +11,6 @@ from src.context import Context
 from src.monitor import Monitor
 from src.operators.memory.memory_access import OpLoad
 
-
 config: SPIRVSmithConfig = OmegaConf.structured(SPIRVSmithConfig())
 init_strategy = copy.deepcopy(config.strategy)
 init_limits = copy.deepcopy(config.limits)

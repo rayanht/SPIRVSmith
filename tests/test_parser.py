@@ -1,6 +1,5 @@
 import copy
 import unittest
-from tempfile import NamedTemporaryFile
 
 from omegaconf import OmegaConf
 
@@ -8,7 +7,6 @@ from run import SPIRVSmithConfig
 from src import FuzzDelegator
 from src.fuzzing_client import ShaderGenerator
 from src.monitor import Monitor
-from src.shader_parser import parse_spirv_assembly_file
 from src.shader_parser import parse_spirv_assembly_lines
 from src.shader_utils import SPIRVShader
 

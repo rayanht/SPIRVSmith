@@ -1,6 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING
 
 from typing_extensions import Self
 
@@ -10,22 +8,18 @@ from src.patched_dataclass import dataclass
 
 if TYPE_CHECKING:
     from src.context import Context
+
 from src.predicates import (
     And,
     HasBaseType,
-    IsOfFloatBaseType,
     HasLength,
     HaveSameTypeLength,
     IsMatrixType,
+    IsOfFloatBaseType,
     IsScalarFloat,
     IsVectorType,
 )
-
-from src.types.concrete_types import (
-    OpTypeMatrix,
-    OpTypeVector,
-)
-
+from src.types.concrete_types import OpTypeMatrix, OpTypeVector
 
 # The following operators override the fuzzing logic rather than relying on the mixin
 # This is because trying to encompass their logic in the mixin would be way too complex:

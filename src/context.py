@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from src import OpCode
     from src.extension import OpExtInstImport
     from run import SPIRVSmithConfig
+
 from src.operators.memory.memory_access import OpVariable
 
 

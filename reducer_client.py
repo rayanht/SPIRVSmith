@@ -2,8 +2,6 @@ import subprocess
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
-from enum import auto
-from enum import Enum
 from tempfile import NamedTemporaryFile
 
 import pandas as pd

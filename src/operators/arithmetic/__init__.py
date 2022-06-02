@@ -10,7 +10,6 @@ from src.patched_dataclass import dataclass
 from src.predicates import HasValidBaseTypeAndSign
 from src.predicates import IsArithmeticType
 
-
 S = TypeVar("S")
 D = TypeVar("D")
 SC = TypeVar("SC")

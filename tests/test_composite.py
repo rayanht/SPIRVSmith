@@ -10,9 +10,7 @@ from src.constants import OpConstant
 from src.constants import OpConstantComposite
 from src.context import Context
 from src.monitor import Monitor
-from src.operators.arithmetic.linear_algebra import (
-    OpOuterProduct,
-)
+from src.operators.arithmetic.linear_algebra import OpOuterProduct
 from src.operators.composite import OpCompositeExtract
 from src.operators.composite import OpCompositeInsert
 from src.operators.composite import OpTranspose

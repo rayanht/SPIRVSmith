@@ -7,8 +7,8 @@ from src.constants import OpConstantComposite
 
 if TYPE_CHECKING:
     from src.context import Context
-from src.types.concrete_types import OpTypeVector
 
+from src.types.concrete_types import OpTypeVector
 
 logging.disable(logging.CRITICAL)
 
