@@ -61,14 +61,7 @@ class OpCode(ABC):
         )
 
     def __hash__(self) -> int:
-        return int(
-            hashlib.sha224(
-                dill.dumps(
-                    tuple([hash(getattr(self, attr)) for attr in self.members()])
-                )
-            ).hexdigest(),
-            16,
-        )
+        return hash(tuple([getattr(self, attr) for attr in self.members()]))
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({', '.join([str(getattr(self, attr)) for attr in self.members()])})"
@@ -198,11 +191,17 @@ class FuzzDelegator(OpCode):
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
-        # TODO this is terrible, there must be a better way
-        pass
+        import src.operators.arithmetic.scalar_arithmetic
+        import src.operators.arithmetic.linear_algebra
+        import src.operators.logic
+        import src.operators.bitwise
+        import src.operators.conversions
+        import src.operators.composite
+        import src.operators.memory.memory_access
+        import src.operators.memory.variable
 
         if context.config.strategy.enable_ext_glsl_std_450:
-            pass
+            import src.operators.arithmetic.glsl
         if not cls.is_parametrized():
             cls.parametrize(context=context)
         subclasses: list["FuzzDelegator"] = list(cls.get_subclasses())

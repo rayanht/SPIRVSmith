@@ -1,6 +1,7 @@
 import os
 import random
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import git
@@ -23,22 +24,6 @@ class SubprocessResult:
     executed_command: str
 
 
-@dataclass
-class ClampedInt:
-    value: int
-    lower_bound: int
-    upper_bound: int
-
-    def increment(self):
-        self.value = min(self.value + 1, self.upper_bound)
-
-    def decrement(self):
-        self.value = max(self.value - 1, self.lower_bound)
-
-    def get(self):
-        return self.value
-
-
 def get_spirvsmith_version() -> str:
     if os.getenv("CI"):
         return "CI"
@@ -49,21 +34,29 @@ def get_spirvsmith_version() -> str:
     return tags[-1].name
 
 
-def get_opcode_class_from_name(opcode_name: str) -> OpCode:
-    pass
+import src.operators.arithmetic.scalar_arithmetic
+import src.operators.arithmetic.linear_algebra
+import src.operators.logic
+import src.operators.bitwise
+import src.operators.conversions
+import src.operators.composite
+import src.operators.memory.memory_access
+import src.operators.memory.variable
+import src.operators.arithmetic.glsl
+import src.annotations
+import src.constants
+import src.extension
+import src.misc
 
-    subclasses: set[OpCode] = set()
-    find_subclasses_dfs(subclasses, OpCode)
-    opcode_lookup: dict[str, OpCode] = dict(
-        zip(map(lambda cls: cls.__name__, subclasses), subclasses)
-    )
-    return opcode_lookup[opcode_name]
 
-
-def find_subclasses_dfs(subclasses: set[OpCode], cls: OpCode) -> None:
+def find_subclasses(cls: type[OpCode]) -> None:
     for subclass in cls.__subclasses__():
-        subclasses.add(subclass)
-        find_subclasses_dfs(subclasses, subclass)
+        CLASSES[subclass.__name__] = subclass
+        find_subclasses(subclass)
+
+
+CLASSES: dict[str, type[OpCode]] = {}
+find_subclasses(OpCode)
 
 
 def mutate_config(config: "SPIRVSmithConfig") -> None:

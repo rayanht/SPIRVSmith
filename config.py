@@ -30,7 +30,7 @@ class MutationsConfig:
     w_memory_operation: BoundedInt = BoundedInt(1, 2)
     w_logical_operation: BoundedInt = BoundedInt(2, 6)
     w_arithmetic_operation: BoundedInt = BoundedInt(2, 6)
-    w_control_flow_operation: BoundedInt = BoundedInt(0, 0)
+    w_control_flow_operation: BoundedInt = BoundedInt(1, 1)
     w_function_operation: BoundedInt = BoundedInt(1, 1)
     w_bitwise_operation: BoundedInt = BoundedInt(2, 6)
     w_conversion_operation: BoundedInt = BoundedInt(2, 6)
@@ -127,7 +127,7 @@ class FuzzingStrategyConfig:
     w_scalar_constant: int = rng.randint(*mutations_config.w_scalar_constant)
 
     # P(generating a statement at step t + 1 | a statement was generated at step t)
-    p_statement: float = 0.995
+    p_statement: float = 0.996
 
     # The following parameter is used to determine how much the fuzzer should
     # favour statements rather than constants when looking for operands.

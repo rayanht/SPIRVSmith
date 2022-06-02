@@ -16,7 +16,7 @@ from src.misc import OpExecutionMode
 from src.misc import OpMemoryModel
 from src.shader_utils import SPIRVShader
 from src.types.concrete_types import EmptyType
-from src.utils import get_opcode_class_from_name
+from src.utils import CLASSES
 
 
 def attempt_numeric_coercion(string: str) -> int | float | str:
@@ -43,7 +43,7 @@ def resolve_operands(
             resolved_operand: int | float | str = attempt_numeric_coercion(operand)
             if isinstance(resolved_operand, str):
                 try:
-                    resolved_operand: OpCode = get_opcode_class_from_name(operand)
+                    resolved_operand: OpCode = CLASSES[operand]
                 except KeyError:
                     enums: list[type[SPIRVEnum]] = [
                         x.type
@@ -121,13 +121,13 @@ def parse_spirv_assembly_lines(lines: list[str]) -> SPIRVShader:
                 "OpSelectionMerge" | "OpLoopMerge" | "OpBranch" | "OpBranchConditional",
                 *operands,
             ]:
-                opcode_class: type[OpCode] = get_opcode_class_from_name(line[0])
+                opcode_class: type[OpCode] = CLASSES[line[0]]
                 opcodes.append(opcode_class)
                 deferred_indices.append((len(opcodes) - 1, operands))
                 current_opcode = None
                 continue
             case [opcode_id, "=", opcode_name, *operands]:
-                opcode_class: type[OpCode] = get_opcode_class_from_name(opcode_name)
+                opcode_class: type[OpCode] = CLASSES[opcode_name]
                 resolved_operands: tuple[OpCode] = resolve_operands(
                     opcode_class, operands, opcode_lookup_table
                 )
@@ -135,7 +135,7 @@ def parse_spirv_assembly_lines(lines: list[str]) -> SPIRVShader:
                 current_opcode.id = opcode_id.replace("%", "")
                 opcode_lookup_table[opcode_id] = current_opcode
             case [opcode_name, *operands]:
-                opcode_class: type[OpCode] = get_opcode_class_from_name(opcode_name)
+                opcode_class: type[OpCode] = CLASSES[opcode_name]
                 resolved_operands: tuple[OpCode] = resolve_operands(
                     opcode_class, operands, opcode_lookup_table
                 )
@@ -159,7 +159,7 @@ def parse_spirv_assembly_lines(lines: list[str]) -> SPIRVShader:
                 opcodes.append(current_opcode)
             current_opcode = None
     for [opcode_name, *operands] in deferred_lines:
-        opcode_class: type[OpCode] = get_opcode_class_from_name(opcode_name)
+        opcode_class: type[OpCode] = CLASSES[opcode_name]
         resolved_operands: tuple[OpCode] = resolve_operands(
             opcode_class, operands, opcode_lookup_table
         )
