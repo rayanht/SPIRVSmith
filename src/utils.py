@@ -1,7 +1,6 @@
 import os
 import random
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import git
@@ -34,26 +33,26 @@ def get_spirvsmith_version() -> str:
     return tags[-1].name
 
 
+def find_subclasses(cls: type[OpCode]) -> None:
+    for subclass in cls.__subclasses__():
+        CLASSES[subclass.__name__] = subclass
+        find_subclasses(subclass)
+
+
 import src.operators.arithmetic.scalar_arithmetic
 import src.operators.arithmetic.linear_algebra
-import src.operators.logic
 import src.operators.bitwise
-import src.operators.conversions
 import src.operators.composite
+import src.operators.conversions
+import src.operators.logic
 import src.operators.memory.memory_access
 import src.operators.memory.variable
 import src.operators.arithmetic.glsl
 import src.annotations
 import src.constants
 import src.extension
+import src.function
 import src.misc
-
-
-def find_subclasses(cls: type[OpCode]) -> None:
-    for subclass in cls.__subclasses__():
-        CLASSES[subclass.__name__] = subclass
-        find_subclasses(subclass)
-
 
 CLASSES: dict[str, type[OpCode]] = {}
 find_subclasses(OpCode)

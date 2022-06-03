@@ -1,4 +1,3 @@
-import hashlib
 import inspect
 from abc import ABC
 from dataclasses import field
@@ -8,7 +7,6 @@ from typing import Generic
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
-import dill
 from typing_extensions import Self
 
 if TYPE_CHECKING:
@@ -193,10 +191,10 @@ class FuzzDelegator(OpCode):
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
         import src.operators.arithmetic.scalar_arithmetic
         import src.operators.arithmetic.linear_algebra
-        import src.operators.logic
         import src.operators.bitwise
-        import src.operators.conversions
         import src.operators.composite
+        import src.operators.conversions
+        import src.operators.logic
         import src.operators.memory.memory_access
         import src.operators.memory.variable
 

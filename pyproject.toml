@@ -20,7 +20,7 @@ spirv-enums = "^1.0"
 dataclass-wizard = "^0.22.1"
 vulkan-platform-py = "^0.4.1"
 frozendict = "^2.3.2"
-spirvsmith-server-client = "^0.1.0"
+spirvsmith-server-client = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3", allow-prereleases = true}
@@ -30,7 +30,6 @@ pre-commit = "^2.18.1"
 mypy = "^0.950"
 coverage = "^6.3.2"
 flake8 = "^4.0.1"
-line-profiler = "^3.5.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

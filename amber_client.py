@@ -27,9 +27,6 @@ MONITOR = Monitor()
 
 from spirvsmith_server_client import Client
 
-client = Client(base_url="http://spirvsmith.hatout.dev")
-
-
 terminate = False
 
 
@@ -100,10 +97,11 @@ from spirvsmith_server_client.api.queues import register_executor
 from spirvsmith_server_client.api.shaders import get_next_shader
 from spirvsmith_server_client.models.buffer_submission import BufferSubmission
 from spirvsmith_server_client.models.execution_platform import ExecutionPlatform as EP
-from spirvsmith_server_client.models.retrieved_shader import RetrievedShader
+from spirvsmith_server_client.models.shader_data import ShaderData
 from spirvsmith_server_client.types import Response
 
 if __name__ == "__main__":
+    client = Client(base_url="http://spirvsmith.hatout.dev")
     execution_platform = ExecutionPlatform.auto_detect()
     execution_platform.display_summary()
     DumpMeta(
@@ -114,14 +112,14 @@ if __name__ == "__main__":
         client=client, json_body=EP.from_dict(asdict(execution_platform))
     )
     while True:
-        response: Response[RetrievedShader] = get_next_shader.sync_detailed(
+        response: Response[ShaderData] = get_next_shader.sync_detailed(
             client=client, json_body=EP.from_dict(asdict(execution_platform))
         )
         if response.status_code == 404:
             time.sleep(2)
             continue
 
-        retrieved_shader: RetrievedShader = response.parsed
+        retrieved_shader: ShaderData = response.parsed
 
         shader: SPIRVShader = parse_spirv_assembly_lines(
             retrieved_shader.shader_assembly.split("\n")
