@@ -5,7 +5,7 @@ cd amber
 ./tools/git-sync-deps
 mkdir -p out/Debug
 cd out/Debug
-cmake -DAMBER_USE_LOCAL_VULKAN=1 ../..
+cmake -DAMBER_SKIP_TESTS=True -DAMBER_SKIP_SHADERC=True ../..
 make
 cp amber ../../../amber-bin
 cd ../../..
