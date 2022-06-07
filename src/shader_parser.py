@@ -7,6 +7,7 @@ from spirv_enums import Capability
 from spirv_enums import ExecutionModel
 from spirv_enums import MemoryModel
 from spirv_enums import SPIRVEnum
+from spirv_enums import StorageClass
 
 from src import OpCode
 from src.context import Context
@@ -145,7 +146,14 @@ def parse_spirv_assembly_lines(lines: list[str]) -> SPIRVShader:
             if current_opcode.__class__.__name__.startswith(
                 ("OpType", "OpConstant", "OpVariable")
             ):
-                current_context.add_to_tvc(current_opcode)
+                if (
+                    current_opcode.__class__.__name__ == "OpVariable"
+                    and getattr(current_opcode, "storage_class")
+                    == StorageClass.Function
+                ):
+                    opcodes.append(current_opcode)
+                else:
+                    current_context.add_to_tvc(current_opcode)
             elif current_opcode.__class__.__name__ in {
                 "OpExtInstImport",
                 "OpExtension",
