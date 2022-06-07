@@ -7,6 +7,7 @@ from typing import Generic
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
+import numpy as np
 from typing_extensions import Self
 
 if TYPE_CHECKING:
@@ -21,16 +22,6 @@ OpCodeName = str
 ParameterName = str
 
 randomization_parameters: dict[OpCodeName, ParameterName] = {
-    "MemoryOperator": "w_memory_operation",
-    "LogicalOperator": "w_logical_operation",
-    "ArithmeticOperator": "w_arithmetic_operation",
-    "ControlFlowOperator": "w_control_flow_operation",
-    "FunctionOperator": "w_function_operation",
-    "BitwiseOperator": "w_bitwise_operation",
-    "ConversionOperator": "w_conversion_operation",
-    "CompositeOperator": "w_composite_operation",
-    "ScalarType": "w_scalar_type",
-    "ContainerType": "w_container_type",
     "CompositeConstant": "w_composite_constant",
     "ScalarConstant": "w_scalar_constant",
 }
@@ -173,19 +164,28 @@ class FuzzDelegator(OpCode):
         PARAMETRIZATIONS[cls.__name__] = {}
         for subclass_name in subclasses_names:
             PARAMETRIZATIONS[cls.__name__][subclass_name] = 1
-        if any(
-            [
-                subclass_name in subclasses_names
-                for subclass_name in randomization_parameters.keys()
-            ]
-        ):
-            for subclass_name in subclasses_names:
-                if subclass_name in randomization_parameters:
-                    PARAMETRIZATIONS[cls.__name__][
-                        subclass_name
-                    ] = context.config.strategy[randomization_parameters[subclass_name]]
         if cls.__name__ == "Statement":
             PARAMETRIZATIONS[cls.__name__]["OpExtInst"] = 0
+            mu = context.rng.randint(0, 7)
+            sample = np.random.normal(
+                loc=mu, scale=context.config.strategy.sigma, size=10000000
+            )
+            sample = np.round(sample).astype(int)
+            sample = [x for x in sample if 0 <= x <= 7]
+
+            _, count = np.unique(sample, return_counts=True)
+            probs = count / len(sample)
+            subclasses_names.remove("OpExtInst")
+            print(probs, subclasses_names)
+            for prob, subclass_name in zip(probs, subclasses_names):
+                if subclass_name != "OpExtInst":
+                    PARAMETRIZATIONS[cls.__name__][subclass_name] = prob
+
+        if (
+            cls.__name__ == "Type"
+            and not context.config.strategy.generate_container_types
+        ):
+            PARAMETRIZATIONS[cls.__name__]["ContainerType"] = 0
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:

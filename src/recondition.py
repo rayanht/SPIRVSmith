@@ -1,13 +1,21 @@
 from abc import ABC
+from dataclasses import dataclass
+from dataclasses import field
 from inspect import isclass
 from typing import Generic
 from typing import TypeAlias
 from typing import TypeVar
 
+from spirv_enums import StorageClass
+
 from src import OpCode
 from src.context import Context
 from src.extension import OpExtInst
 from src.extension import OpExtInstImport
+from src.function import OpBranch
+from src.function import OpBranchConditional
+from src.function import OpLabel
+from src.function import OpLoopMerge
 from src.misc import OpUndef
 from src.operators.arithmetic.glsl import Acos
 from src.operators.arithmetic.glsl import Acosh
@@ -52,17 +60,38 @@ from src.operators.bitwise import OpShiftRightArithmetic
 from src.operators.bitwise import OpShiftRightLogical
 from src.operators.composite import OpVectorExtractDynamic
 from src.operators.composite import OpVectorInsertDynamic
+from src.operators.logic import OpSLessThan
+from src.operators.memory.memory_access import OpLoad
+from src.operators.memory.memory_access import OpStore
+from src.operators.memory.variable import OpVariable
 from src.predicates import IsOfFloatBaseType
 from src.predicates import IsVectorType
+from src.types.concrete_types import EmptyType
+from src.types.concrete_types import OpTypeBool
 from src.types.concrete_types import OpTypeFloat
 from src.types.concrete_types import OpTypeInt
 
 T = TypeVar("T")
 
 
+@dataclass
+class ReconditioningEffects:
+    immediate_effects: list[OpCode] = field(default_factory=list)
+    post_effects: list[OpCode] = field(default_factory=list)
+    variable_effects: list[OpVariable] = None
+    overwrite_length: int = 0
+    immediate_offset: int = 0
+
+    def __len__(self):
+        __len = len(self.immediate_effects) + len(self.post_effects)
+        if self.variable_effects is not None:
+            __len += len(self.variable_effects)
+        return __len
+
+
 class DangerousPattern(ABC, Generic[T]):
     @staticmethod
-    def recondition(context: Context, opcode: T):
+    def recondition(context: Context, opcode: T) -> ReconditioningEffects:
         ...
 
     @staticmethod
@@ -78,7 +107,7 @@ class UndefOpCode(DangerousPattern[UndefOpCodeVulnerableOpCode]):
     def recondition(
         context: Context,
         opcode: UndefOpCodeVulnerableOpCode,
-    ):
+    ) -> ReconditioningEffects:
         if not isclass(opcode):
             fuzzed_opcode = None
             for attr in opcode.members():
@@ -89,7 +118,7 @@ class UndefOpCode(DangerousPattern[UndefOpCodeVulnerableOpCode]):
                     for attr in opcode.members():
                         setattr(opcode, attr, getattr(fuzzed_opcode, attr))
                     break
-        return []
+        return ReconditioningEffects()
 
     @staticmethod
     def get_affected_opcodes() -> set[type[UndefOpCodeVulnerableOpCode]]:
@@ -105,7 +134,9 @@ class VectorAccessOutOfBounds(
     DangerousPattern[VectorAccessOutOfBoundsVulnerableOpCode]
 ):
     @staticmethod
-    def recondition(context: Context, opcode: VectorAccessOutOfBoundsVulnerableOpCode):
+    def recondition(
+        context: Context, opcode: VectorAccessOutOfBoundsVulnerableOpCode
+    ) -> ReconditioningEffects:
         """Recondition vector accesses using a modulo operation."""
         operand1 = opcode.index
         index_type = opcode.index.type
@@ -121,7 +152,7 @@ class VectorAccessOutOfBounds(
         else:
             op_mod = OpUMod(index_type, operand1, operand2)
         opcode.index = op_mod
-        return [op_mod]
+        return ReconditioningEffects(immediate_effects=[op_mod])
 
     @staticmethod
     def get_affected_opcodes() -> set[type[VectorAccessOutOfBoundsVulnerableOpCode]]:
@@ -145,7 +176,7 @@ class TooLargeMagnitude(DangerousPattern[TooLargeMagnitudeVulnerableOpCode]):
             operands=(opcode.operand1,),
         )
         opcode.operand1 = op_fract
-        return [op_fract]
+        return ReconditioningEffects(immediate_effects=[op_fract])
 
     @staticmethod
     def get_affected_opcodes() -> set[type[TooLargeMagnitudeVulnerableOpCode]]:
@@ -180,7 +211,7 @@ class FirstOperandLessThanOne(
             )
         op_add = OpFAdd(opcode.operand1.type, op_abs, const_one)
         opcode.operand1 = op_add
-        return [op_abs, op_add]
+        return ReconditioningEffects(immediate_effects=[op_abs, op_add])
 
     @staticmethod
     def get_affected_opcodes() -> set[type[FirstOperandLessThanOneVulnerableOpCode]]:
@@ -240,8 +271,8 @@ class SecondOperandEqualsZero(
                 )
         opcode.operand2 = op_add
         if op_abs:
-            return [op_abs, op_add]
-        return [op_add]
+            return ReconditioningEffects(immediate_effects=[op_abs, op_add])
+        return ReconditioningEffects(immediate_effects=[op_add])
 
     @staticmethod
     def get_affected_opcodes() -> set[type[SecondOperandEqualsZeroVulnerableOpCode]]:
@@ -285,7 +316,9 @@ class BothOperandsEqualZero(DangerousPattern[BothOperandsEqualZeroVulnerableOpCo
 
         opcode.operand1 = op_add1
         opcode.operand2 = op_add2
-        return [op_sub1, op_add1, op_sub2, op_add2]
+        return ReconditioningEffects(
+            immediate_effects=[op_sub1, op_add1, op_sub2, op_add2]
+        )
 
     @staticmethod
     def get_affected_opcodes() -> set[type[BothOperandsEqualZeroVulnerableOpCode]]:
@@ -332,7 +365,7 @@ class DegenerateClamp(DangerousPattern[DegenerateClampVulnerableOpCode]):
         )
         opcode.operand2 = op_min
         opcode.operand3 = op_max
-        return [op_min, op_max]
+        return ReconditioningEffects(immediate_effects=[op_min, op_max])
 
     @staticmethod
     def get_affected_opcodes() -> set[type[DegenerateClampVulnerableOpCode]]:
@@ -379,12 +412,68 @@ class TooLargeShift(DangerousPattern[TooLargeShiftVulnerableOpCode]):
             )
         opcode.operand2 = op_mod
         if op_abs:
-            return [op_abs, op_mod]
-        return [op_mod]
+            return ReconditioningEffects(immediate_effects=[op_abs, op_mod])
+        return ReconditioningEffects(immediate_effects=[op_mod])
 
     @staticmethod
     def get_affected_opcodes() -> set[type[TooLargeShiftVulnerableOpCode]]:
         return {OpShiftLeftLogical, OpShiftRightLogical, OpShiftRightArithmetic}
+
+
+InfiniteLoopVulnerableOpCode: TypeAlias = OpLoopMerge
+
+
+class InfiniteLoop(DangerousPattern[InfiniteLoopVulnerableOpCode]):
+    @staticmethod
+    def recondition(
+        context: Context,
+        opcode: InfiniteLoopVulnerableOpCode,
+    ):
+        loop_variable = context.create_on_demand_variable(
+            StorageClass.Function, OpTypeInt(32, 1)
+        )
+        loop_limiter_label = OpLabel()
+        loop_limiter_branch = OpBranch(loop_limiter_label)
+        op_load1 = OpLoad(type=OpTypeInt(32, 1), variable=loop_variable)
+        const_ten = context.create_on_demand_numerical_constant(
+            OpTypeInt, value=10, width=32, signed=1
+        )
+        const_one = context.create_on_demand_numerical_constant(
+            OpTypeInt, value=1, width=32, signed=1
+        )
+        const_zero = context.create_on_demand_numerical_constant(
+            OpTypeInt, value=0, width=32, signed=1
+        )
+        op_add = OpIAdd(type=OpTypeInt(32, 1), operand1=op_load1, operand2=const_one)
+        op_store_init = OpStore(
+            type=EmptyType(), pointer=loop_variable, object=const_zero
+        )
+        op_store_post = OpStore(type=EmptyType(), pointer=loop_variable, object=op_add)
+        op_load2 = OpLoad(type=OpTypeInt(32, 1), variable=loop_variable)
+        op_less_than = OpSLessThan(OpTypeBool(), op_load2, const_ten)
+        branch_conditional = OpBranchConditional(
+            op_less_than, opcode.continue_label, opcode.merge_label
+        )
+        return ReconditioningEffects(
+            immediate_effects=[op_store_init],
+            immediate_offset=2,
+            post_effects=[
+                loop_limiter_branch,
+                loop_limiter_label,
+                op_load1,
+                op_add,
+                op_store_post,
+                op_load2,
+                op_less_than,
+                branch_conditional,
+            ],
+            variable_effects=[loop_variable],
+            overwrite_length=1,
+        )
+
+    @staticmethod
+    def get_affected_opcodes() -> set[type[InfiniteLoopVulnerableOpCode]]:
+        return {OpLoopMerge}
 
 
 # DegenerateBitManipulationVulnerableOpCode: TypeAlias = (
@@ -459,13 +548,30 @@ def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):
                     for affected_opcode in dangerous_pattern.get_affected_opcodes()
                 ]
             ):
-                reconditioning_side_effects = dangerous_pattern.recondition(
-                    context,
-                    opcode.instruction if isinstance(opcode, OpExtInst) else opcode,
+                reconditioning_side_effects: ReconditioningEffects = (
+                    dangerous_pattern.recondition(
+                        context,
+                        opcode.instruction if isinstance(opcode, OpExtInst) else opcode,
+                    )
                 )
                 spirv_opcodes = (
-                    spirv_opcodes[:i] + reconditioning_side_effects + spirv_opcodes[i:]
+                    spirv_opcodes[: i - reconditioning_side_effects.immediate_offset]
+                    + reconditioning_side_effects.immediate_effects
+                    + spirv_opcodes[
+                        i - reconditioning_side_effects.immediate_offset : i + 1
+                    ]
+                    + reconditioning_side_effects.post_effects
+                    + spirv_opcodes[
+                        i + reconditioning_side_effects.overwrite_length + 1 :
+                    ]
                 )
+                if reconditioning_side_effects.variable_effects:
+                    insertion_index: int = spirv_opcodes.index(OpLabel()) + 1
+                    spirv_opcodes = (
+                        spirv_opcodes[:insertion_index]
+                        + reconditioning_side_effects.variable_effects
+                        + spirv_opcodes[insertion_index:]
+                    )
                 i += len(reconditioning_side_effects)
                 # Reset the OpExtInst and update operands
                 if isinstance(opcode, OpExtInst):

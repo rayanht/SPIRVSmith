@@ -112,7 +112,7 @@ class TestContext(unittest.TestCase):
 
     def test_numerical_types_distributed_correctly(self):
         self.context.config.limits.n_types = N
-        self.context.config.strategy.w_container_type = 0
+        self.context.config.strategy.generate_container_types = False
 
         Type.parametrize(self.context)
         Type.set_zero_probability(MiscType, self.context)
@@ -135,8 +135,6 @@ class TestContext(unittest.TestCase):
 
     def test_correct_number_of_function_types_created(self):
         self.context.config.limits.n_types = N
-        self.context.config.strategy.w_scalar_type = 1
-        self.context.config.strategy.w_container_type = 1
 
         self.context.config.limits.n_functions = 5
 

@@ -24,6 +24,7 @@ class TestParser(unittest.TestCase):
         FuzzDelegator.reset_parametrizations()
         config.limits = copy.deepcopy(init_limits)
         config.strategy = copy.deepcopy(init_strategy)
+        config.strategy.p_statement = 0.95
         self.shader: SPIRVShader = ShaderGenerator(config, None).gen_shader()
         self.parsed_shader: SPIRVShader = parse_spirv_assembly_lines(
             self.shader.generate_assembly_lines()
@@ -60,4 +61,10 @@ class TestParser(unittest.TestCase):
         self.assertListEqual(
             self.shader.generate_assembly_lines(),
             self.parsed_shader.generate_assembly_lines(),
+        )
+
+    def test_parsed_reconditioned_shader_generates_same_assembly(self):
+        self.assertListEqual(
+            self.shader.recondition().normalise_ids().generate_assembly_lines(),
+            self.parsed_shader.recondition().normalise_ids().generate_assembly_lines(),
         )

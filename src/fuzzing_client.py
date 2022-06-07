@@ -69,13 +69,6 @@ class ShaderGenerator:
     generator_info: Optional[GeneratorInfo] = None
 
     def start(self):
-        self.generator_info = GeneratorInfo(
-            id=str(uuid4()),
-            fuzzer_version=get_spirvsmith_version(),
-            strategy=FuzzingStrategy.from_dict(
-                OmegaConf.to_container(self.config.strategy)
-            ),
-        )
         MP_pool: Pool = multiprocessing.Pool(4, init_MP_pool)
         thread_pool_executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=4)
 
@@ -113,28 +106,6 @@ class ShaderGenerator:
 
             if paused:
                 Monitor(self.config).info(event=Event.PAUSED)
-
-            if random.SystemRandom().random() <= self.config.strategy.mutation_rate:
-                old_strategy = copy.deepcopy(self.config.strategy)
-                mutate_config(self.config)
-                self.generator_info = GeneratorInfo(
-                    id=str(uuid4()),
-                    fuzzer_version=get_spirvsmith_version(),
-                    strategy=FuzzingStrategy.from_dict(
-                        OmegaConf.to_container(self.config.strategy)
-                    ),
-                )
-                if self.config.misc.broadcast_generated_shaders:
-                    register_generator.sync(
-                        client=client, json_body=self.generator_info
-                    )
-                Monitor(self.config).info(
-                    event=Event.GENERATOR_MUTATION,
-                    extra={
-                        "old_strategy": old_strategy,
-                        "new_strategy": self.config.strategy,
-                    },
-                )
 
     def gen_shader(self) -> SPIRVShader:
         execution_model = ExecutionModel.GLCompute
