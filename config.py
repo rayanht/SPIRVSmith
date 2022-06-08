@@ -1,6 +1,8 @@
 import random
 from dataclasses import dataclass
+from typing import Optional
 
+from src.optimiser_fuzzer import fuzz_optimiser
 from src.utils import get_spirvsmith_version
 
 rng = random.SystemRandom()
@@ -42,6 +44,8 @@ class LimitsConfig:
     # How deep can the shader go when generating shaders (in terms of control flow).
     # e.g. with a depth of 2, the fuzzer will never generate a triply-nested loop.
     max_depth: int = 3
+    # How many shaders should the fuzzer generate. If None, the fuzzer will generate indefinitely.
+    max_shaders: Optional[int] = 100
 
 
 @dataclass
@@ -101,6 +105,7 @@ class MiscConfig:
     # unless you have deployed the associated infrastructure and have a credentials file.
     broadcast_generated_shaders: bool = False
     upload_logs: bool = True
+    fuzz_optimiser: bool = False
     version: str = get_spirvsmith_version()
 
 

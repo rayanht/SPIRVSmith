@@ -2,6 +2,7 @@ import copy
 import multiprocessing
 import os
 import random
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from multiprocessing.pool import Pool
@@ -78,7 +79,13 @@ class ShaderGenerator:
             os.mkdir("out")
         except FileExistsError:
             pass
-        while True:
+        shader_counter: int = 0
+        max_shaders: int = (
+            self.config.limits.max_shaders
+            if self.config.limits.max_shaders
+            else sys.maxsize
+        )
+        while shader_counter < max_shaders:
             if terminate:
                 MP_pool.close()
                 MP_pool.join()
@@ -89,7 +96,8 @@ class ShaderGenerator:
                 shader: SPIRVShader = self.gen_shader()
                 shader.generate_assembly_file(f"out/{shader.id}.spasm")
                 if shader.validate():
-                    MP_pool.apply_async(func=fuzz_optimiser, args=(shader,))
+                    if self.config.misc.fuzz_optimiser:
+                        MP_pool.apply_async(func=fuzz_optimiser, args=(shader,))
                     if self.config.misc.broadcast_generated_shaders:
                         submit_shader.sync(
                             client=client,
@@ -106,6 +114,8 @@ class ShaderGenerator:
 
             if paused:
                 Monitor(self.config).info(event=Event.PAUSED)
+
+            shader_counter += 1
 
     def gen_shader(self) -> SPIRVShader:
         execution_model = ExecutionModel.GLCompute
