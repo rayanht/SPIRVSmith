@@ -83,6 +83,19 @@ def run_amber(amber_filename: str, buffer_bindings: list[int], shader_id: str) -
             print("**** SEGFAULT ****")
             return "SEGFAULT"
 
+        if process.returncode == -signal.SIGABRT:
+            MONITOR.error(
+                event=Event.AMBER_ABORT,
+                extra={
+                    "stderr": process.stderr.decode("utf-8"),
+                    "run_args": " ".join(process.args),
+                    "shader_id": shader_id,
+                },
+            )
+            print(process.stderr.decode("utf-8"))
+            print("**** ABORT ****")
+            return "ABORT"
+
         MONITOR.info(event=Event.AMBER_SUCCESS, extra={"shader_id": shader_id})
 
         with open(temp_file.name, "r") as f:
