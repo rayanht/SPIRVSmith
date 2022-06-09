@@ -166,10 +166,9 @@ class FuzzDelegator(OpCode):
             PARAMETRIZATIONS[cls.__name__][subclass_name] = 1
         if cls.__name__ == "Statement":
             PARAMETRIZATIONS[cls.__name__]["OpExtInst"] = 0
-            mu = context.rng.randint(0, 7)
-            sample = np.random.normal(
-                loc=mu, scale=context.config.strategy.sigma, size=10000000
-            )
+            mu = context.rng.uniform(0, 7)
+            sigma = context.rng.uniform(1.5, 3.5)
+            sample = np.random.normal(loc=mu, scale=sigma, size=10000000)
             sample = np.round(sample).astype(int)
             sample = [x for x in sample if 0 <= x <= 7]
 
