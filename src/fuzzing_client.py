@@ -75,10 +75,7 @@ class ShaderGenerator:
 
         if self.config.misc.broadcast_generated_shaders:
             register_generator.sync(client=client, json_body=self.generator_info)
-        try:
-            os.mkdir("out")
-        except FileExistsError:
-            pass
+        os.makedirs(self.config.misc.out_folder, exist_ok=True)
         shader_counter: int = 0
         max_shaders: int = (
             self.config.limits.max_shaders
@@ -94,7 +91,9 @@ class ShaderGenerator:
                 break
             if not paused:
                 shader: SPIRVShader = self.gen_shader()
-                shader.generate_assembly_file(f"out/{shader.id}.spasm")
+                shader.generate_assembly_file(
+                    f"{self.config.misc.out_folder}/{shader.id}.spasm"
+                )
                 if shader.validate():
                     if self.config.misc.fuzz_optimiser:
                         MP_pool.apply_async(func=fuzz_optimiser, args=(shader,))

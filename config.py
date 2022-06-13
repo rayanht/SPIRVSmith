@@ -100,13 +100,15 @@ class FuzzingStrategyConfig:
 
 @dataclass
 class MiscConfig:
+    out_folder: str = "out"
+    fuzz_optimiser: bool = False
+    version: str = get_spirvsmith_version()
+
     # The following parameters are only useful when running SPIRVSmith in
     # a distributed fashion. Enabling these will almost definitely crash SPIRVSmith
     # unless you have deployed the associated infrastructure and have a credentials file.
     broadcast_generated_shaders: bool = False
     upload_logs: bool = True
-    fuzz_optimiser: bool = False
-    version: str = get_spirvsmith_version()
 
 
 @dataclass
