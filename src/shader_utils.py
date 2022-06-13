@@ -405,7 +405,7 @@ def create_amber_file(shader: SPIRVShader, filename: str) -> None:
             lines = fr.readlines()
             for line in lines:
                 fw.write(line.decode("utf-8"))
-            fw.write("END\n")
+            fw.write("\nEND\n")
         for struct in struct_declarations:
             fw.write(f"{struct.to_amberscript()}\n")
         for buffer in buffers:
