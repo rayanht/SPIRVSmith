@@ -50,7 +50,7 @@ class Monitor:
                 )
             )
         ]
-        if config and config.misc.upload_logs:
+        if config and (misc := config.get("misc", None)) and misc["upload_logs"]:
             outputs.append(daiquiri.output.Datadog())
         daiquiri.setup(
             outputs=outputs,

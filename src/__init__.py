@@ -168,9 +168,10 @@ class FuzzDelegator(OpCode):
             PARAMETRIZATIONS[cls.__name__]["OpExtInst"] = 0
             mu = context.rng.uniform(0, 7)
             sigma = context.rng.uniform(1.5, 3.5)
-            sample = np.random.normal(loc=mu, scale=sigma, size=10000000)
+            sample = np.random.normal(loc=mu, scale=2000000, size=10000000)
             sample = np.round(sample).astype(int)
             sample = [x for x in sample if 0 <= x <= 7]
+            # sample = list(range(8))
 
             _, count = np.unique(sample, return_counts=True)
             probs = count / len(sample)

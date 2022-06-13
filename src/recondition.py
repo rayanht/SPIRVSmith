@@ -527,6 +527,8 @@ class InfiniteLoop(DangerousPattern[InfiniteLoopVulnerableOpCode]):
 
 
 def recondition_opcodes(context: Context, spirv_opcodes: list[OpCode]):
+    if not context.config:
+        context.config = {"strategy": {"p_picking_statement_operand": 0}}
     dangerous_patterns = DangerousPattern.__subclasses__()
     i = 0
     j = len(spirv_opcodes)
