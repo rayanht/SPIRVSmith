@@ -129,6 +129,8 @@ class TestContext(unittest.TestCase):
         for type in types:
             counter[type] += 1
 
+        self.context.config.strategy.type_exclusion_set = []
+
         self.assertAlmostEqual(counter[type1], N // 4, delta=N // 10)
         self.assertAlmostEqual(counter[type2], N // 4, delta=N // 10)
         self.assertAlmostEqual(counter[type3], N // 2, delta=N // 10)
