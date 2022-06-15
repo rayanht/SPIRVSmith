@@ -213,6 +213,8 @@ class FuzzDelegator(OpCode):
         import src.operators.logic
         import src.operators.memory.memory_access
         import src.operators.memory.variable
+        import src.types.abstract_types
+        import src.types.concrete_types
 
         if context.config.strategy.enable_ext_glsl_std_450:
             import src.operators.arithmetic.glsl
