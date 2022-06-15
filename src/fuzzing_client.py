@@ -1,16 +1,13 @@
 import copy
 import multiprocessing
 import os
-import random
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from multiprocessing.pool import Pool
 from typing import Optional
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
-from omegaconf import OmegaConf
+import tqdm
 from spirv_enums import AddressingModel
 from spirv_enums import Capability
 from spirv_enums import ExecutionMode
@@ -35,8 +32,6 @@ from src.optimiser_fuzzer import fuzz_optimiser
 from src.shader_utils import SPIRVShader
 from src.types.concrete_types import OpTypeFunction
 from src.types.concrete_types import OpTypeVoid
-from src.utils import get_spirvsmith_version
-from src.utils import mutate_config
 
 if TYPE_CHECKING:
     from run import SPIRVSmithConfig
@@ -76,13 +71,13 @@ class ShaderGenerator:
         if self.config.misc.broadcast_generated_shaders:
             register_generator.sync(client=client, json_body=self.generator_info)
         os.makedirs(self.config.misc.out_folder, exist_ok=True)
-        shader_counter: int = 0
         max_shaders: int = (
-            self.config.limits.max_shaders
-            if self.config.limits.max_shaders
-            else sys.maxsize
+            self.config.limits.max_shaders if self.config.limits.max_shaders else 1000
         )
-        while shader_counter < max_shaders:
+        print(f"SPIRVSmith will generate {max_shaders} shaders...")
+        print(f"Selected Generation Policy: {self.config.strategy.gp_policy}")
+        print(f"Selected Recency Bias Policy: {self.config.strategy.rbp_policy}")
+        for _ in range(max_shaders):
             if terminate:
                 MP_pool.close()
                 MP_pool.join()
@@ -113,8 +108,6 @@ class ShaderGenerator:
 
             if paused:
                 Monitor(self.config).info(event=Event.PAUSED)
-
-            shader_counter += 1
 
     def gen_shader(self) -> SPIRVShader:
         execution_model = ExecutionModel.GLCompute

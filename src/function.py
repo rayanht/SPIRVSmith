@@ -1,3 +1,4 @@
+import inspect
 from ast import Constant
 from typing import Optional
 from typing import TYPE_CHECKING
@@ -7,6 +8,7 @@ from spirv_enums import SelectionControlMask
 from typing_extensions import Self
 
 from src import AbortFuzzing
+from src import COUNT
 from src import FuzzLeafMixin
 from src import FuzzResult
 from src import OpCode
@@ -100,12 +102,26 @@ class OpSelectionMerge(ControlFlowOperator, Untyped, VoidOp):
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        global COUNT
+        old_count = COUNT
         if context.get_depth() > context.config.limits.max_depth:
             raise AbortFuzzing
         exit_label = OpLabel.fuzz(context).opcode
         selection_control = SelectionControlMask.NONE
-        if_block = fuzz_block(context, exit_label)
-        else_block = fuzz_block(context, exit_label)
+        try:
+            if_block = fuzz_block(
+                context,
+                exit_label,
+                limiter=context.config.strategy.shader_target_size / 20,
+            )
+            else_block = fuzz_block(
+                context,
+                exit_label,
+                limiter=context.config.strategy.shader_target_size / 20,
+            )
+        except GeneratorExit:
+            COUNT = old_count + 10
+            raise AbortFuzzing
         true_label = if_block[0]
         false_label = else_block[0]
         try:
@@ -145,7 +161,9 @@ class OpLoopMerge(ControlFlowOperator, Untyped, VoidOp):
             raise AbortFuzzing
         merge_label = OpLabel.fuzz(context).opcode
         selection_control = SelectionControlMask.NONE
-        block = fuzz_block(context, None)
+        block = fuzz_block(
+            context, None, limiter=context.config.strategy.shader_target_size / 20
+        )
         continue_label = block[0]
         condition = context.get_random_operand(IsScalarBoolean)
         loop_entry_branch = OpBranchConditional(
@@ -186,19 +204,23 @@ class OpBranch(FuzzLeafMixin, Untyped, VoidOp):
 def fuzz_block(
     context: "Context",
     exit_label: Optional[OpLabel],
+    limiter: Optional[int] = 4096,
 ) -> tuple[OpCode]:
     block_label: OpLabel = OpLabel.fuzz(context).opcode
     instructions: list[OpCode] = []
     variables: list[OpVariable] = []
     block_context = context.make_child_context()
 
-    while context.rng.random() < block_context.config.strategy.p_statement:
+    i = 0
+    while i < limiter:
         try:
             fuzzed_opcode: FuzzResult = Statement.fuzz(block_context)
         except AbortFuzzing:
             continue
+        except GeneratorExit:
+            break
         nested_block = False
-        if isinstance(fuzzed_opcode.opcode, OpSelectionMerge):
+        if isinstance(fuzzed_opcode.opcode, (OpSelectionMerge, OpLoopMerge)):
             nested_block = True
         if fuzzed_opcode.is_opcode_pre_side_effects:
             instructions.append(fuzzed_opcode.opcode)
@@ -220,6 +242,7 @@ def fuzz_block(
             instructions.append(fuzzed_opcode.opcode)
         if isinstance(fuzzed_opcode.opcode, OpVariable):
             variables.append(fuzzed_opcode.opcode)
+        i += 1
     if exit_label:
         instructions.append(OpBranch(label=exit_label))
     return tuple([block_label, *variables, *instructions])

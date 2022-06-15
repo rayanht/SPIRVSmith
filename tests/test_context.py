@@ -112,11 +112,11 @@ class TestContext(unittest.TestCase):
 
     def test_numerical_types_distributed_correctly(self):
         self.context.config.limits.n_types = N
-        self.context.config.strategy.generate_container_types = False
-
-        Type.parametrize(self.context)
-        Type.set_zero_probability(MiscType, self.context)
-        ScalarType.set_zero_probability(OpTypeBool, self.context)
+        self.context.config.strategy.type_exclusion_set = [
+            "ContainerType",
+            "OpTypeBool",
+            "MiscType",
+        ]
 
         type1: Type = OpTypeInt(32, 0)
         type2: Type = OpTypeInt(32, 1)

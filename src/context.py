@@ -8,7 +8,9 @@ from typing import Iterable
 from typing import Optional
 from typing import TYPE_CHECKING
 
+import numpy as np
 import ulid
+from scipy.stats import beta
 from spirv_enums import Decoration
 from spirv_enums import ExecutionModel
 from spirv_enums import StorageClass
@@ -250,28 +252,34 @@ class Context:
     ) -> Operand:
         statements: list[Statement] = self.get_typed_statements(predicate)
         constants: list[Constant] = self.get_constants(predicate)
-
-        # TODO parametrize using a geometric distribution
+        N, M = len(statements), len(constants)
         try:
             if (
                 self.rng.random()
                 < self.config["strategy"]["p_picking_statement_operand"]
-                and len(list(statements)) > 0
-            ):
-                potential_operands: list[Statement] = list(statements)
-                weights = [
-                    len(potential_operands) - n + len(potential_operands) // 2
-                    for n in range(len(potential_operands))
-                ]
-                try:
-                    return self.rng.choices(potential_operands, weights=weights, k=1)[0]
-                except IndexError:
-                    return self.rng.choice(list(constants))
+                and N > 0
+            ) or (M == 0 and N > 0):
+                match self.config.strategy.rbp_policy:
+                    case "uniform":
+                        probs = [1 / N] * N
+                    case "greedy":
+                        probs = [1] + [0] * (N - 1)
+                    case "linear":
+                        probs = [N - n + N // 2 for n in range(N)]
+                    case "beta_binomial":
+                        mu = 0.2
+                        sigma = 0.35
+
+                        n = (mu * (1 - mu)) / sigma**2
+                        a = mu * n
+                        b = (1 - mu) * n
+
+                        x = np.linspace(beta.ppf(0.01, a, b), beta.ppf(0.99, a, b), N)
+                        pdf = beta.pdf(x, a, b)
+                        probs = pdf / pdf.sum()
+                return self.rng.choices(statements, weights=probs[::-1], k=1)[0]
             else:
-                try:
-                    return self.rng.choice(list(constants))
-                except IndexError:
-                    return self.rng.choice(list(statements))
+                return self.rng.choice(list(constants))
         except IndexError:
             try:
                 opcode_name: str = inspect.stack()[1][0].f_locals["cls"].__name__

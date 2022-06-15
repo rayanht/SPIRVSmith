@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from typing import TypeVar
 
 import numpy as np
+from scipy.stats import beta
 from typing_extensions import Self
 
 if TYPE_CHECKING:
@@ -123,6 +124,7 @@ class FuzzResult(Generic[T]):
 # A FuzzDelegator is a transient object, we need to commit
 # reparametrizations to this global object.
 PARAMETRIZATIONS: dict[str, dict[str, int]] = {}
+COUNT: int = 0
 
 
 class FuzzDelegator(OpCode):
@@ -141,6 +143,8 @@ class FuzzDelegator(OpCode):
     @classmethod
     def reset_parametrizations(cls):
         global PARAMETRIZATIONS
+        global COUNT
+        COUNT = 0
         PARAMETRIZATIONS = {}
 
     @classmethod
@@ -157,8 +161,8 @@ class FuzzDelegator(OpCode):
 
     @classmethod
     def parametrize(cls, context: "Context") -> None:
-        subclasses_names: set[OpCodeName] = set(
-            map(lambda cls: cls.__name__, cls.get_subclasses())
+        subclasses_names: list[OpCodeName] = sorted(
+            set(map(lambda cls: cls.__name__, cls.get_subclasses()))
         )
         # Get parametrization from config for top-level delegators
         PARAMETRIZATIONS[cls.__name__] = {}
@@ -166,29 +170,41 @@ class FuzzDelegator(OpCode):
             PARAMETRIZATIONS[cls.__name__][subclass_name] = 1
         if cls.__name__ == "Statement":
             PARAMETRIZATIONS[cls.__name__]["OpExtInst"] = 0
-            mu = context.rng.uniform(0, 7)
-            sigma = context.rng.uniform(1.5, 3.5)
-            sample = np.random.normal(loc=mu, scale=2000000, size=10000000)
-            sample = np.round(sample).astype(int)
-            sample = [x for x in sample if 0 <= x <= 7]
-            # sample = list(range(8))
-
-            _, count = np.unique(sample, return_counts=True)
-            probs = count / len(sample)
             subclasses_names.remove("OpExtInst")
-            print(probs, subclasses_names)
-            for prob, subclass_name in zip(probs, subclasses_names):
-                if subclass_name != "OpExtInst":
-                    PARAMETRIZATIONS[cls.__name__][subclass_name] = prob
+            N = len(subclasses_names)
+            match context.config.strategy.gp_policy:
+                case "uniform":
+                    probs = [1 / N] * N
+                case "gaussian":
+                    mu = context.rng.uniform(0, N)
+                    sigma = context.rng.uniform(1.5, 3.5)
+                    sample = np.random.normal(loc=mu, scale=sigma, size=100000)
+                    sample = np.round(sample).astype(int)
+                    sample = [x for x in sample if 0 <= x < N]
+                    _, count = np.unique(sample, return_counts=True)
+                    probs = count / len(sample)
+                case "beta_binomial":
+                    mu = context.rng.uniform(0.1, 0.9)
+                    sigma = context.rng.uniform(0.1, 0.25)
 
-        if (
-            cls.__name__ == "Type"
-            and not context.config.strategy.generate_container_types
-        ):
-            PARAMETRIZATIONS[cls.__name__]["ContainerType"] = 0
+                    n = (mu * (1 - mu)) / sigma**2
+                    a = mu * n
+                    b = (1 - mu) * n
+
+                    x = np.linspace(beta.ppf(0.01, a, b), beta.ppf(0.99, a, b), N)
+                    pdf = beta.pdf(x, a, b)
+                    probs = pdf / pdf.sum()
+            for prob, subclass_name in zip(probs, subclasses_names):
+                PARAMETRIZATIONS[cls.__name__][subclass_name] = prob
 
     @classmethod
     def fuzz(cls, context: "Context") -> FuzzResult[Self]:
+        """
+        Sentinel
+        """
+        global COUNT
+        if COUNT > context.config.strategy.shader_target_size:
+            raise GeneratorExit
         import src.operators.arithmetic.scalar_arithmetic
         import src.operators.arithmetic.linear_algebra
         import src.operators.bitwise
@@ -202,18 +218,31 @@ class FuzzDelegator(OpCode):
             import src.operators.arithmetic.glsl
         if not cls.is_parametrized():
             cls.parametrize(context=context)
-        subclasses: list["FuzzDelegator"] = list(cls.get_subclasses())
+        if context.rng.random() < context.config.strategy.p_mutation:
+            Statement.parametrize(context=context)
+        subclasses: list[type["FuzzDelegator"]] = list(cls.get_subclasses())
+        if cls is Type or issubclass(cls, Type):
+            excluded_types = [
+                subclass
+                for subclass in subclasses
+                if subclass.__name__ in context.config.strategy.type_exclusion_set
+            ]
+            for excluded_type in excluded_types:
+                cls.set_zero_probability(excluded_type, context)
         weights = [PARAMETRIZATIONS[cls.__name__][sub.__name__] for sub in subclasses]
         if sum(weights) == 0 or len(weights) == 0:
             print(cls, subclasses, weights)
         try:
-            return context.rng.choices(subclasses, weights=weights, k=1)[0].fuzz(
-                context
-            )
+            subclass = context.rng.choices(subclasses, weights=weights, k=1)[0]
+            fuzzed_subclass = subclass.fuzz(context)
         except ReparametrizationError:
-            return context.rng.choices(subclasses, weights=weights, k=1)[0].fuzz(
-                context
-            )
+            subclass = context.rng.choices(subclasses, weights=weights, k=1)[0]
+            fuzzed_subclass = subclass.fuzz(context)
+        if cls.fuzz.__doc__ != subclass.fuzz.__doc__ and not issubclass(
+            subclass, (Type, Constant)
+        ):
+            COUNT += 1
+        return fuzzed_subclass
 
 
 @dataclass

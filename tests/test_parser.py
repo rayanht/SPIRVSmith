@@ -24,7 +24,7 @@ class TestParser(unittest.TestCase):
         FuzzDelegator.reset_parametrizations()
         config.limits = copy.deepcopy(init_limits)
         config.strategy = copy.deepcopy(init_strategy)
-        config.strategy.p_statement = 0.95
+        config.strategy.shader_target_size = 500
         self.shader: SPIRVShader = ShaderGenerator(config, None).gen_shader()
         self.parsed_shader: SPIRVShader = parse_spirv_assembly_lines(
             self.shader.generate_assembly_lines()
